@@ -1,0 +1,8 @@
+<.header>
+  Edit Database <%= @database.id %>
+  <:subtitle>Use this form to manage database records in your database.</:subtitle>
+</.header>
+
+<.database_form changeset={@changeset} action={~p"/databases/#{@database}"} />
+
+<.back navigate={~p"/databases"}>Back to databases</.back>

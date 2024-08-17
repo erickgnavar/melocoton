@@ -1,0 +1,25 @@
+<.header>
+  Listing Databases
+  <:actions>
+    <.link href={~p"/databases/new"}>
+      <.button>New Database</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table id="databases" rows={@databases} row_click={&JS.navigate(~p"/databases/#{&1}")}>
+  <:col :let={database} label="Name"><%= database.name %></:col>
+  <:col :let={database} label="Type"><%= database.type %></:col>
+  <:col :let={database} label="Url"><%= database.url %></:col>
+  <:action :let={database}>
+    <div class="sr-only">
+      <.link navigate={~p"/databases/#{database}"}>Show</.link>
+    </div>
+    <.link navigate={~p"/databases/#{database}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={database}>
+    <.link href={~p"/databases/#{database}"} method="delete" data-confirm="Are you sure?">
+      Delete
+    </.link>
+  </:action>
+</.table>

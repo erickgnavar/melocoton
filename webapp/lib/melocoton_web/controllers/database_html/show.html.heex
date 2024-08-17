@@ -1,0 +1,17 @@
+<.header>
+  Database <%= @database.id %>
+  <:subtitle>This is a database record from your database.</:subtitle>
+  <:actions>
+    <.link href={~p"/databases/#{@database}/edit"}>
+      <.button>Edit database</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.list>
+  <:item title="Name"><%= @database.name %></:item>
+  <:item title="Type"><%= @database.type %></:item>
+  <:item title="Url"><%= @database.url %></:item>
+</.list>
+
+<.back navigate={~p"/databases"}>Back to databases</.back>
