@@ -30,6 +30,20 @@ defmodule MelocotonWeb.SQLLive.Run do
 
   @impl Phoenix.LiveView
   def handle_event("run-query", _params, socket) do
+    run_query(socket)
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event("handle-key", %{"key" => "Enter", "metaKey" => true}, socket) do
+    run_query(socket)
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event("handle-key", _params, socket) do
+    {:noreply, socket}
+  end
+
+  defp run_query(socket) do
     Logger.info("Running query #{socket.assigns.query}")
 
     case socket.assigns.repo.query(socket.assigns.query, []) do
