@@ -17,7 +17,8 @@ defmodule Melocoton.Application do
       # Start a worker by calling: Melocoton.Worker.start_link(arg)
       # {Melocoton.Worker, arg},
       # Start to serve requests, typically the last entry
-      MelocotonWeb.Endpoint
+      MelocotonWeb.Endpoint,
+      Melocoton.Pool
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

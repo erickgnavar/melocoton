@@ -19,6 +19,7 @@ defmodule MelocotonWeb.Router do
 
     get "/", PageController, :home
     resources "/databases", DatabaseController
+    live "/databases/:database_id/run", SQLLive.Run
   end
 
   # Other scopes may use custom stacks.

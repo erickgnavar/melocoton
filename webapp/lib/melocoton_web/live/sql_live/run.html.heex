@@ -1,0 +1,36 @@
+<div class="max-w-full h-screen flex flex-col justify-between mx-auto divide-y divide-solid">
+  <div class="text-center">
+    <button class="px-4 py-2 mx-2 my-2 outline outline-2" phx-click="run-query">Run SQL</button>
+    <button class="px-4 py-2 mx-2 my-2 outline outline-2">Reload</button>
+  </div>
+  <div>
+    <.form for={@form} phx-change="validate">
+      <.input
+        type="textarea"
+        field={@form[:query]}
+        class="sql-code-container w-full h-40 resize-none focus:outline-none"
+        rows="10"
+      />
+    </.form>
+  </div>
+  <div class="overflow-auto"><pre></pre></div>
+  <div class="overflow-auto">
+    <table class="table-auto border border-gray-400 w-full">
+      <thead>
+        <tr class="bg-gray-200">
+          <th :for={col <- @result.cols} class="px-4 py-2 text-left">
+            <%= col %>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr :for={row <- @result.rows} class="bg-gray-100">
+          <td :for={col <- @result.cols} class="px-4 py-2 text-left">
+            <%= Map.get(row, col) %>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="text-center bg-gray-400"><pre>Rows returned: <%= @result.num_rows %>></pre></div>
+</div>

@@ -18,6 +18,9 @@
     <.link navigate={~p"/databases/#{database}/edit"}>Edit</.link>
   </:action>
   <:action :let={database}>
+    <.link href={~p"/databases/#{database.id}/run"}>Run</.link>
+  </:action>
+  <:action :let={database}>
     <.link href={~p"/databases/#{database}"} method="delete" data-confirm="Are you sure?">
       Delete
     </.link>
