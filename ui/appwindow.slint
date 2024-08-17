@@ -1,0 +1,61 @@
+import { Button, TextEdit, ListView, HorizontalBox } from "std-widgets.slint";
+
+export component AppWindow inherits Window {
+    in-out property <string> query: "";
+    callback run-query(string);
+
+    // forward-focus: my-key-handler;
+    my-key-handler := FocusScope {
+        key-pressed(event) => {
+            debug(event.text);
+            if (event.modifiers.control) {
+                debug("control was pressed during this event");
+            }
+            if (event.text == Key.Escape) {
+                debug("Esc key was pressed")
+            }
+            accept
+        }
+    }
+
+    GridLayout {
+        spacing: 10px;
+        padding: 5px;
+
+        Row {
+            query-input := TextEdit {
+                text: root.query;
+                forward-focus: my-key-handler;
+                placeholder-text: "Inserte SQL query here";
+                width: 500px;
+                height: 400px;
+                edited(input) => {
+                    root.query = input;
+                }
+            }
+        }
+
+        Row {
+            Button {
+                text: "Run query";
+                clicked => {
+                    root.run-query(root.query);
+                }
+            }
+        }
+
+        Row {
+            ListView {
+                for data in [{ text: "hello" }, { text: "fooo" }]: HorizontalBox {
+                    Text {
+                        text: data.text;
+                    }
+
+                    Text {
+                        text: data.text;
+                    }
+                }
+            }
+        }
+    }
+}

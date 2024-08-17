@@ -1,0 +1,22 @@
+[package]
+name = "melocoton"
+version = "0.1.0"
+authors = ["Erick Navarro <erick@navarro.io>"]
+edition = "2021"
+build = "build.rs"
+description = "A simple keyboard driven GUI application for databases"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+slint = "1.6"
+rusqlite = { version = "0.32.0" }
+
+[build-dependencies]
+slint-build = "1.6"
+
+[package.metadata.bundle]
+name = "Melocoton"
+identifier = "io.github.erickgnavar.melocoton"
+description = "A simple keyboard driven GUI application for databases"
+icon = ["./icon.png", "./icon@2x.png"]
