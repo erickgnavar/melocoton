@@ -12,7 +12,7 @@ defmodule Melocoton.DatabasesFixtures do
       attrs
       |> Enum.into(%{
         name: "some name",
-        type: "some type",
+        type: :sqlite,
         url: "some url"
       })
       |> Melocoton.Databases.create_database()

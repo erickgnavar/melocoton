@@ -4,7 +4,7 @@ defmodule Melocoton.Databases.Database do
 
   schema "databases" do
     field :name, :string
-    field :type, :string
+    field :type, Ecto.Enum, values: [:sqlite, :postgres], default: :sqlite
     field :url, :string
 
     timestamps(type: :utc_datetime)

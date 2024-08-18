@@ -3,8 +3,8 @@ defmodule MelocotonWeb.DatabaseControllerTest do
 
   import Melocoton.DatabasesFixtures
 
-  @create_attrs %{name: "some name", type: "some type", url: "some url"}
-  @update_attrs %{name: "some updated name", type: "some updated type", url: "some updated url"}
+  @create_attrs %{name: "some name", type: "sqlite", url: "some url"}
+  @update_attrs %{name: "some updated name", type: "postgres", url: "some updated url"}
   @invalid_attrs %{name: nil, type: nil, url: nil}
 
   describe "index" do

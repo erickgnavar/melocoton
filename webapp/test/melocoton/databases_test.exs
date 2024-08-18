@@ -21,11 +21,11 @@ defmodule Melocoton.DatabasesTest do
     end
 
     test "create_database/1 with valid data creates a database" do
-      valid_attrs = %{name: "some name", type: "some type", url: "some url"}
+      valid_attrs = %{name: "some name", type: "sqlite", url: "some url"}
 
       assert {:ok, %Database{} = database} = Databases.create_database(valid_attrs)
       assert database.name == "some name"
-      assert database.type == "some type"
+      assert database.type == :sqlite
       assert database.url == "some url"
     end
 
@@ -38,13 +38,13 @@ defmodule Melocoton.DatabasesTest do
 
       update_attrs = %{
         name: "some updated name",
-        type: "some updated type",
+        type: "postgres",
         url: "some updated url"
       }
 
       assert {:ok, %Database{} = database} = Databases.update_database(database, update_attrs)
       assert database.name == "some updated name"
-      assert database.type == "some updated type"
+      assert database.type == :postgres
       assert database.url == "some updated url"
     end
 
