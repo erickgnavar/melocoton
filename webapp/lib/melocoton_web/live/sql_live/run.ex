@@ -59,7 +59,7 @@ defmodule MelocotonWeb.SQLLive.Run do
     end
   end
 
-  defp handle_response(%Exqlite.Result{columns: cols, rows: rows, num_rows: num_rows}) do
+  defp handle_response(%{columns: cols, rows: rows, num_rows: num_rows}) do
     rows =
       rows
       |> Enum.map(&Enum.zip(cols, &1))

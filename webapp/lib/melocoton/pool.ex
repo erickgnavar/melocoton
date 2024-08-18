@@ -19,7 +19,11 @@ defmodule Melocoton.Pool do
       end
 
     # TODO: eval this and return an error in case url is wrong
-    repo.start_link(database: database.url, pool_size: 5)
+    case database.type do
+      :sqlite -> repo.start_link(database: database.url, pool_size: 5)
+      :postgres -> repo.start_link(url: database.url, pool_size: 5)
+    end
+
     {:reply, repo, state}
   end
 
@@ -28,11 +32,17 @@ defmodule Melocoton.Pool do
   end
 
   defp create_repo(database) do
+    adapter =
+      case database.type do
+        :sqlite -> "Ecto.Adapters.SQLite3"
+        :postgres -> "Ecto.Adapters.Postgres"
+      end
+
     module_str = """
       defmodule Melocoton.Repos.#{database.name |> Macro.camelize()} do
       use Ecto.Repo,
           otp_app: :melocoton,
-          adapter: Ecto.Adapters.SQLite3
+          adapter: #{adapter}
       end
     """
 
