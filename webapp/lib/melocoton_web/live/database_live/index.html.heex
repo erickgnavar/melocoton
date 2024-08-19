@@ -14,7 +14,9 @@
 >
   <:col :let={{_id, database}} label="Name"><%= database.name %></:col>
   <:col :let={{_id, database}} label="Type"><%= database.type %></:col>
-  <:col :let={{_id, database}} label="Url"><%= database.url %></:col>
+  <:col :let={{_id, database}} label="Url">
+    <code><%= database.url %></code>
+  </:col>
   <:action :let={{_id, database}}>
     <div class="sr-only">
       <.link navigate={~p"/databases/#{database}"}>Show</.link>
