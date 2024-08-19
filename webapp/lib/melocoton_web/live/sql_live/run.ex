@@ -15,6 +15,7 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> assign(:repo, repo)
     |> assign(:database, database)
     |> assign(:result, empty_result())
+    |> assign(:error_message, nil)
     |> ok()
   end
 
@@ -51,11 +52,12 @@ defmodule MelocotonWeb.SQLLive.Run do
       {:ok, result} ->
         socket
         |> assign(result: handle_response(result))
+        |> assign(:error_message, nil)
         |> noreply()
 
       {:error, error} ->
         socket
-        |> put_flash(:error, "#{inspect(error)}")
+        |> assign(:error_message, "#{inspect(error)}")
         |> noreply()
     end
   end
