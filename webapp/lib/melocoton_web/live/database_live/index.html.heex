@@ -1,0 +1,51 @@
+<.header>
+  Listing Databases
+  <:actions>
+    <.link patch={~p"/databases/new"}>
+      <.button>New Database</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table
+  id="databases"
+  rows={@streams.databases}
+  row_click={fn {_id, database} -> JS.navigate(~p"/databases/#{database}") end}
+>
+  <:col :let={{_id, database}} label="Name"><%= database.name %></:col>
+  <:col :let={{_id, database}} label="Type"><%= database.type %></:col>
+  <:col :let={{_id, database}} label="Url"><%= database.url %></:col>
+  <:action :let={{_id, database}}>
+    <div class="sr-only">
+      <.link navigate={~p"/databases/#{database}"}>Show</.link>
+    </div>
+    <.link patch={~p"/databases/#{database}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={{_id, database}}>
+    <.link patch={~p"/databases/#{database}/run"}>Run</.link>
+  </:action>
+  <:action :let={{id, database}}>
+    <.link
+      phx-click={JS.push("delete", value: %{id: database.id}) |> hide("##{id}")}
+      data-confirm="Are you sure?"
+    >
+      Delete
+    </.link>
+  </:action>
+</.table>
+
+<.modal
+  :if={@live_action in [:new, :edit]}
+  id="database-modal"
+  show
+  on_cancel={JS.patch(~p"/databases")}
+>
+  <.live_component
+    module={MelocotonWeb.DatabaseLive.FormComponent}
+    id={@database.id || :new}
+    title={@page_title}
+    action={@live_action}
+    database={@database}
+    patch={~p"/databases"}
+  />
+</.modal>
