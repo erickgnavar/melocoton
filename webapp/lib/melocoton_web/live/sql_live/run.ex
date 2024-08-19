@@ -57,10 +57,13 @@ defmodule MelocotonWeb.SQLLive.Run do
 
       {:error, error} ->
         socket
-        |> assign(:error_message, "#{inspect(error)}")
+        |> assign(:error_message, translate_query_error(error))
         |> noreply()
     end
   end
+
+  defp translate_query_error(%Postgrex.Error{postgres: %{message: message}}), do: message
+  defp translate_query_error(%Exqlite.Error{message: message}), do: message
 
   defp handle_response(%{columns: cols, rows: rows, num_rows: num_rows}) do
     rows =
