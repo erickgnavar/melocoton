@@ -28,6 +28,21 @@ let csrfToken = document
 let liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: { _csrf_token: csrfToken },
+  hooks: {
+    SaveSelectedText: {
+      mounted() {
+        let that = this;
+
+        this.el.addEventListener("select", (event) => {
+          const selection = event.target.value.substring(
+            event.target.selectionStart,
+            event.target.selectionEnd,
+          );
+          that.pushEvent("validate", { query: selection });
+        });
+      },
+    },
+  },
   metadata: {
     keydown: (e, el) => {
       return {
