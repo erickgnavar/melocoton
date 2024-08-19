@@ -62,9 +62,23 @@ defmodule MelocotonWeb.SQLLive.Run do
   defp handle_response(%{columns: cols, rows: rows, num_rows: num_rows}) do
     rows =
       rows
-      |> Enum.map(&Enum.zip(cols, &1))
+      |> Enum.map(&Enum.zip(cols, normalize_value(&1)))
       |> Enum.map(&Enum.into(&1, %{}))
 
     %{cols: cols, rows: rows, num_rows: num_rows}
+  end
+
+  defp normalize_value(values) do
+    Enum.map(values, fn
+      # handle uuid columns that are returned as raw binary data
+      value when is_binary(value) ->
+        case Ecto.UUID.cast(value) do
+          {:ok, casted_value} -> casted_value
+          :error -> value
+        end
+
+      value ->
+        value
+    end)
   end
 end
