@@ -38,16 +38,24 @@ defmodule Melocoton.Pool do
         :postgres -> "Ecto.Adapters.Postgres"
       end
 
-    module_str = """
-      defmodule Melocoton.Repos.#{database.name |> Macro.camelize()} do
-      use Ecto.Repo,
-          otp_app: :melocoton,
-          adapter: #{adapter}
-      end
-    """
+    module_name = "Melocoton.Repos.#{database.name |> Macro.camelize()}" |> String.to_atom()
 
-    [{module, _bytecode}] = Code.compile_string(module_str)
+    # check if already loaded so we avoid a warning about runtime code
+    # reloaded
+    if Code.ensure_loaded?(module_name) do
+      {:ok, module_name}
+    else
+      module_str = """
+        defmodule #{module_name} do
+        use Ecto.Repo,
+            otp_app: :melocoton,
+            adapter: #{adapter}
+        end
+      """
 
-    {:ok, module}
+      [{module, _bytecode}] = Code.compile_string(module_str)
+
+      {:ok, module}
+    end
   end
 end
