@@ -13,6 +13,7 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> assign(:query, "")
     |> assign(form: to_form(%{"query" => ""}))
     |> assign(:repo, repo)
+    |> assign(:database, database)
     |> assign(:result, empty_result())
     |> ok()
   end

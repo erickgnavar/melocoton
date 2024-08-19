@@ -4,6 +4,9 @@
     <button class="px-4 py-2 mx-2 my-2 outline outline-2">Reload</button>
     <a class="px-4 py-2 mx-2 my-2 outline outline-2" href={~p"/databases"}>Back to list</a>
   </div>
+  <div>
+    <h1 class="text-3xl text-center"><%= @database.name %></h1>
+  </div>
   <div phx-window-keydown="handle-key">
     <.form for={@form} phx-change="validate">
       <.input
