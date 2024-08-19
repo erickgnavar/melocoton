@@ -6,6 +6,22 @@
   </div>
   <div>
     <h1 class="text-3xl text-center"><%= @database.name %></h1>
+    <p class="text-center">
+      <button
+        :for={session <- @database.sessions}
+        phx-click="change-session"
+        phx-value-session-id={session.id}
+        class={[
+          "px-4 py-2 mx-2 my-2 outline outline-2",
+          session.id == @current_session.id && "bg-gray-400"
+        ]}
+      >
+        #<%= session.id %>
+      </button>
+      <button phx-click="new-session" class="px-4 py-2 mx-2 my-2 outline outline-2">
+        New session
+      </button>
+    </p>
   </div>
   <div phx-window-keydown="handle-key">
     <.form for={@form} phx-change="validate">

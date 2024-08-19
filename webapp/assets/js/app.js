@@ -38,7 +38,7 @@ let liveSocket = new LiveSocket("/live", Socket, {
             event.target.selectionStart,
             event.target.selectionEnd,
           );
-          that.pushEvent("validate", { query: selection });
+          that.pushEvent("validate", { session: { query: selection } });
         });
       },
     },

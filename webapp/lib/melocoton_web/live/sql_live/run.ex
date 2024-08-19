@@ -9,11 +9,17 @@ defmodule MelocotonWeb.SQLLive.Run do
     database = Databases.get_database!(database_id)
     repo = Pool.get_repo(database)
 
+    current_session =
+      case database.sessions do
+        [] -> create_session(database)
+        [session | _rest] -> session
+      end
+
     socket
-    |> assign(:query, "")
-    |> assign(form: to_form(%{"query" => ""}))
+    |> assign(:form, to_form(Databases.change_session(current_session, %{})))
     |> assign(:repo, repo)
     |> assign(:database, database)
+    |> assign(:current_session, current_session)
     |> assign(:result, empty_result())
     |> assign(:error_message, nil)
     |> ok()
@@ -24,9 +30,36 @@ defmodule MelocotonWeb.SQLLive.Run do
   end
 
   @impl Phoenix.LiveView
-  def handle_event("validate", %{"query" => query}, socket) do
+  def handle_event("validate", %{"session" => params}, socket) do
+    {:ok, updated_session} = Databases.update_session(socket.assigns.current_session, params)
+
     socket
-    |> assign(:query, query)
+    |> assign(:current_session, updated_session)
+    |> noreply()
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event("new-session", _params, socket) do
+    session = create_session(socket.assigns.database)
+    updated_database = Databases.get_database!(socket.assigns.database.id)
+
+    socket
+    |> assign(:database, updated_database)
+    |> assign(:current_session, session)
+    |> assign(:form, to_form(Databases.change_session(session, %{})))
+    |> noreply()
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event("change-session", %{"session-id" => session_id}, socket) do
+    session =
+      Enum.find(socket.assigns.database.sessions, fn session ->
+        to_string(session.id) == session_id
+      end)
+
+    socket
+    |> assign(:current_session, session)
+    |> assign(:form, to_form(Databases.change_session(session, %{})))
     |> noreply()
   end
 
@@ -45,10 +78,16 @@ defmodule MelocotonWeb.SQLLive.Run do
     {:noreply, socket}
   end
 
-  defp run_query(socket) do
-    Logger.info("Running query #{socket.assigns.query}")
+  defp create_session(database) do
+    {:ok, session} = Databases.create_session(%{database_id: database.id, query: ""})
+    session
+  end
 
-    case socket.assigns.repo.query(socket.assigns.query, []) do
+  defp run_query(socket) do
+    query = socket.assigns.current_session.query
+    Logger.info("Running query #{query}")
+
+    case socket.assigns.repo.query(query, []) do
       {:ok, result} ->
         socket
         |> assign(result: handle_response(result))
