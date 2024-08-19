@@ -18,6 +18,7 @@ defmodule MelocotonWeb.SQLLive.Run do
     socket
     |> assign(:form, to_form(Databases.change_session(current_session, %{})))
     |> assign(:repo, repo)
+    |> assign(:tables, get_tables(repo, database.type) |> IO.inspect(label: "tables"))
     |> assign(:database, database)
     |> assign(:current_session, current_session)
     |> assign(:result, empty_result())
@@ -125,5 +126,41 @@ defmodule MelocotonWeb.SQLLive.Run do
       value ->
         value
     end)
+  end
+
+  defp get_tables(repo, :postgres) do
+    sql = """
+    SELECT table_name
+    FROM information_schema.tables
+    WHERE table_type = 'BASE TABLE' AND table_schema NOT IN ('pg_catalog', 'information_schema');
+    """
+
+    case repo.query(sql) do
+      {:ok, %{rows: rows}} ->
+        Enum.map(rows, &Enum.at(&1, 0))
+
+      {:error, _error} ->
+        []
+    end
+  end
+
+  defp get_tables(repo, :sqlite) do
+    sql = """
+    SELECT
+      name
+    FROM
+      sqlite_schema
+    WHERE
+      type = 'table' AND
+      name NOT LIKE 'sqlite_%';
+    """
+
+    case repo.query(sql) do
+      {:ok, %{rows: rows}} ->
+        Enum.map(rows, &Enum.at(&1, 0))
+
+      {:error, _error} ->
+        []
+    end
   end
 end
