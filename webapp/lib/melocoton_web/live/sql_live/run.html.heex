@@ -9,7 +9,12 @@
       <tbody>
         <tr :for={table <- @tables} class="bg-gray-100">
           <td class="px-4 py-2 text-left">
-            <%= table %>
+            <%= table.name %>
+            <ul>
+              <li :for={col <- table.cols} class="text-sm">
+                <%= col.name %> (<%= col.type %>)
+              </li>
+            </ul>
           </td>
         </tr>
       </tbody>

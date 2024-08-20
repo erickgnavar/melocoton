@@ -137,7 +137,27 @@ defmodule MelocotonWeb.SQLLive.Run do
 
     case repo.query(sql) do
       {:ok, %{rows: rows}} ->
-        Enum.map(rows, &Enum.at(&1, 0))
+        rows
+        |> Enum.map(&Enum.at(&1, 0))
+        |> Enum.map(fn name ->
+          cols =
+            case repo.query(
+                   "SELECT * FROM information_schema.columns WHERE table_schema = 'public' AND table_name = '#{name}';"
+                 ) do
+              {:ok, result} ->
+                result
+                |> handle_response()
+                |> Map.get(:rows)
+                |> Enum.map(fn row ->
+                  %{name: row["column_name"], type: row["data_type"]}
+                end)
+
+              {:error, _error} ->
+                []
+            end
+
+          %{name: name, cols: cols}
+        end)
 
       {:error, _error} ->
         []
@@ -157,7 +177,25 @@ defmodule MelocotonWeb.SQLLive.Run do
 
     case repo.query(sql) do
       {:ok, %{rows: rows}} ->
-        Enum.map(rows, &Enum.at(&1, 0))
+        rows
+        |> Enum.map(&Enum.at(&1, 0))
+        |> Enum.map(fn name ->
+          cols =
+            case repo.query("PRAGMA table_info(#{name});") do
+              {:ok, result} ->
+                result
+                |> handle_response()
+                |> Map.get(:rows)
+                |> Enum.map(fn row ->
+                  %{name: row["name"], type: row["type"]}
+                end)
+
+              {:error, _error} ->
+                []
+            end
+
+          %{name: name, cols: cols}
+        end)
 
       {:error, _error} ->
         []
