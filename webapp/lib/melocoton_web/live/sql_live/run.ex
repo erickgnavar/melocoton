@@ -84,6 +84,12 @@ defmodule MelocotonWeb.SQLLive.Run do
     session
   end
 
+  defp run_query(%{assigns: %{current_session: %{query: nil}}} = socket) do
+    socket
+    |> put_flash(:error, "Enter query")
+    |> noreply()
+  end
+
   defp run_query(socket) do
     query = socket.assigns.current_session.query
     Logger.info("Running query #{query}")
