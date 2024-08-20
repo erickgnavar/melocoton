@@ -18,7 +18,7 @@ defmodule MelocotonWeb.SQLLive.Run do
     socket
     |> assign(:form, to_form(Databases.change_session(current_session, %{})))
     |> assign(:repo, repo)
-    |> assign(:tables, get_tables(repo, database.type) |> IO.inspect(label: "tables"))
+    |> assign(:tables, get_tables(repo, database.type))
     |> assign(:database, database)
     |> assign(:current_session, current_session)
     |> assign(:result, empty_result())
