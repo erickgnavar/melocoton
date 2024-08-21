@@ -1,5 +1,5 @@
 <div class="max-w-full h-screen flex flex-row mx-auto divide-y divide-solid">
-  <div class="w-1/5 p-3">
+  <div class="w-1/5 p-3 overflow-auto">
     <table class="table-auto border border-gray-400 w-full">
       <thead>
         <tr class="bg-gray-200">
@@ -20,7 +20,7 @@
       </tbody>
     </table>
   </div>
-  <div class="w-4/5 p-3 flex flex-col justify-between">
+  <div class="w-4/5 p-3 flex flex-col justify-between overflow-auto">
     <div class="text-center">
       <button class="px-4 py-2 mx-2 my-2 outline outline-2" phx-click="run-query">Run SQL</button>
       <a class="px-4 py-2 mx-2 my-2 outline outline-2" href={~p"/databases"}>Back to list</a>

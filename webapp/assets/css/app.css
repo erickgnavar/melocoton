@@ -3,3 +3,8 @@
 @import "tailwindcss/utilities";
 
 /* This file is for your main application CSS */
+
+/* avoid over scrolling in main layout */
+html {
+  overflow: hidden;
+}
