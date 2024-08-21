@@ -62,10 +62,10 @@
     </pre>
     </div>
     <div :if={is_nil(@error_message)} class="overflow-auto">
-      <table class="table-auto border border-gray-400 w-full">
+      <table class="table-auto border border-gray-400 w-full relative">
         <thead>
-          <tr class="bg-gray-200">
-            <th :for={col <- @result.cols} class="px-4 py-2 text-left">
+          <tr>
+            <th :for={col <- @result.cols} class="px-4 py-2 text-left sticky top-0 bg-gray-200">
               <%= col %>
             </th>
           </tr>
