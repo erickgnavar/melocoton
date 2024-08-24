@@ -30,7 +30,7 @@ defmodule Melocoton.MixProject do
 
   defp releases do
     [
-      example_cli_app: [
+      melocoton: [
         steps: [:assemble, &Burrito.wrap/1],
         burrito: [
           targets: [
