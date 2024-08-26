@@ -1,5 +1,5 @@
 <div class="max-w-full h-screen flex flex-row mx-auto divide-y divide-solid">
-  <div class="w-1/5 p-3 overflow-auto">
+  <div class="w-1/5 p-3 overflow-auto select-none">
     <h2 class="px-4 py-2 text-left text-xl">Tables</h2>
     <details
       :for={table <- @tables}
@@ -14,11 +14,11 @@
     </details>
   </div>
   <div class="w-4/5 p-3 flex flex-col justify-between overflow-auto">
-    <div class="text-center">
+    <div class="text-center select-none">
       <button class="px-4 py-2 mx-2 my-2 outline outline-2" phx-click="run-query">Execute</button>
       <a class="px-4 py-2 mx-2 my-2 outline outline-2" href={~p"/databases"}>Back to list</a>
     </div>
-    <div>
+    <div class="select-none">
       <h1 class="text-3xl text-center"><%= @database.name %></h1>
       <p class="text-center">
         <button
@@ -72,6 +72,8 @@
         </tbody>
       </table>
     </div>
-    <div class="text-center bg-gray-400"><pre>Rows returned: <%= @result.num_rows %></pre></div>
+    <div class="text-center bg-gray-400 select-none">
+      <pre>Rows returned: <%= @result.num_rows %></pre>
+    </div>
   </div>
 </div>
