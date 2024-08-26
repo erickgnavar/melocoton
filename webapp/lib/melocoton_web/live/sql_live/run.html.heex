@@ -8,7 +8,7 @@
       <summary class="font-semibold"><%= table.name %></summary>
       <ul>
         <li :for={col <- table.cols} class="text-sm">
-          - <%= col.name %> (<%= col.type %>)
+          - <%= col.name %> <code>(<%= col.type %>)</code>
         </li>
       </ul>
     </details>
