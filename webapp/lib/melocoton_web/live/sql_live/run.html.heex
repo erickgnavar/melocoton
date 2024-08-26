@@ -1,24 +1,17 @@
 <div class="max-w-full h-screen flex flex-row mx-auto divide-y divide-solid">
   <div class="w-1/5 p-3 overflow-auto">
-    <table class="table-auto border border-gray-400 w-full">
-      <thead>
-        <tr class="bg-gray-200">
-          <th class="px-4 py-2 text-left">Tables</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr :for={table <- @tables} class="bg-gray-100">
-          <td class="px-4 py-2 text-left">
-            <%= table.name %>
-            <ul>
-              <li :for={col <- table.cols} class="text-sm">
-                <%= col.name %> (<%= col.type %>)
-              </li>
-            </ul>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <h2 class="px-4 py-2 text-left text-xl">Tables</h2>
+    <details
+      :for={table <- @tables}
+      class="bg-gray-100 mb-3 border border-dashed border-2 p-2 cursor-default"
+    >
+      <summary class="font-semibold"><%= table.name %></summary>
+      <ul>
+        <li :for={col <- table.cols} class="text-sm">
+          - <%= col.name %> (<%= col.type %>)
+        </li>
+      </ul>
+    </details>
   </div>
   <div class="w-4/5 p-3 flex flex-col justify-between overflow-auto">
     <div class="text-center">
