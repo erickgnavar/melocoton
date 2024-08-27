@@ -23,6 +23,7 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> assign(:current_session, current_session)
     |> assign(:result, empty_result())
     |> assign(:error_message, nil)
+    |> assign(:page_title, database.name)
     |> ok()
   end
 
