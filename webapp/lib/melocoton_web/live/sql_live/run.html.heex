@@ -13,11 +13,7 @@
       </ul>
     </details>
   </div>
-  <div class="w-4/5 p-3 flex flex-col justify-between overflow-auto">
-    <div class="text-center select-none">
-      <button class="px-4 py-2 mx-2 my-2 outline outline-2" phx-click="run-query">Execute</button>
-      <a class="px-4 py-2 mx-2 my-2 outline outline-2" href={~p"/databases"}>Back to list</a>
-    </div>
+  <div class="w-4/5 p-3 flex flex-col gap-3 justify-between overflow-auto">
     <div class="select-none">
       <h1 class="text-3xl text-center"><%= @database.name %></h1>
       <p class="text-center">
@@ -38,6 +34,7 @@
       </p>
     </div>
     <div phx-window-keydown="handle-key">
+      <div id="editor" style="height: 200px; width: 100%"></div>
       <.form for={@form} phx-change="validate">
         <.input
           type="textarea"
@@ -48,6 +45,10 @@
           rows="10"
         />
       </.form>
+    </div>
+    <div class="text-center select-none">
+      <button class="px-4 py-2 mx-2 my-2 outline outline-2" phx-click="run-query">Execute</button>
+      <a class="px-4 py-2 mx-2 my-2 outline outline-2" href={~p"/databases"}>Back to list</a>
     </div>
     <div :if={!is_nil(@error_message)} class="overflow-auto">
       <pre>
