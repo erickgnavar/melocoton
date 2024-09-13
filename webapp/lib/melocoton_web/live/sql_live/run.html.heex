@@ -47,8 +47,15 @@
       </.form>
     </div>
     <div class="text-center select-none">
-      <button class="px-4 py-2 mx-2 my-2 outline outline-2" phx-click="run-query">Execute</button>
-      <a class="px-4 py-2 mx-2 my-2 outline outline-2" href={~p"/databases"}>Back to list</a>
+      <button class="px-4 py-2 mx-2 my-2 outline outline-2" phx-click="run-query">
+        <.icon name="hero-bolt" class="h-5 w-5" /> Execute
+      </button>
+      <button
+        class="px-4 py-2 mx-2 my-2 outline outline-2"
+        phx-click={JS.navigate(~p"/databases")}
+      >
+        <.icon name="hero-arrow-left" class="h-5 w-5" /> Back to list
+      </button>
     </div>
     <div :if={!is_nil(@error_message)} class="overflow-auto">
       <pre>
