@@ -127,8 +127,11 @@ defmodule MelocotonWeb.SQLLive.Run do
   defp translate_query_error(%Exqlite.Error{message: message}), do: message
 
   defp handle_response(%{columns: cols, rows: rows, num_rows: num_rows}) do
+    cols = cols || []
+
     rows =
       rows
+      |> Kernel.||([])
       |> Enum.map(&Enum.zip(cols, normalize_value(&1)))
       |> Enum.map(&Enum.into(&1, %{}))
 
