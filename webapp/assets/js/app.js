@@ -33,12 +33,12 @@ let liveSocket = new LiveSocket("/live", Socket, {
       mounted() {
         let that = this;
 
-        this.el.addEventListener("select", (event) => {
-          const selection = event.target.value.substring(
-            event.target.selectionStart,
-            event.target.selectionEnd,
+        this.el.addEventListener("keyup", (event) => {
+          let selection = this.el.value.slice(
+            this.el.selectionStart,
+            this.el.selectionEnd,
           );
-          that.pushEvent("validate", { session: { query: selection } });
+          that.pushEvent("save-selection", { query: selection });
         });
       },
     },
