@@ -56,6 +56,14 @@
       >
         <.icon name="hero-arrow-left" class="h-5 w-5" /> Back to list
       </button>
+      <a
+        :if={@result.rows != []}
+        class="px-4 py-2 mx-2 my-2 outline outline-2"
+        target="blank"
+        href={~p"/export-csv/#{inspect(@pid)}"}
+      >
+        <.icon name="hero-table-cells" class="h-5 w-5" /> Export CSV
+      </a>
     </div>
     <div :if={!is_nil(@error_message)} class="overflow-auto">
       <pre>

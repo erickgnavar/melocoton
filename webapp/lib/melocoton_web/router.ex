@@ -18,6 +18,7 @@ defmodule MelocotonWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+    get "/export-csv/:pid", PageController, :export_csv
     live "/databases", DatabaseLive.Index, :index
     live "/databases/new", DatabaseLive.Index, :new
     live "/databases/:id/edit", DatabaseLive.Index, :edit

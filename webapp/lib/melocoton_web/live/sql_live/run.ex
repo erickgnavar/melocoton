@@ -25,6 +25,7 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> assign(:error_message, nil)
     |> assign(:selection, "")
     |> assign(:page_title, database.name)
+    |> assign(:pid, self())
     |> ok()
   end
 
