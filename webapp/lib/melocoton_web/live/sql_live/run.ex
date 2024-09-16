@@ -142,10 +142,13 @@ defmodule MelocotonWeb.SQLLive.Run do
   defp normalize_value(values) do
     Enum.map(values, fn
       # handle uuid columns that are returned as raw binary data
-      value when is_binary(value) ->
-        case Ecto.UUID.cast(value) do
-          {:ok, casted_value} -> casted_value
-          :error -> value
+      <<raw_uuid::binary-size(16)>> ->
+        case Ecto.UUID.cast(raw_uuid) do
+          {:ok, casted_value} ->
+            casted_value
+
+          :error ->
+            "ERROR"
         end
 
       value ->
