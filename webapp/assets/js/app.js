@@ -22,19 +22,19 @@ import { Socket } from "phoenix";
 import { LiveSocket } from "phoenix_live_view";
 import topbar from "../vendor/topbar";
 
-let csrfToken = document
+const csrfToken = document
   .querySelector("meta[name='csrf-token']")
   .getAttribute("content");
-let liveSocket = new LiveSocket("/live", Socket, {
+const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: { _csrf_token: csrfToken },
   hooks: {
     SaveSelectedText: {
       mounted() {
-        let that = this;
+        const that = this;
 
         this.el.addEventListener("keyup", (event) => {
-          let selection = this.el.value.slice(
+          const selection = this.el.value.slice(
             this.el.selectionStart,
             this.el.selectionEnd,
           );
