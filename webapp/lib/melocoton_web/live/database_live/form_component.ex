@@ -8,7 +8,7 @@ defmodule MelocotonWeb.DatabaseLive.FormComponent do
     ~H"""
     <div>
       <.header>
-        <%= @title %>
+        {@title}
         <:subtitle>Use this form to manage database records in your database.</:subtitle>
       </.header>
 

@@ -5,17 +5,17 @@
       :for={table <- @tables}
       class="bg-gray-100 mb-3 border border-dashed border-2 p-2 cursor-default"
     >
-      <summary class="font-semibold"><%= table.name %></summary>
+      <summary class="font-semibold">{table.name}</summary>
       <ul>
         <li :for={col <- table.cols} class="text-sm">
-          - <%= col.name %> <code>(<%= col.type %>)</code>
+          - {col.name} <code>({col.type})</code>
         </li>
       </ul>
     </details>
   </div>
   <div class="w-4/5 p-3 flex flex-col gap-3 justify-between overflow-auto">
     <div class="select-none">
-      <h1 class="text-3xl text-center"><%= @database.name %></h1>
+      <h1 class="text-3xl text-center">{@database.name}</h1>
       <p class="text-center">
         <button
           :for={{session, index} <- Enum.with_index(@database.sessions, 1)}
@@ -26,7 +26,7 @@
             session.id == @current_session.id && "bg-gray-400"
           ]}
         >
-          #<%= index %>
+          #{index}
         </button>
         <button phx-click="new-session" class="px-4 py-2 mx-2 my-2 outline outline-2">
           New session
@@ -75,14 +75,14 @@
         <thead>
           <tr>
             <th :for={col <- @result.cols} class="px-4 py-2 text-left sticky top-0 bg-gray-200">
-              <%= col %>
+              {col}
             </th>
           </tr>
         </thead>
         <tbody>
           <tr :for={row <- @result.rows} class="bg-gray-100">
             <td :for={col <- @result.cols} class="px-4 py-2 text-left">
-              <%= Map.get(row, col) %>
+              {Map.get(row, col)}
             </td>
           </tr>
         </tbody>
