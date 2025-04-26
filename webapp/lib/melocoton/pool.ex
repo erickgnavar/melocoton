@@ -38,7 +38,7 @@ defmodule Melocoton.Pool do
         :postgres -> "Ecto.Adapters.Postgres"
       end
 
-    module_name = "Melocoton.Repos.#{database.name |> Macro.camelize()}" |> String.to_atom()
+    module_name = Module.concat(Melocoton.Repos, "#{database.name |> Macro.camelize()}")
 
     # check if already loaded so we avoid a warning about runtime code
     # reloaded
