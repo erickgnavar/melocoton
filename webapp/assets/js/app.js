@@ -84,6 +84,10 @@ const liveSocket = new LiveSocket("/live", Socket, {
           ],
         });
 
+        // HACK: expose view so we can use it on load-new-query event
+        // to reset editor content
+        window.view = view;
+
         view.focus();
       },
     },
@@ -96,6 +100,15 @@ const liveSocket = new LiveSocket("/live", Socket, {
       };
     },
   },
+});
+
+window.addEventListener("phx:load-query", ({ detail }) => {
+  // this will be triggered when a new session is loaded in server, so
+  // we need to reset SQL editor with new session's query
+  const newState = view.state.update({
+    changes: { from: 0, to: view.state.doc.length, insert: detail.query },
+  });
+  view.dispatch(newState);
 });
 
 // Show progress bar on live navigation and form submits
