@@ -23,7 +23,6 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> assign(:current_session, current_session)
     |> assign(:result, empty_result())
     |> assign(:error_message, nil)
-    |> assign(:selection, "")
     |> assign(:page_title, database.name)
     |> assign(:pid, self())
     |> ok()
@@ -68,46 +67,7 @@ defmodule MelocotonWeb.SQLLive.Run do
   end
 
   @impl Phoenix.LiveView
-  def handle_event("run-query", _params, socket) do
-    run_query(socket)
-  end
-
-  @impl Phoenix.LiveView
-  def handle_event("save-selection", %{"query" => query}, socket) do
-    socket
-    |> assign(:selection, query)
-    |> noreply()
-  end
-
-  @impl Phoenix.LiveView
-  def handle_event("handle-key", %{"key" => "Enter", "metaKey" => true}, socket) do
-    run_query(socket)
-  end
-
-  @impl Phoenix.LiveView
-  def handle_event("handle-key", _params, socket) do
-    {:noreply, socket}
-  end
-
-  defp create_session(database) do
-    {:ok, session} = Databases.create_session(%{database_id: database.id, query: ""})
-    session
-  end
-
-  defp run_query(%{assigns: %{current_session: %{query: nil}}} = socket) do
-    socket
-    |> put_flash(:error, "Enter query")
-    |> noreply()
-  end
-
-  defp run_query(socket) do
-    query =
-      if socket.assigns.selection != "" do
-        socket.assigns.selection
-      else
-        socket.assigns.current_session.query
-      end
-
+  def handle_event("run-query", %{"query" => query}, socket) do
     Logger.info("Running query #{query}")
 
     case socket.assigns.repo.query(query, []) do
@@ -122,6 +82,11 @@ defmodule MelocotonWeb.SQLLive.Run do
         |> assign(:error_message, translate_query_error(error))
         |> noreply()
     end
+  end
+
+  defp create_session(database) do
+    {:ok, session} = Databases.create_session(%{database_id: database.id, query: ""})
+    session
   end
 
   defp translate_query_error(%Postgrex.Error{postgres: %{message: message}}), do: message

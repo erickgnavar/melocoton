@@ -33,16 +33,16 @@
         </button>
       </p>
     </div>
-    <div phx-window-keydown="handle-key">
-      <div id="editor" style="height: 200px; width: 100%"></div>
+    <div>
+      <div id="editor" phx-update="ignore"></div>
       <.form for={@form} phx-change="validate">
         <.input
           type="textarea"
           field={@form[:query]}
-          phx-hook="SaveSelectedText"
-          autofocus
-          class="sql-code-container w-full h-40 resize-none focus:outline-none"
           rows="10"
+          style="display: none"
+          id="query-textarea"
+          phx-hook="SQLEditor"
         />
       </.form>
     </div>

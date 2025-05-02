@@ -22,6 +22,11 @@ import { Socket } from "phoenix";
 import { LiveSocket } from "phoenix_live_view";
 import topbar from "../vendor/topbar";
 
+import { EditorView, basicSetup } from "codemirror";
+import { keymap } from "@codemirror/view";
+import { sql } from "@codemirror/lang-sql";
+import { vim } from "@replit/codemirror-vim";
+
 const csrfToken = document
   .querySelector("meta[name='csrf-token']")
   .getAttribute("content");
@@ -29,15 +34,57 @@ const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: { _csrf_token: csrfToken },
   hooks: {
-    SaveSelectedText: {
+    SQLEditor: {
       mounted() {
-        this.el.addEventListener("keyup", (event) => {
-          const selection = this.el.value.slice(
-            this.el.selectionStart,
-            this.el.selectionEnd,
-          );
-          this.pushEvent("save-selection", { query: selection });
+        const that = this;
+
+        function keymaps() {
+          return keymap.of([
+            {
+              key: "Mod-Enter",
+              run() {
+                // run query with current selection when pressing
+                // CMD + enter
+                const selection = view.state.selection.ranges.at(0);
+                const selectedText = view.state.doc
+                  .toString()
+                  .substring(selection.from, selection.to);
+
+                that.pushEvent("run-query", {
+                  query: selectedText,
+                });
+
+                return true;
+              },
+            },
+          ]);
+        }
+
+        const view = new EditorView({
+          // because this element is a textarea we pass its content
+          // when initializing the editor
+          doc: this.el.value,
+          parent: document.getElementById("editor"),
+          extensions: [
+            vim(),
+            keymaps(),
+            basicSetup,
+            sql(),
+            EditorView.updateListener.of((updateView) => {
+              // update text area
+              that.el.value = updateView.state.doc.toString();
+              // we trigger this event to be able to update the session
+              // query value, this simulate a manual edit inside the
+              // textarea element
+              that.pushEvent("validate", {
+                _target: ["session", "query"],
+                session: { query: updateView.state.doc.toString() },
+              });
+            }),
+          ],
         });
+
+        view.focus();
       },
     },
   },

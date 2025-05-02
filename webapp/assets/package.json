@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "@codemirror/lang-sql": "^6.8.0",
+    "@replit/codemirror-vim": "^6.3.0",
+    "codemirror": "^6.0.1"
+  }
+}
