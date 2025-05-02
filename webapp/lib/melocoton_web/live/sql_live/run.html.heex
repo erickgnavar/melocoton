@@ -47,7 +47,11 @@
       </.form>
     </div>
     <div class="text-center select-none">
-      <button class="px-4 py-2 mx-2 my-2 outline outline-2" phx-click="run-query">
+      <button
+        class="px-4 py-2 mx-2 my-2 outline outline-2"
+        phx-click="run-query"
+        phx-value-query={@current_session.query}
+      >
         <.icon name="hero-bolt" class="h-5 w-5" /> Execute
       </button>
       <button
