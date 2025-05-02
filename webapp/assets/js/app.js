@@ -31,14 +31,12 @@ const liveSocket = new LiveSocket("/live", Socket, {
   hooks: {
     SaveSelectedText: {
       mounted() {
-        const that = this;
-
         this.el.addEventListener("keyup", (event) => {
           const selection = this.el.value.slice(
             this.el.selectionStart,
             this.el.selectionEnd,
           );
-          that.pushEvent("save-selection", { query: selection });
+          this.pushEvent("save-selection", { query: selection });
         });
       },
     },
