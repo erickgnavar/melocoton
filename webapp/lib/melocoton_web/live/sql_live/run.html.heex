@@ -34,7 +34,7 @@
           <i class="fas fa-sync-alt"></i>
         </button>
       </div>
-      <div class="overflow-y-auto flex-1 p-1">
+      <div class="overflow-y-auto overscroll-none flex-1 p-1">
         <ul class="text-xs">
           <li>
             <div class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer">
@@ -202,7 +202,10 @@
               Query History
             </div>
           </div>
-          <div :if={@result != [] and is_nil(@error_message)} class="overflow-auto flex-1 p-0">
+          <div
+            :if={@result != [] and is_nil(@error_message)}
+            class="overflow-auto overscroll-none flex-1 p-0"
+          >
             <div class="overflow-x-auto">
               <table class="w-full border-collapse text-xs">
                 <thead>
