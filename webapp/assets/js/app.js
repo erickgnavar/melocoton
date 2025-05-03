@@ -26,6 +26,7 @@ import { EditorView, basicSetup } from "codemirror";
 import { keymap } from "@codemirror/view";
 import { sql } from "@codemirror/lang-sql";
 import { vim } from "@replit/codemirror-vim";
+import { oneDark } from "@codemirror/theme-one-dark";
 
 const csrfToken = document
   .querySelector("meta[name='csrf-token']")
@@ -81,6 +82,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
                 session: { query: updateView.state.doc.toString() },
               });
             }),
+            oneDark,
           ],
         });
 
