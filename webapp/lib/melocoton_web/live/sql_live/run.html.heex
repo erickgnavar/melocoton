@@ -1,99 +1,263 @@
-<div class="max-w-full h-screen flex flex-row mx-auto divide-y divide-solid">
-  <div class="w-1/5 p-3 overflow-auto select-none">
-    <h2 class="px-4 py-2 text-left text-xl">Tables</h2>
-    <details
-      :for={table <- @tables}
-      class="bg-gray-100 mb-3 border border-dashed border-2 p-2 cursor-default"
-    >
-      <summary class="font-semibold">{table.name}</summary>
-      <ul>
-        <li :for={col <- table.cols} class="text-sm">
-          - {col.name} <code>({col.type})</code>
-        </li>
-      </ul>
-    </details>
+<div class="h-screen w-screen flex flex-col">
+  <div class="bg-app-menubar-light dark:bg-app-menubar-dark border-b border-app-border-light dark:border-app-border-dark flex text-xs px-2 select-none h-7 items-center dark-transition">
+    <!-- Environment Indicator -->
+    <div class="flex items-center pr-2 border-r border-app-border-light dark:border-app-border-dark mr-2">
+      <div class="w-2 h-2 rounded-full bg-env-production mr-1.5 env-indicator-production"></div>
+      <span class="text-env-production font-medium">PRODUCTION</span>
+    </div>
+
+    <div class="px-2 py-1 hover:bg-black/10 dark:hover:bg-white/10">File</div>
+    <div class="px-2 py-1 hover:bg-black/10 dark:hover:bg-white/10">Edit</div>
+    <div class="px-2 py-1 hover:bg-black/10 dark:hover:bg-white/10">View</div>
+    <div class="px-2 py-1 hover:bg-black/10 dark:hover:bg-white/10">Query</div>
+    <div class="px-2 py-1 hover:bg-black/10 dark:hover:bg-white/10">Tools</div>
+    <div class="px-2 py-1 hover:bg-black/10 dark:hover:bg-white/10">Help</div>
+    <!-- Spacer -->
+    <div class="flex-1"></div>
+    <!-- Database Name with Environment Color -->
+    <div class="px-2 py-1 mr-2 flex items-center">
+      <i class="fas fa-database mr-1.5 text-env-production"></i>
+      <span>Production DB</span>
+    </div>
+
+    <button id="theme-toggle" class="p-1 text-sm hover:bg-black/10 dark:hover:bg-white/10 rounded">
+      <i class="fas fa-moon dark:hidden"></i>
+      <i class="fas fa-sun hidden dark:block"></i>
+    </button>
   </div>
-  <div class="w-4/5 p-3 flex flex-col gap-3 justify-between overflow-auto">
-    <div class="select-none">
-      <h1 class="text-3xl text-center">{@database.name}</h1>
-      <p class="text-center">
-        <button
+
+  <div class="flex-1 flex overflow-hidden">
+    <aside class="w-56  bg-app-sidebar-light dark:bg-app-sidebar-dark border-r border-app-border-light dark:border-app-border-dark flex flex-col dark-transition">
+      <div class="p-2 border-b border-app-border-light dark:border-app-border-dark flex items-center justify-between dark-transition">
+        <div class="text-xs font-medium">{gettext("Database Objects")}</div>
+        <button class="text-xs hover:bg-black/10 dark:hover:bg-white/10 p-1 rounded">
+          <i class="fas fa-sync-alt"></i>
+        </button>
+      </div>
+      <div class="overflow-y-auto flex-1 p-1">
+        <ul class="text-xs">
+          <li>
+            <div class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer">
+              <i class="fas fa-database mr-1.5 text-env-production"></i>
+              <span>{@database.name}</span>
+              <i class="fas fa-chevron-down ml-auto text-[10px]"></i>
+            </div>
+            <!-- Tables -->
+            <ul class="pl-4 mt-0.5">
+              <li :for={table <- @tables}>
+                <div class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer">
+                  <i class="fas fa-table mr-1.5 text-green-600 dark:text-green-500"></i>
+                  <span>{table.name}</span>
+                  <i class="fas fa-chevron-down ml-auto text-[10px]"></i>
+                </div>
+                <!-- Columns -->
+                <ul class="pl-4 mt-0.5">
+                  <li
+                    :for={col <- table.cols}
+                    class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10"
+                  >
+                    <i class="fas fa-font mr-1.5 text-purple-600 dark:text-purple-500 text-[10px]">
+                    </i>
+                    <span>{col.name} ({col.type})</span>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+          <!-- Functions -->
+          <li>
+            <div class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer">
+              <i class="fas fa-code mr-1.5 text-orange-600 dark:text-orange-500"></i>
+              <span>Functions</span>
+              <i class="fas fa-chevron-right ml-auto text-[10px]"></i>
+            </div>
+          </li>
+          <!-- Views -->
+          <li>
+            <div class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer">
+              <i class="fas fa-eye mr-1.5 text-indigo-600 dark:text-indigo-500"></i>
+              <span>Views</span>
+              <i class="fas fa-chevron-right ml-auto text-[10px]"></i>
+            </div>
+          </li>
+          <!-- Triggers -->
+          <li>
+            <div class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer">
+              <i class="fas fa-bolt mr-1.5 text-amber-600 dark:text-amber-500"></i>
+              <span>Triggers</span>
+              <i class="fas fa-chevron-right ml-auto text-[10px]"></i>
+            </div>
+          </li>
+          <!-- Indexes -->
+          <li>
+            <div class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer">
+              <i class="fas fa-sort-amount-up mr-1.5 text-blue-600 dark:text-blue-500"></i>
+              <span>Indexes</span>
+              <i class="fas fa-chevron-right ml-auto text-[10px]"></i>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div class="p-2 border-t border-app-border-light dark:border-app-border-dark text-[10px] text-gray-500 dark:text-gray-400 dark-transition">
+        <div class="flex items-center">
+          <div class="w-1.5 h-1.5 rounded-full bg-env-production mr-1.5"></div>
+          <span>Connected to <span class="text-env-production">Production DB</span></span>
+        </div>
+      </div>
+    </aside>
+    
+<!-- Main Content Area -->
+    <main class="flex-1 flex flex-col overflow-hidden bg-app-content-light dark:bg-app-content-dark dark-transition">
+      <!-- Tabs with Environment Color -->
+      <div class="border-b border-app-border-light dark:border-app-border-dark flex text-xs dark-transition">
+        <div
           :for={{session, index} <- Enum.with_index(@database.sessions, 1)}
+          class={[
+            "px-3 py-1.5 bg-white dark:bg-gray-800 border-r border-app-border-light dark:border-app-border-dark flex items-center dark-transition",
+            @current_session.id == session.id && "border-t-2"
+          ]}
           phx-click="change-session"
           phx-value-session-id={session.id}
-          class={[
-            "px-4 py-2 mx-2 my-2 outline outline-2",
-            session.id == @current_session.id && "bg-gray-400"
-          ]}
+          style="border-top-color: #ef4444;"
         >
-          #{index}
+          <span>#{index}</span>
+          <button class="ml-2 hover:bg-black/10 dark:hover:bg-white/10 rounded p-0.5">
+            <i class="fas fa-times text-[10px]"></i>
+          </button>
+        </div>
+        <button
+          class="px-3 py-1.5 hover:bg-black/10 dark:hover:bg-white/10"
+          phx-click="new-session"
+        >
+          <i class="fas fa-plus text-[10px]"></i>
         </button>
-        <button phx-click="new-session" class="px-4 py-2 mx-2 my-2 outline outline-2">
-          New session
-        </button>
-      </p>
-    </div>
-    <div>
-      <div id="editor" phx-update="ignore"></div>
-      <.form for={@form} phx-change="validate">
-        <.input
-          type="textarea"
-          field={@form[:query]}
-          rows="10"
-          style="display: none"
-          id="query-textarea"
-          phx-hook="SQLEditor"
-        />
-      </.form>
-    </div>
-    <div class="text-center select-none">
-      <button
-        class="px-4 py-2 mx-2 my-2 outline outline-2"
-        phx-click="run-query"
-        phx-value-query={@current_session.query}
-      >
-        <.icon name="hero-bolt" class="h-5 w-5" /> Execute
-      </button>
-      <button
-        class="px-4 py-2 mx-2 my-2 outline outline-2"
-        phx-click={JS.navigate(~p"/databases")}
-      >
-        <.icon name="hero-arrow-left" class="h-5 w-5" /> Back to list
-      </button>
-      <a
-        :if={@result.rows != []}
-        class="px-4 py-2 mx-2 my-2 outline outline-2"
-        target="blank"
-        href={~p"/export-csv/#{inspect(@pid)}"}
-      >
-        <.icon name="hero-table-cells" class="h-5 w-5" /> Export CSV
-      </a>
-    </div>
-    <div :if={!is_nil(@error_message)} class="overflow-auto">
-      <pre>
-    <%= @error_message %>
-    </pre>
-    </div>
-    <div :if={is_nil(@error_message)} class="overflow-auto">
-      <table class="table-auto border border-gray-400 w-full relative">
-        <thead>
-          <tr>
-            <th :for={col <- @result.cols} class="px-4 py-2 text-left sticky top-0 bg-gray-200">
-              {col}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr :for={row <- @result.rows} class="bg-gray-100">
-            <td :for={col <- @result.cols} class="px-4 py-2 text-left">
-              {Map.get(row, col)}
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="text-center bg-gray-400 select-none">
-      <pre>Rows returned: <%= @result.num_rows %></pre>
-    </div>
+      </div>
+      
+<!-- Editor Area with Environment Color -->
+      <div class="flex-1 flex flex-col overflow-hidden">
+        <!-- SQL Editor -->
+        <div class="p-2 flex-1 flex flex-col min-h-0">
+          <div class="flex justify-between items-center mb-1">
+            <div class="text-xs font-medium flex items-center">
+              <span>SQL Editor</span>
+              <span class="ml-2 px-1.5 py-0.5 bg-env-production-light dark:bg-env-production/20 text-env-production text-[10px] rounded-sm font-medium">
+                PRODUCTION
+              </span>
+            </div>
+            <div class="flex space-x-1">
+              <button class="px-2 py-0.5 text-xs bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 dark-transition">
+                Format
+              </button>
+              <button
+                class="px-2 py-0.5 text-xs bg-env-production text-white flex items-center hover:bg-env-production/90"
+                phx-click="run-query"
+                phx-value-query={@current_session.query}
+              >
+                <i class="fas fa-play mr-1 text-[10px]"></i> Run
+              </button>
+            </div>
+          </div>
+          <div class="flex-1 border border-app-border-light dark:border-app-border-dark overflow-hidden dark-transition relative">
+            <!-- Environment Border Indicator -->
+            <div class="absolute inset-y-0 left-0 w-1 bg-env-production"></div>
+
+            <div
+              id="editor"
+              phx-update="ignore"
+              class="w-full h-full p-2 pl-3 font-mono text-xs bg-app-editor-light dark:bg-app-editor-dark focus:outline-none dark-transition"
+            >
+            </div>
+
+            <.form for={@form} phx-change="validate">
+              <.input
+                type="textarea"
+                field={@form[:query]}
+                rows="10"
+                style="display: none"
+                id="query-textarea"
+                phx-hook="SQLEditor"
+              />
+            </.form>
+          </div>
+        </div>
+
+        <div class="border-t border-app-border-light dark:border-app-border-dark flex flex-col h-2/5 overflow-hidden dark-transition">
+          <div class="flex border-b border-app-border-light dark:border-app-border-dark text-xs dark-transition">
+            <div
+              class={[
+                "px-3 py-1 bg-white dark:bg-gray-800 dark-transition",
+                @result != [] && "border-b-2"
+              ]}
+              style="border-bottom-color: #ef4444;"
+            >
+              {gettext("Results")}
+            </div>
+            <div class={[
+              "px-3 py-1 border-b-2 border-transparent",
+              !is_nil(@error_message) && "border-b-2"
+            ]}>
+              Messages
+            </div>
+            <div class="px-3 py-1 border-b-2 border-transparent">
+              Query History
+            </div>
+          </div>
+          <div :if={@result != [] and is_nil(@error_message)} class="overflow-auto flex-1 p-0">
+            <div class="overflow-x-auto">
+              <table class="w-full border-collapse text-xs">
+                <thead>
+                  <tr class="bg-gray-100 dark:bg-gray-800 dark-transition">
+                    <th
+                      :for={col <- @result.cols}
+                      class="border border-app-border-light dark:border-app-border-dark px-2 py-1 text-left font-medium dark-transition"
+                    >
+                      {col}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr :for={row <- @result.rows}>
+                    <td
+                      :for={col <- @result.cols}
+                      class="border border-app-border-light dark:border-app-border-dark px-2 py-1 whitespace-nowrap dark-transition"
+                    >
+                      {Map.get(row, col)}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div
+            :if={!is_nil(@error_message)}
+            class="border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-2 m-2 text-xs rounded dark-transition"
+          >
+            <div class="flex">
+              <div class="flex-shrink-0 text-red-500">
+                <i class="fas fa-exclamation-circle"></i>
+              </div>
+              <div class="ml-2">
+                <p class="text-red-700 dark:text-red-400 font-medium">
+                  {@error_message}
+                </p>
+                <p class="text-gray-500 dark:text-gray-400 mt-1 text-[10px]">
+                  Position: 1-5 • Error code: 42601
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="border-t border-app-border-light dark:border-app-border-dark p-1 text-[10px] text-gray-500 dark:text-gray-400 flex justify-between dark-transition bg-env-production-light dark:bg-env-production/10">
+            <div>{@result.num_rows} rows returned in 0.012s</div>
+            <div class="flex items-center">
+              <div class="w-1.5 h-1.5 rounded-full bg-env-production mr-1.5"></div>
+              <span class="text-env-production font-medium">Production DB</span>
+              @ prod-server:5432
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
   </div>
 </div>

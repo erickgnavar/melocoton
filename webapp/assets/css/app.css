@@ -8,3 +8,85 @@
 html {
   overflow: hidden;
 }
+
+.cm-editor {
+  height: 100%;
+}
+
+/* Custom scrollbar for native look */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #555;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #666;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #444;
+}
+
+/* Native-like focus styles */
+*:focus {
+  outline: 2px solid #0078d7;
+  outline-offset: -2px;
+}
+
+.dark *:focus {
+  outline-color: #3b99fc;
+}
+
+/* Native-like selection */
+::selection {
+  background-color: #0078d7;
+  color: white;
+}
+
+/* Remove textarea resize handle */
+textarea {
+  resize: none;
+}
+
+/* Full screen styles */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
+}
+
+/* Dark mode transitions */
+.dark-transition {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s
+    ease;
+}
+
+/* Environment indicator pulse animation for production */
+@keyframes pulse-red {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+.env-indicator-production {
+  animation: pulse-red 2s infinite;
+}
