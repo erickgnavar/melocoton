@@ -18,7 +18,9 @@ defmodule Melocoton.Databases do
 
   """
   def list_databases do
-    Repo.all(Database)
+    Database
+    |> preload(:group)
+    |> Repo.all()
   end
 
   @doc """

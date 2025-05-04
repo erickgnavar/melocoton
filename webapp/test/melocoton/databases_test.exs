@@ -11,7 +11,7 @@ defmodule Melocoton.DatabasesTest do
     @invalid_attrs %{name: nil, type: nil, url: nil}
 
     test "list_databases/0 returns all databases" do
-      database = database_fixture()
+      database = database_fixture() |> Melocoton.Repo.preload(:group)
       assert Databases.list_databases() == [database]
     end
 

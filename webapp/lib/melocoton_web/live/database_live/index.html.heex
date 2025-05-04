@@ -33,24 +33,24 @@
         <!-- Connection Tree -->
         <ul class="text-xs">
           <!-- Production Group -->
-          <li class="mb-1">
+          <li :for={{group, databases} <- @data} class="mb-1">
             <div class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer group">
               <div class="w-2 h-2 rounded-full bg-env-production mr-1.5"></div>
-              <span class="text-env-production font-medium">PRODUCTION</span>
+              <span class="text-env-production font-medium uppercase">{group.name}</span>
               <i class="fas fa-chevron-down ml-auto text-[10px]"></i>
-              <button
+              <.link
                 class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity edit-group-btn"
                 data-group="production"
-                data-name="PRODUCTION"
-                data-color="#ef4444"
+                data-name={group.name}
+                data-color={group.color}
+                patch={~p"/groups/#{group.id}/edit"}
               >
                 <i class="fas fa-pen-to-square text-[10px]"></i>
-              </button>
+              </.link>
             </div>
             <ul class="pl-4 mt-0.5">
-              <!-- PostgreSQL Connection -->
               <li
-                :for={database <- @databases}
+                :for={database <- databases}
                 class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer"
               >
                 <i class="fas fa-database mr-1.5 text-db-postgres"></i>
@@ -58,60 +58,6 @@
                 <span class="ml-1 text-[9px] text-gray-500 dark:text-gray-400">
                   ({database.type})
                 </span>
-              </li>
-              <!-- MySQL Connection -->
-              <li class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer">
-                <i class="fas fa-database mr-1.5 text-db-mysql"></i>
-                <span>Analytics DB</span>
-                <span class="ml-1 text-[9px] text-gray-500 dark:text-gray-400">(mysql)</span>
-              </li>
-            </ul>
-          </li>
-          
-<!-- Staging Group -->
-          <li class="mb-1">
-            <div class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer group">
-              <div class="w-2 h-2 rounded-full bg-env-staging mr-1.5"></div>
-              <span class="text-env-staging font-medium">STAGING</span>
-              <i class="fas fa-chevron-down ml-auto text-[10px]"></i>
-              <button
-                class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity edit-group-btn"
-                data-group="staging"
-                data-name="STAGING"
-                data-color="#eab308"
-              >
-                <i class="fas fa-pen-to-square text-[10px]"></i>
-              </button>
-            </div>
-            <ul class="pl-4 mt-0.5">
-              <li class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer">
-                <i class="fas fa-database mr-1.5 text-db-postgres"></i>
-                <span>Staging DB</span>
-                <span class="ml-1 text-[9px] text-gray-500 dark:text-gray-400">(pg)</span>
-              </li>
-            </ul>
-          </li>
-          
-<!-- Development Group -->
-          <li class="mb-1">
-            <div class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer group">
-              <div class="w-2 h-2 rounded-full bg-env-development mr-1.5"></div>
-              <span class="text-env-development font-medium">DEVELOPMENT</span>
-              <i class="fas fa-chevron-down ml-auto text-[10px]"></i>
-              <button
-                class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity edit-group-btn"
-                data-group="development"
-                data-name="DEVELOPMENT"
-                data-color="#22c55e"
-              >
-                <i class="fas fa-pen-to-square text-[10px]"></i>
-              </button>
-            </div>
-            <ul class="pl-4 mt-0.5">
-              <li class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer">
-                <i class="fas fa-file-alt mr-1.5 text-db-sqlite"></i>
-                <span>Local Dev DB</span>
-                <span class="ml-1 text-[9px] text-gray-500 dark:text-gray-400">(sqlite)</span>
               </li>
             </ul>
           </li>
@@ -165,23 +111,23 @@
 <!-- Connection List -->
       <div class="flex-1 overflow-auto p-4">
         <!-- Production Group -->
-        <div class="mb-4">
+        <div :for={{group, databases} <- @data} class="mb-4">
           <div class="flex items-center mb-2">
             <div class="w-2 h-2 rounded-full bg-env-production mr-1.5"></div>
-            <h2 class="text-sm font-medium text-env-production">PRODUCTION</h2>
-            <button
+            <h2 class="text-sm font-medium text-env-production uppercase">{group.name}</h2>
+            <.link
               class="ml-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 edit-group-btn"
               data-group="production"
-              data-name="PRODUCTION"
-              data-color="#ef4444"
+              data-name={group.name}
+              data-color={group.color}
+              patch={~p"/groups/#{group.id}/edit"}
             >
               <i class="fas fa-pen-to-square text-[10px]"></i>
-            </button>
+            </.link>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            <!-- PostgreSQL Connection -->
             <div
-              :for={database <- @databases}
+              :for={database <- databases}
               id={"databases-#{database.id}"}
               class="border border-app-border-light dark:border-app-border-dark rounded bg-white dark:bg-gray-800 overflow-hidden hover:shadow-sm transition-shadow dark-transition"
             >
@@ -240,146 +186,6 @@
                 >
                   Connect
                 </.link>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-<!-- Staging Group -->
-        <div class="mb-4">
-          <div class="flex items-center mb-2">
-            <div class="w-2 h-2 rounded-full bg-env-staging mr-1.5"></div>
-            <h2 class="text-sm font-medium text-env-staging">STAGING</h2>
-            <button
-              class="ml-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 edit-group-btn"
-              data-group="staging"
-              data-name="STAGING"
-              data-color="#eab308"
-            >
-              <i class="fas fa-pen-to-square text-[10px]"></i>
-            </button>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            <!-- PostgreSQL Connection -->
-            <div class="border border-app-border-light dark:border-app-border-dark rounded bg-white dark:bg-gray-800 overflow-hidden hover:shadow-sm transition-shadow dark-transition">
-              <div class="px-3 py-2 border-b border-app-border-light dark:border-app-border-dark flex items-center justify-between dark-transition">
-                <div class="flex items-center">
-                  <i class="fas fa-database text-db-postgres mr-1.5"></i>
-                  <span class="text-xs font-medium">Staging DB</span>
-                </div>
-                <div class="flex items-center space-x-1">
-                  <button
-                    class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-1 rounded hover:bg-black/5 dark:hover:bg-white/10"
-                    title="Edit"
-                  >
-                    <i class="fas fa-pen-to-square text-[10px]"></i>
-                  </button>
-                  <button
-                    class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-1 rounded hover:bg-black/5 dark:hover:bg-white/10"
-                    title="Duplicate"
-                  >
-                    <i class="fas fa-copy text-[10px]"></i>
-                  </button>
-                  <button
-                    class="text-gray-500 hover:text-red-500 p-1 rounded hover:bg-black/5 dark:hover:bg-white/10"
-                    title="Delete"
-                  >
-                    <i class="fas fa-trash-alt text-[10px]"></i>
-                  </button>
-                </div>
-              </div>
-              <div class="p-3 text-[11px] space-y-1.5">
-                <div class="flex items-center">
-                  <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-db-postgres-light dark:bg-db-postgres/20 text-db-postgres">
-                    <i class="fas fa-database mr-1"></i> PostgreSQL
-                  </span>
-                </div>
-                <div class="flex items-center">
-                  <i class="fas fa-server text-gray-400 w-4"></i>
-                  <span>staging-server.example.com:5432</span>
-                </div>
-                <div class="flex items-center">
-                  <i class="fas fa-database text-gray-400 w-4"></i>
-                  <span>main_staging</span>
-                </div>
-                <div class="flex items-center">
-                  <i class="fas fa-user text-gray-400 w-4"></i>
-                  <span>staging_user</span>
-                </div>
-              </div>
-              <div class="px-3 py-2 border-t border-app-border-light dark:border-app-border-dark flex justify-end dark-transition">
-                <button class="px-2 py-1 bg-app-accent-light text-white text-[10px] rounded hover:bg-app-accent-light/90">
-                  Connect
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-<!-- Development Group -->
-        <div class="mb-4">
-          <div class="flex items-center mb-2">
-            <div class="w-2 h-2 rounded-full bg-env-development mr-1.5"></div>
-            <h2 class="text-sm font-medium text-env-development">DEVELOPMENT</h2>
-            <button
-              class="ml-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 edit-group-btn"
-              data-group="development"
-              data-name="DEVELOPMENT"
-              data-color="#22c55e"
-            >
-              <i class="fas fa-pen-to-square text-[10px]"></i>
-            </button>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            <!-- SQLite Connection -->
-            <div class="border border-app-border-light dark:border-app-border-dark rounded bg-white dark:bg-gray-800 overflow-hidden hover:shadow-sm transition-shadow dark-transition">
-              <div class="px-3 py-2 border-b border-app-border-light dark:border-app-border-dark flex items-center justify-between dark-transition">
-                <div class="flex items-center">
-                  <i class="fas fa-file-alt text-db-sqlite mr-1.5"></i>
-                  <span class="text-xs font-medium">Local Dev DB</span>
-                </div>
-                <div class="flex items-center space-x-1">
-                  <button
-                    class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-1 rounded hover:bg-black/5 dark:hover:bg-white/10"
-                    title="Edit"
-                  >
-                    <i class="fas fa-pen-to-square text-[10px]"></i>
-                  </button>
-                  <button
-                    class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-1 rounded hover:bg-black/5 dark:hover:bg-white/10"
-                    title="Edit"
-                  >
-                    <i class="fas fa-pen-to-square text-[10px]"></i>
-                  </button>
-                  <button
-                    class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-1 rounded hover:bg-black/5 dark:hover:bg-white/10"
-                    title="Duplicate"
-                  >
-                    <i class="fas fa-copy text-[10px]"></i>
-                  </button>
-                  <button
-                    class="text-gray-500 hover:text-red-500 p-1 rounded hover:bg-black/5 dark:hover:bg-white/10"
-                    title="Delete"
-                  >
-                    <i class="fas fa-trash-alt text-[10px]"></i>
-                  </button>
-                </div>
-              </div>
-              <div class="p-3 text-[11px] space-y-1.5">
-                <div class="flex items-center">
-                  <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-db-sqlite-light dark:bg-db-sqlite/20 text-db-sqlite">
-                    <i class="fas fa-file-alt mr-1"></i> SQLite
-                  </span>
-                </div>
-                <div class="flex items-center">
-                  <i class="fas fa-file text-gray-400 w-4"></i>
-                  <span>/Users/developer/projects/app/dev.db</span>
-                </div>
-              </div>
-              <div class="px-3 py-2 border-t border-app-border-light dark:border-app-border-dark flex justify-end dark-transition">
-                <button class="px-2 py-1 bg-app-accent-light text-white text-[10px] rounded hover:bg-app-accent-light/90">
-                  Connect
-                </button>
               </div>
             </div>
           </div>

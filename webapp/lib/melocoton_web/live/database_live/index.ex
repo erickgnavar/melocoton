@@ -10,7 +10,7 @@ defmodule MelocotonWeb.DatabaseLive.Index do
 
     socket
     |> assign(:groups, groups)
-    |> assign(:databases, Databases.list_databases())
+    |> assign(:data, get_grouped_databases())
     |> then(&{:ok, &1})
   end
 
@@ -51,12 +51,16 @@ defmodule MelocotonWeb.DatabaseLive.Index do
 
   @impl true
   def handle_info({MelocotonWeb.DatabaseLive.FormComponent, {:saved, _database}}, socket) do
-    {:noreply, assign(socket, :databases, Databases.list_databases())}
+    socket
+    |> assign(:data, get_grouped_databases())
+    |> then(&{:noreply, &1})
   end
 
   @impl true
   def handle_info({MelocotonWeb.GroupLive.FormComponent, {:saved, _group}}, socket) do
-    {:noreply, assign(socket, :databases, Databases.list_databases())}
+    socket
+    |> assign(:data, get_grouped_databases())
+    |> then(&{:noreply, &1})
   end
 
   @impl true
@@ -64,6 +68,12 @@ defmodule MelocotonWeb.DatabaseLive.Index do
     database = Databases.get_database!(id)
     {:ok, _} = Databases.delete_database(database)
 
-    {:noreply, assign(socket, :databases, Databases.list_databases())}
+    socket
+    |> assign(:data, get_grouped_databases())
+    |> then(&{:noreply, &1})
+  end
+
+  defp get_grouped_databases do
+    Enum.group_by(Databases.list_databases(), & &1.group)
   end
 end
