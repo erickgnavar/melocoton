@@ -29,8 +29,8 @@
         <ul class="text-xs">
           <li :for={{group, databases} <- @data} class="mb-1">
             <div class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer group">
-              <div class="w-2 h-2 rounded-full bg-env-production mr-1.5"></div>
-              <span class="text-env-production font-medium uppercase">{group.name}</span>
+              <div class={["w-2 h-2 rounded-full mr-1.5", "bg-[#{group.color}]"]}></div>
+              <span class={["font-medium uppercase", "text-[#{group.color}]"]}>{group.name}</span>
               <i class="fas fa-chevron-down ml-auto text-[10px]"></i>
               <.link
                 class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity edit-group-btn"
@@ -98,8 +98,8 @@
       <div class="flex-1 overflow-auto p-4">
         <div :for={{group, databases} <- @data} class="mb-4">
           <div class="flex items-center mb-2">
-            <div class="w-2 h-2 rounded-full bg-env-production mr-1.5"></div>
-            <h2 class="text-sm font-medium text-env-production uppercase">{group.name}</h2>
+            <div class={["w-2 h-2 rounded-full mr-1.5", "bg-[#{group.color}]"]}></div>
+            <h2 class={["text-sm font-medium uppercase", "text-[#{group.color}]"]}>{group.name}</h2>
             <.link
               class="ml-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 edit-group-btn"
               patch={~p"/groups/#{group.id}/edit"}
