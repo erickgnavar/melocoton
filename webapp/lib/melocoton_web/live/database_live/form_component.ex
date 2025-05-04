@@ -14,6 +14,12 @@ defmodule MelocotonWeb.DatabaseLive.FormComponent do
         phx-change="validate"
         phx-submit="save"
       >
+        <.input
+          field={@form[:group_id]}
+          type="select"
+          label="Group"
+          options={Enum.map(@groups, &{&1.name, &1.id})}
+        />
         <.input field={@form[:name]} type="text" label="Name" />
         <.input
           field={@form[:type]}

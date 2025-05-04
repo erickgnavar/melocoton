@@ -6,7 +6,12 @@ defmodule MelocotonWeb.DatabaseLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, stream(socket, :databases, Databases.list_databases())}
+    groups = Databases.list_groups()
+
+    socket
+    |> assign(:groups, groups)
+    |> stream(:databases, Databases.list_databases())
+    |> then(&{:ok, &1})
   end
 
   @impl true
