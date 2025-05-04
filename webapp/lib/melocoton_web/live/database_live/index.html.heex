@@ -50,7 +50,7 @@
             <ul class="pl-4 mt-0.5">
               <!-- PostgreSQL Connection -->
               <li
-                :for={{_id, database} <- @streams.databases}
+                :for={database <- @databases}
                 class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer"
               >
                 <i class="fas fa-database mr-1.5 text-db-postgres"></i>
@@ -181,7 +181,7 @@
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             <!-- PostgreSQL Connection -->
             <div
-              :for={{id, database} <- @streams.databases}
+              :for={database <- @databases}
               id={"databases-#{database.id}"}
               class="border border-app-border-light dark:border-app-border-dark rounded bg-white dark:bg-gray-800 overflow-hidden hover:shadow-sm transition-shadow dark-transition"
             >
@@ -207,7 +207,7 @@
                   <.link
                     class="text-gray-500 hover:text-red-500 p-1 rounded hover:bg-black/5 dark:hover:bg-white/10"
                     title="Delete"
-                    phx-click={JS.push("delete", value: %{id: database.id}) |> hide("##{id}")}
+                    phx-click={JS.push("delete", value: %{id: database.id})}
                     data-confirm="Are you sure?"
                   >
                     <i class="fas fa-trash-alt text-[10px]"></i>

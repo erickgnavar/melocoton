@@ -10,7 +10,7 @@ defmodule MelocotonWeb.DatabaseLive.Index do
 
     socket
     |> assign(:groups, groups)
-    |> stream(:databases, Databases.list_databases())
+    |> assign(:databases, Databases.list_databases())
     |> then(&{:ok, &1})
   end
 
@@ -50,14 +50,13 @@ defmodule MelocotonWeb.DatabaseLive.Index do
   end
 
   @impl true
-  def handle_info({MelocotonWeb.DatabaseLive.FormComponent, {:saved, database}}, socket) do
-    {:noreply, stream_insert(socket, :databases, database)}
+  def handle_info({MelocotonWeb.DatabaseLive.FormComponent, {:saved, _database}}, socket) do
+    {:noreply, assign(socket, :databases, Databases.list_databases())}
   end
 
   @impl true
   def handle_info({MelocotonWeb.GroupLive.FormComponent, {:saved, _group}}, socket) do
-    # TODO: reload all the data
-    {:noreply, socket}
+    {:noreply, assign(socket, :databases, Databases.list_databases())}
   end
 
   @impl true
@@ -65,6 +64,6 @@ defmodule MelocotonWeb.DatabaseLive.Index do
     database = Databases.get_database!(id)
     {:ok, _} = Databases.delete_database(database)
 
-    {:noreply, stream_delete(socket, :databases, database)}
+    {:noreply, assign(socket, :databases, Databases.list_databases())}
   end
 end
