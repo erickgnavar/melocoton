@@ -38,6 +38,7 @@ defmodule MelocotonWeb.CoreComponents do
   """
   attr :id, :string, required: true
   attr :show, :boolean, default: false
+  attr :title, :string, required: true
   attr :on_cancel, JS, default: %JS{}
   slot :inner_block, required: true
 
@@ -50,40 +51,37 @@ defmodule MelocotonWeb.CoreComponents do
       data-cancel={JS.exec(@on_cancel, "phx-remove")}
       class="relative z-50 hidden"
     >
-      <div id={"#{@id}-bg"} class="bg-zinc-50/90 fixed inset-0 transition-opacity" aria-hidden="true" />
-      <div
-        class="fixed inset-0 overflow-y-auto"
-        aria-labelledby={"#{@id}-title"}
-        aria-describedby={"#{@id}-description"}
-        role="dialog"
-        aria-modal="true"
-        tabindex="0"
-      >
-        <div class="flex min-h-full items-center justify-center">
-          <div class="w-full max-w-3xl p-4 sm:p-6 lg:py-8">
-            <.focus_wrap
-              id={"#{@id}-container"}
-              phx-window-keydown={JS.exec("data-cancel", to: "##{@id}")}
-              phx-key="escape"
-              phx-click-away={JS.exec("data-cancel", to: "##{@id}")}
-              class="shadow-zinc-700/10 ring-zinc-700/10 relative hidden rounded-2xl bg-white p-14 shadow-lg ring-1 transition"
+      <div class="fixed inset-0 z-50 flex items-center justify-center ">
+        <div
+          id={"#{@id}-bg"}
+          class="modal-overlay absolute inset-0 bg-black/30 dark:bg-black/50"
+          aria-hidden="true"
+        />
+        <.focus_wrap
+          id={"#{@id}-container"}
+          phx-window-keydown={JS.exec("data-cancel", to: "##{@id}")}
+          phx-key="escape"
+          phx-click-away={JS.exec("data-cancel", to: "##{@id}")}
+          class="modal-container relative bg-white dark:bg-gray-800 w-full max-w-md mx-auto rounded shadow-lg overflow-hidden z-10 dark-transition"
+        >
+          <div class="px-4 py-3 border-b border-app-border-light dark:border-app-border-dark flex items-center justify-between dark-transition">
+            <h3 class="text-sm font-medium" id="modal-title">
+              {assigns[:title] || "No title"}
+            </h3>
+            <button
+              id="close-modal-btn"
+              phx-click={JS.exec("data-cancel", to: "##{@id}")}
+              aria-label={gettext("close")}
+              class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
             >
-              <div class="absolute top-6 right-5">
-                <button
-                  phx-click={JS.exec("data-cancel", to: "##{@id}")}
-                  type="button"
-                  class="-m-3 flex-none p-3 opacity-20 hover:opacity-40"
-                  aria-label={gettext("close")}
-                >
-                  <.icon name="hero-x-mark-solid" class="h-5 w-5" />
-                </button>
-              </div>
-              <div id={"#{@id}-content"}>
-                {render_slot(@inner_block)}
-              </div>
-            </.focus_wrap>
+              <i class="fas fa-times"></i>
+            </button>
           </div>
-        </div>
+
+          <div id={"#{@id}-content"}>
+            {render_slot(@inner_block)}
+          </div>
+        </.focus_wrap>
       </div>
     </div>
     """
@@ -202,9 +200,9 @@ defmodule MelocotonWeb.CoreComponents do
   def simple_form(assigns) do
     ~H"""
     <.form :let={f} for={@for} as={@as} {@rest}>
-      <div class="mt-10 space-y-8 bg-white">
+      <div class="mt-10 space-y-8">
         {render_slot(@inner_block, f)}
-        <div :for={action <- @actions} class="mt-2 flex items-center justify-between gap-6">
+        <div :for={action <- @actions} class="mt-2 flex items-center justify-end gap-6">
           {render_slot(action, f)}
         </div>
       </div>
@@ -231,8 +229,7 @@ defmodule MelocotonWeb.CoreComponents do
     <button
       type={@type}
       class={[
-        "phx-submit-loading:opacity-75 rounded-lg bg-zinc-900 hover:bg-zinc-700 py-2 px-3",
-        "text-sm font-semibold leading-6 text-white active:text-white/80",
+        "px-3 py-1.5 text-xs bg-app-accent-light text-white rounded hover:bg-app-accent-light/90",
         @class
       ]}
       {@rest}
@@ -330,12 +327,12 @@ defmodule MelocotonWeb.CoreComponents do
 
   def input(%{type: "select"} = assigns) do
     ~H"""
-    <div>
+    <div class="space-y-1">
       <.label for={@id}>{@label}</.label>
       <select
         id={@id}
         name={@name}
-        class="mt-2 block w-full rounded-md border border-gray-300 bg-white shadow-sm focus:border-zinc-400 focus:ring-0 sm:text-sm"
+        class="w-full appearance-none px-2 py-1.5 text-xs border border-app-border-light dark:border-app-border-dark rounded bg-app-input-light dark:bg-app-input-dark pr-8 dark-transition"
         multiple={@multiple}
         {@rest}
       >
@@ -369,7 +366,7 @@ defmodule MelocotonWeb.CoreComponents do
   # All other inputs text, datetime-local, url, password, etc. are handled here...
   def input(assigns) do
     ~H"""
-    <div>
+    <div class="space-y-1">
       <.label for={@id}>{@label}</.label>
       <input
         type={@type}
@@ -377,7 +374,7 @@ defmodule MelocotonWeb.CoreComponents do
         id={@id}
         value={Phoenix.HTML.Form.normalize_value(@type, @value)}
         class={[
-          "mt-2 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6",
+          "w-full px-2 py-1.5 text-xs border border-app-border-light dark:border-app-border-dark rounded bg-app-input-light dark:bg-app-input-dark dark-transition",
           @errors == [] && "border-zinc-300 focus:border-zinc-400",
           @errors != [] && "border-rose-400 focus:border-rose-400"
         ]}
@@ -396,7 +393,7 @@ defmodule MelocotonWeb.CoreComponents do
 
   def label(assigns) do
     ~H"""
-    <label for={@for} class="block text-sm font-semibold leading-6 text-zinc-800">
+    <label for={@for} class="block text-xs font-medium">
       {render_slot(@inner_block)}
     </label>
     """

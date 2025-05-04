@@ -23,8 +23,6 @@ defmodule MelocotonWeb.Router do
     live "/databases/new", DatabaseLive.Index, :new
     live "/databases/:id/edit", DatabaseLive.Index, :edit
 
-    live "/databases/:id", DatabaseLive.Show, :show
-    live "/databases/:id/show/edit", DatabaseLive.Show, :edit
     live "/databases/:database_id/run", SQLLive.Run
   end
 

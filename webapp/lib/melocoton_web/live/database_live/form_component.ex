@@ -6,12 +6,7 @@ defmodule MelocotonWeb.DatabaseLive.FormComponent do
   @impl true
   def render(assigns) do
     ~H"""
-    <div>
-      <.header>
-        {@title}
-        <:subtitle>Use this form to manage database records in your database.</:subtitle>
-      </.header>
-
+    <div class="p-4">
       <.simple_form
         for={@form}
         id="database-form"
