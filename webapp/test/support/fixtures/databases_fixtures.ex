@@ -19,4 +19,19 @@ defmodule Melocoton.DatabasesFixtures do
 
     database
   end
+
+  @doc """
+  Generate a group.
+  """
+  def group_fixture(attrs \\ %{}) do
+    {:ok, group} =
+      attrs
+      |> Enum.into(%{
+        color: "some color",
+        name: "some name"
+      })
+      |> Melocoton.Databases.create_group()
+
+    group
+  end
 end

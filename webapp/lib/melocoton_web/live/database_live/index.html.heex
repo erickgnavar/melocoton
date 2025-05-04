@@ -135,12 +135,13 @@
         >
           <i class="fas fa-plus mr-1.5"></i> New Connection
         </.link>
-        <button
+        <.link
           id="new-group-btn"
           class="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center mr-2 dark-transition"
+          patch={~p"/groups/new"}
         >
           <i class="fas fa-folder-plus mr-1.5"></i> New Group
-        </button>
+        </.link>
         <button class="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center dark-transition">
           <i class="fas fa-file-import mr-1.5"></i> Import
         </button>
@@ -386,153 +387,6 @@
       </div>
     </main>
   </div>
-  
-<!-- Group Modal -->
-  <div id="group-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden">
-    <div class="modal-overlay absolute inset-0 bg-black/30 dark:bg-black/50"></div>
-    <div class="modal-container relative bg-white dark:bg-gray-800 w-full max-w-sm mx-auto rounded shadow-lg overflow-hidden z-10 dark-transition">
-      <!-- Modal Header -->
-      <div class="px-4 py-3 border-b border-app-border-light dark:border-app-border-dark flex items-center justify-between dark-transition">
-        <h3 class="text-sm font-medium" id="group-modal-title">New Connection Group</h3>
-        <button
-          id="close-group-modal-btn"
-          class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-        >
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-      
-<!-- Modal Body -->
-      <div class="p-4">
-        <form id="group-form" class="space-y-4">
-          <!-- Group Name -->
-          <div class="space-y-1">
-            <label for="group-name" class="block text-xs font-medium">Group Name</label>
-            <input
-              type="text"
-              id="group-name"
-              class="w-full px-2 py-1.5 text-xs border border-app-border-light dark:border-app-border-dark rounded bg-app-input-light dark:bg-app-input-dark dark-transition"
-              placeholder="My Group"
-            />
-          </div>
-          
-<!-- Group Color -->
-          <div class="space-y-1">
-            <label class="block text-xs font-medium">Group Color</label>
-            <div class="flex flex-wrap mt-2" id="color-picker">
-              <!-- Predefined colors -->
-              <div
-                class="color-option"
-                style="background-color: #ef4444;"
-                data-color="#ef4444"
-                title="Red"
-              >
-              </div>
-              <div
-                class="color-option"
-                style="background-color: #f97316;"
-                data-color="#f97316"
-                title="Orange"
-              >
-              </div>
-              <div
-                class="color-option"
-                style="background-color: #eab308;"
-                data-color="#eab308"
-                title="Yellow"
-              >
-              </div>
-              <div
-                class="color-option"
-                style="background-color: #22c55e;"
-                data-color="#22c55e"
-                title="Green"
-              >
-              </div>
-              <div
-                class="color-option"
-                style="background-color: #06b6d4;"
-                data-color="#06b6d4"
-                title="Cyan"
-              >
-              </div>
-              <div
-                class="color-option"
-                style="background-color: #3b82f6;"
-                data-color="#3b82f6"
-                title="Blue"
-              >
-              </div>
-              <div
-                class="color-option"
-                style="background-color: #8b5cf6;"
-                data-color="#8b5cf6"
-                title="Purple"
-              >
-              </div>
-              <div
-                class="color-option"
-                style="background-color: #ec4899;"
-                data-color="#ec4899"
-                title="Pink"
-              >
-              </div>
-              <div
-                class="color-option"
-                style="background-color: #6b7280;"
-                data-color="#6b7280"
-                title="Gray"
-              >
-              </div>
-              <div
-                class="color-option"
-                style="background-color: #334155;"
-                data-color="#334155"
-                title="Slate"
-              >
-              </div>
-            </div>
-            <input type="hidden" id="selected-color" value="#3b82f6" />
-            
-<!-- Custom color input -->
-            <div class="mt-2 flex items-center">
-              <label for="custom-color" class="block text-xs mr-2">Custom:</label>
-              <input
-                type="color"
-                id="custom-color"
-                class="w-6 h-6 border border-app-border-light dark:border-app-border-dark rounded cursor-pointer"
-              />
-            </div>
-          </div>
-          
-<!-- Group Preview -->
-          <div class="mt-4 p-3 border border-app-border-light dark:border-app-border-dark rounded bg-app-sidebar-light dark:bg-app-sidebar-dark dark-transition">
-            <div class="text-xs font-medium mb-1">Preview:</div>
-            <div class="flex items-center p-1">
-              <div id="color-preview" class="w-2 h-2 rounded-full bg-blue-500 mr-1.5"></div>
-              <span id="name-preview" class="font-medium" style="color: #3b82f6;">MY GROUP</span>
-            </div>
-          </div>
-        </form>
-      </div>
-      
-<!-- Modal Footer -->
-      <div class="px-4 py-3 border-t border-app-border-light dark:border-app-border-dark flex justify-end space-x-2 dark-transition">
-        <button
-          id="cancel-group-btn"
-          class="px-3 py-1.5 text-xs bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 dark-transition"
-        >
-          Cancel
-        </button>
-        <button
-          id="save-group-btn"
-          class="px-3 py-1.5 text-xs bg-app-accent-light text-white rounded hover:bg-app-accent-light/90"
-        >
-          Save Group
-        </button>
-      </div>
-    </div>
-  </div>
 </div>
 
 <.modal
@@ -548,6 +402,23 @@
     title={@page_title}
     action={@live_action}
     database={@database}
+    patch={~p"/databases"}
+  />
+</.modal>
+
+<.modal
+  :if={@live_action in [:new_group, :edit_group]}
+  id="group-modal"
+  show
+  on_cancel={JS.patch(~p"/databases")}
+  title={@page_title}
+>
+  <.live_component
+    module={MelocotonWeb.GroupLive.FormComponent}
+    id={@group.id || :new}
+    title={@page_title}
+    action={@live_action}
+    group={@group}
     patch={~p"/databases"}
   />
 </.modal>
