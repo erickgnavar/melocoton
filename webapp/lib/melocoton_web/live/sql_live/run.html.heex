@@ -12,7 +12,12 @@
       </span>
     </div>
 
-    <div class="px-2 py-1 hover:bg-black/10 dark:hover:bg-white/10">File</div>
+    <div
+      class="px-2 py-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer"
+      phx-click={JS.patch(~p"/databases")}
+    >
+      Home
+    </div>
     <div class="px-2 py-1 hover:bg-black/10 dark:hover:bg-white/10">Edit</div>
     <div class="px-2 py-1 hover:bg-black/10 dark:hover:bg-white/10">View</div>
     <div class="px-2 py-1 hover:bg-black/10 dark:hover:bg-white/10">Query</div>
