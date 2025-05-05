@@ -19,6 +19,7 @@ defmodule MelocotonWeb.DatabaseLive.FormComponent do
           type="select"
           label="Group"
           options={Enum.map(@groups, &{&1.name, &1.id})}
+          required={true}
         />
         <.input field={@form[:name]} type="text" label="Name" />
         <.input
