@@ -37,7 +37,7 @@ defmodule Melocoton.Databases do
       ** (Ecto.NoResultsError)
 
   """
-  def get_database!(id), do: Repo.get!(Database, id) |> Repo.preload(:sessions)
+  def get_database!(id), do: Repo.get!(Database, id) |> Repo.preload([:group, :sessions])
 
   @doc """
   Creates a database.

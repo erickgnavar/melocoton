@@ -2,8 +2,14 @@
   <div class="bg-app-menubar-light dark:bg-app-menubar-dark border-b border-app-border-light dark:border-app-border-dark flex text-xs px-2 select-none h-7 items-center dark-transition">
     <!-- Environment Indicator -->
     <div class="flex items-center pr-2 border-r border-app-border-light dark:border-app-border-dark mr-2">
-      <div class="w-2 h-2 rounded-full bg-env-production mr-1.5 env-indicator-production"></div>
-      <span class="text-env-production font-medium">PRODUCTION</span>
+      <div class={[
+        "w-2 h-2 rounded-full mr-1.5 env-indicator-production",
+        "bg-[#{@database.group.color}]"
+      ]}>
+      </div>
+      <span class={["font-medium uppercase", "text-[#{@database.group.color}]"]}>
+        {@database.group.name}
+      </span>
     </div>
 
     <div class="px-2 py-1 hover:bg-black/10 dark:hover:bg-white/10">File</div>
@@ -15,9 +21,9 @@
     <!-- Spacer -->
     <div class="flex-1"></div>
     <!-- Database Name with Environment Color -->
-    <div class="px-2 py-1 mr-2 flex items-center">
-      <i class="fas fa-database mr-1.5 text-env-production"></i>
-      <span>Production DB</span>
+    <div class="px-2 py-1 mr-2 flex items-center uppercase ">
+      <i class={["fas fa-database mr-1.5", "text-[#{@database.group.color}]"]}></i>
+      <span>{@database.group.name}</span>
     </div>
 
     <button id="theme-toggle" class="p-1 text-sm hover:bg-black/10 dark:hover:bg-white/10 rounded">
@@ -38,7 +44,7 @@
         <ul class="text-xs">
           <li>
             <div class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer">
-              <i class="fas fa-database mr-1.5 text-env-production"></i>
+              <i class={["fas fa-database mr-1.5", "text-[#{@database.group.color}]"]}></i>
               <span>{@database.name}</span>
               <i class="fas fa-chevron-down ml-auto text-[10px]"></i>
             </div>
@@ -100,8 +106,13 @@
       </div>
       <div class="p-2 border-t border-app-border-light dark:border-app-border-dark text-[10px] text-gray-500 dark:text-gray-400 dark-transition">
         <div class="flex items-center">
-          <div class="w-1.5 h-1.5 rounded-full bg-env-production mr-1.5"></div>
-          <span>Connected to <span class="text-env-production">Production DB</span></span>
+          <div class={["w-1.5 h-1.5 rounded-full mr-1.5", "bg-[#{@database.group.color}]"]}></div>
+          <span>
+            Connected to
+            <span class={"uppercase text-[#{@database.group.color}]"}>
+              {@database.group.name}
+            </span>
+          </span>
         </div>
       </div>
     </aside>
@@ -118,7 +129,7 @@
           ]}
           phx-click="change-session"
           phx-value-session-id={session.id}
-          style="border-top-color: #ef4444;"
+          style={"border-top-color: #{@database.group.color};"}
         >
           <span>#{index}</span>
           <button class="ml-2 hover:bg-black/10 dark:hover:bg-white/10 rounded p-0.5">
@@ -140,8 +151,11 @@
           <div class="flex justify-between items-center mb-1">
             <div class="text-xs font-medium flex items-center">
               <span>SQL Editor</span>
-              <span class="ml-2 px-1.5 py-0.5 bg-env-production-light dark:bg-env-production/20 text-env-production text-[10px] rounded-sm font-medium">
-                PRODUCTION
+              <span class={[
+                "ml-2 px-1.5 py-0.5 uppercase text-white text-[10px] rounded-sm font-medium",
+                "bg-[#{@database.group.color}]"
+              ]}>
+                {@database.group.name}
               </span>
             </div>
             <div class="flex space-x-1">
@@ -149,7 +163,11 @@
                 Format
               </button>
               <button
-                class="px-2 py-0.5 text-xs bg-env-production text-white flex items-center hover:bg-env-production/90"
+                class={[
+                  "px-2 py-0.5 text-xs text-white flex items-center",
+                  "bg-[#{@database.group.color}]",
+                  "hover:bg-[#{@database.group.color}]/90"
+                ]}
                 phx-click="run-query"
                 phx-value-query={@current_session.query}
               >
@@ -168,7 +186,7 @@
           </div>
           <div class="flex-1 border border-app-border-light dark:border-app-border-dark overflow-hidden dark-transition relative">
             <!-- Environment Border Indicator -->
-            <div class="absolute inset-y-0 left-0 w-1 bg-env-production"></div>
+            <div class={["absolute inset-y-0 left-0 w-1", "bg-[#{@database.group.color}]"]}></div>
 
             <div
               id="editor"
@@ -197,7 +215,7 @@
                 "px-3 py-1 bg-white dark:bg-gray-800 dark-transition",
                 @result != [] && "border-b-2"
               ]}
-              style="border-bottom-color: #ef4444;"
+              style={"border-bottom-color: #{@database.group.color};"}
             >
               {gettext("Results")}
             </div>
@@ -260,11 +278,14 @@
             </div>
           </div>
 
-          <div class="border-t border-app-border-light dark:border-app-border-dark p-1 text-[10px] text-gray-500 dark:text-gray-400 flex justify-between dark-transition bg-env-production-light dark:bg-env-production/10">
-            <div>{@result.num_rows} rows returned in 0.012s</div>
-            <div class="flex items-center">
-              <div class="w-1.5 h-1.5 rounded-full bg-env-production mr-1.5"></div>
-              <span class="text-env-production font-medium">Production DB</span>
+          <div class={[
+            "border-t border-app-border-light dark:border-app-border-dark p-1 text-[10px] text-gray-500 dark:text-gray-400 flex justify-between dark-transition text-white",
+            "bg-[#{@database.group.color}]"
+          ]}>
+            <div class="text-white">{@result.num_rows} rows returned in 0.012s</div>
+            <div class="flex items-center text-white">
+              <div class="w-1.5 h-1.5 rounded-full bg-white mr-1.5"></div>
+              <span class="font-medium uppercase">{@database.group.name}</span>
               @ prod-server:5432
             </div>
           </div>
