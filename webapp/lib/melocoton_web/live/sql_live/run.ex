@@ -17,6 +17,8 @@ defmodule MelocotonWeb.SQLLive.Run do
 
     socket
     |> assign(:form, to_form(Databases.change_session(current_session, %{})))
+    |> assign(:search_form, to_form(%{"term" => ""}))
+    |> assign(:search_term, "")
     |> assign(:repo, repo)
     |> assign(:tables, get_tables(repo, database.type))
     |> assign(:indexes, get_indexes(repo, database.type))
@@ -39,6 +41,12 @@ defmodule MelocotonWeb.SQLLive.Run do
 
     socket
     |> assign(:current_session, updated_session)
+    |> noreply()
+  end
+
+  def handle_event("validate-search", %{"term" => term}, socket) do
+    socket
+    |> assign(:search_term, term)
     |> noreply()
   end
 
