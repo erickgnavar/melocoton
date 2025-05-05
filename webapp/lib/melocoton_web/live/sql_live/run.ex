@@ -221,7 +221,7 @@ defmodule MelocotonWeb.SQLLive.Run do
     end
   end
 
-  defp get_indexes(repo, :postgres) do
+  defp get_indexes(_repo, :postgres) do
     []
   end
 end
