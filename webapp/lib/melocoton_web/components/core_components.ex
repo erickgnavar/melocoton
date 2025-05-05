@@ -367,7 +367,7 @@ defmodule MelocotonWeb.CoreComponents do
   def input(assigns) do
     ~H"""
     <div class="space-y-1">
-      <.label for={@id}>{@label}</.label>
+      <.label :if={@label} for={@id}>{@label}</.label>
       <input
         type={@type}
         name={@name}
