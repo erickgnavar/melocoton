@@ -70,7 +70,7 @@ defmodule Melocoton.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
       {:bandit, "~> 1.5"},
-      {:burrito, "~> 1.0"},
+      {:burrito, "~> 1.3"},
       {:csv, "~> 3.2"}
     ]
   end
