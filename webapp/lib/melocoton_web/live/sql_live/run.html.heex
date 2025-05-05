@@ -97,14 +97,24 @@
               <i class="fas fa-chevron-right ml-auto text-[10px]"></i>
             </div>
           </li>
-          <!-- Indexes -->
-          <li>
-            <div class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer">
-              <i class="fas fa-sort-amount-up mr-1.5 text-blue-600 dark:text-blue-500"></i>
-              <span>Indexes</span>
-              <i class="fas fa-chevron-right ml-auto text-[10px]"></i>
+          <div class="p-2 border-b border-app-border-light dark:border-app-border-dark dark-transition">
+            <div class="flex items-center justify-between cursor-pointer" data-toggle="indexes">
+              <div class="text-xs font-medium">Indexes</div>
+              <i class="fas fa-chevron-down text-[10px]"></i>
             </div>
-          </li>
+            <div id="indexes-content" class="mt-1 text-xs">
+              <div
+                :for={index <- @indexes}
+                class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer"
+              >
+                <i class="fas fa-key mr-1.5 text-amber-500"></i>
+                <span>{index.name}</span>
+                <span class="ml-1 text-[9px] text-gray-500 dark:text-gray-400">
+                  ({index.table})
+                </span>
+              </div>
+            </div>
+          </div>
         </ul>
       </div>
       <div class="p-2 border-t border-app-border-light dark:border-app-border-dark text-[10px] text-gray-500 dark:text-gray-400 dark-transition">

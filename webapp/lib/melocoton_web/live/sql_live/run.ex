@@ -19,6 +19,7 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> assign(:form, to_form(Databases.change_session(current_session, %{})))
     |> assign(:repo, repo)
     |> assign(:tables, get_tables(repo, database.type))
+    |> assign(:indexes, get_indexes(repo, database.type))
     |> assign(:database, database)
     |> assign(:current_session, current_session)
     |> assign(:result, empty_result())
@@ -91,6 +92,7 @@ defmodule MelocotonWeb.SQLLive.Run do
   def handle_event("reload-objects", _params, socket) do
     socket
     |> assign(:tables, get_tables(socket.assigns.repo, socket.assigns.database.type))
+    |> assign(:indexes, get_indexes(socket.assigns.repo, socket.assigns.database.type))
     |> noreply()
   end
 
@@ -203,5 +205,23 @@ defmodule MelocotonWeb.SQLLive.Run do
       {:error, _error} ->
         []
     end
+  end
+
+  defp get_indexes(repo, :sqlite) do
+    sql = "SELECT name, tbl_name FROM sqlite_master WHERE type = 'index';"
+
+    case repo.query(sql) do
+      {:ok, %{rows: rows}} ->
+        Enum.map(rows, fn [name, table] ->
+          %{name: name, table: table}
+        end)
+
+      {:error, _error} ->
+        []
+    end
+  end
+
+  defp get_indexes(repo, :postgres) do
+    []
   end
 end
