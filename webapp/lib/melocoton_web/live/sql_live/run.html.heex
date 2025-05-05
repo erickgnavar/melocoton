@@ -44,78 +44,48 @@
         </button>
       </div>
       <div class="overflow-y-auto overscroll-none flex-1 p-1">
-        <ul class="text-xs">
-          <li>
+        <div class="p-2 border-b border-app-border-light dark:border-app-border-dark dark-transition">
+          <div class="flex items-center justify-between cursor-pointer" data-toggle="tables">
+            <div class="text-xs font-medium">Tables</div>
+            <i class="fas fa-chevron-down text-[10px]"></i>
+          </div>
+          <div :for={table <- @tables} class="mt-1 text-xs">
             <div class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer">
-              <i class={["fas fa-database mr-1.5", "text-[#{@database.group.color}]"]}></i>
-              <span>{@database.name}</span>
+              <i class="fas fa-table mr-1.5 text-blue-500"></i>
+              <span>{table.name}</span>
               <i class="fas fa-chevron-down ml-auto text-[10px]"></i>
             </div>
-            <!-- Tables -->
+
             <ul class="pl-4 mt-0.5">
-              <li :for={table <- @tables}>
-                <div class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer">
-                  <i class="fas fa-table mr-1.5 text-green-600 dark:text-green-500"></i>
-                  <span>{table.name}</span>
-                  <i class="fas fa-chevron-down ml-auto text-[10px]"></i>
-                </div>
-                <!-- Columns -->
-                <ul class="pl-4 mt-0.5">
-                  <li
-                    :for={col <- table.cols}
-                    class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10"
-                  >
-                    <i class="fas fa-font mr-1.5 text-purple-600 dark:text-purple-500 text-[10px]">
-                    </i>
-                    <span>{col.name} ({col.type})</span>
-                  </li>
-                </ul>
+              <li
+                :for={col <- table.cols}
+                class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10"
+              >
+                <i class="fas fa-font mr-1.5 text-purple-600 dark:text-purple-500 text-[10px]">
+                </i>
+                <span>{col.name} ({col.type})</span>
               </li>
             </ul>
-          </li>
-          <!-- Functions -->
-          <li>
-            <div class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer">
-              <i class="fas fa-code mr-1.5 text-orange-600 dark:text-orange-500"></i>
-              <span>Functions</span>
-              <i class="fas fa-chevron-right ml-auto text-[10px]"></i>
-            </div>
-          </li>
-          <!-- Views -->
-          <li>
-            <div class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer">
-              <i class="fas fa-eye mr-1.5 text-indigo-600 dark:text-indigo-500"></i>
-              <span>Views</span>
-              <i class="fas fa-chevron-right ml-auto text-[10px]"></i>
-            </div>
-          </li>
-          <!-- Triggers -->
-          <li>
-            <div class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer">
-              <i class="fas fa-bolt mr-1.5 text-amber-600 dark:text-amber-500"></i>
-              <span>Triggers</span>
-              <i class="fas fa-chevron-right ml-auto text-[10px]"></i>
-            </div>
-          </li>
-          <div class="p-2 border-b border-app-border-light dark:border-app-border-dark dark-transition">
-            <div class="flex items-center justify-between cursor-pointer" data-toggle="indexes">
-              <div class="text-xs font-medium">Indexes</div>
-              <i class="fas fa-chevron-down text-[10px]"></i>
-            </div>
-            <div id="indexes-content" class="mt-1 text-xs">
-              <div
-                :for={index <- @indexes}
-                class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer"
-              >
-                <i class="fas fa-key mr-1.5 text-amber-500"></i>
-                <span>{index.name}</span>
-                <span class="ml-1 text-[9px] text-gray-500 dark:text-gray-400">
-                  ({index.table})
-                </span>
-              </div>
+          </div>
+        </div>
+        <div class="p-2 border-b border-app-border-light dark:border-app-border-dark dark-transition">
+          <div class="flex items-center justify-between cursor-pointer" data-toggle="indexes">
+            <div class="text-xs font-medium">Indexes</div>
+            <i class="fas fa-chevron-down text-[10px]"></i>
+          </div>
+          <div id="indexes-content" class="mt-1 text-xs">
+            <div
+              :for={index <- @indexes}
+              class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer"
+            >
+              <i class="fas fa-key mr-1.5 text-amber-500"></i>
+              <span>{index.name}</span>
+              <span class="ml-1 text-[9px] text-gray-500 dark:text-gray-400">
+                ({index.table})
+              </span>
             </div>
           </div>
-        </ul>
+        </div>
       </div>
       <div class="p-2 border-t border-app-border-light dark:border-app-border-dark text-[10px] text-gray-500 dark:text-gray-400 dark-transition">
         <div class="flex items-center">
