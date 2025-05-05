@@ -86,6 +86,12 @@ defmodule MelocotonWeb.SQLLive.Run do
     end
   end
 
+  def handle_event("reload-objects", _params, socket) do
+    socket
+    |> assign(:tables, get_tables(socket.assigns.repo, socket.assigns.database.type))
+    |> noreply()
+  end
+
   defp create_session(database) do
     {:ok, session} = Databases.create_session(%{database_id: database.id, query: ""})
     session

@@ -36,7 +36,10 @@
     <aside class="w-56  bg-app-sidebar-light dark:bg-app-sidebar-dark border-r border-app-border-light dark:border-app-border-dark flex flex-col dark-transition">
       <div class="p-2 border-b border-app-border-light dark:border-app-border-dark flex items-center justify-between dark-transition">
         <div class="text-xs font-medium">{gettext("Database Objects")}</div>
-        <button class="text-xs hover:bg-black/10 dark:hover:bg-white/10 p-1 rounded">
+        <button
+          class="text-xs hover:bg-black/10 dark:hover:bg-white/10 p-1 rounded"
+          phx-click="reload-objects"
+        >
           <i class="fas fa-sync-alt"></i>
         </button>
       </div>
