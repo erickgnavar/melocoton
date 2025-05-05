@@ -50,6 +50,8 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> assign(:database, updated_database)
     |> assign(:current_session, session)
     |> assign(:form, to_form(Databases.change_session(session, %{})))
+    # load query into SQL editor
+    |> push_event("load-query", %{"query" => session.query})
     |> noreply()
   end
 
