@@ -9,7 +9,7 @@ rm -fr burrito_out 2 &>/dev/null
 
 BURRITO_TARGET=macos MIX_ENV=prod mix release
 
-cp ./burrito_out/melocoton_macos ../binaries/webserver
+cp ./burrito_out/melocoton_macos ../src-tauri/binaries/webserver
 
 cd ..
 
