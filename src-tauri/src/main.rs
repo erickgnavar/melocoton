@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    melocoton_lib::run()
+    let _ = melocoton_lib::run();
 }
