@@ -16,7 +16,7 @@ defmodule Melocoton.DatabasesTest do
     end
 
     test "get_database!/1 returns the database with given id" do
-      database = database_fixture() |> Melocoton.Repo.preload(:sessions)
+      database = database_fixture() |> Melocoton.Repo.preload([:sessions, :group])
       assert Databases.get_database!(database.id) == database
     end
 
@@ -49,7 +49,7 @@ defmodule Melocoton.DatabasesTest do
     end
 
     test "update_database/2 with invalid data returns error changeset" do
-      database = database_fixture() |> Melocoton.Repo.preload(:sessions)
+      database = database_fixture() |> Melocoton.Repo.preload([:sessions, :group])
       assert {:error, %Ecto.Changeset{}} = Databases.update_database(database, @invalid_attrs)
       assert database == Databases.get_database!(database.id)
     end

@@ -8,9 +8,12 @@ defmodule Melocoton.DatabasesFixtures do
   Generate a database.
   """
   def database_fixture(attrs \\ %{}) do
+    group = group_fixture()
+
     {:ok, database} =
       attrs
       |> Enum.into(%{
+        group_id: group.id,
         name: "some name",
         type: :sqlite,
         url: "some url"
