@@ -84,14 +84,17 @@
         <!-- Spacer -->
         <div class="flex-1"></div>
         <div class="relative">
-          <input
-            type="text"
-            placeholder="Search connections..."
-            class="w-64 px-2 py-1 text-xs border border-app-border-light dark:border-app-border-dark rounded bg-app-input-light dark:bg-app-input-dark pr-8 dark-transition"
-          />
-          <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-            <i class="fas fa-search text-gray-400 text-[10px]"></i>
-          </div>
+          <.form for={@search_form} phx-change="validate-search">
+            <.input
+              field={@search_form[:term]}
+              type="text"
+              placeholder="Search connections..."
+              phx-debounce="200"
+            />
+            <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+              <i class="fas fa-search text-gray-400 text-[10px]"></i>
+            </div>
+          </.form>
         </div>
       </div>
 

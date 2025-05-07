@@ -11,12 +11,20 @@ defmodule MelocotonWeb.DatabaseLive.Index do
     socket
     |> assign(:groups, groups)
     |> assign(:data, get_grouped_databases())
+    |> assign(:search_form, to_form(%{"term" => ""}))
     |> then(&{:ok, &1})
   end
 
   @impl true
   def handle_params(params, _url, socket) do
     {:noreply, apply_action(socket, socket.assigns.live_action, params)}
+  end
+
+  @impl true
+  def handle_event("validate-search", %{"term" => term}, socket) do
+    socket
+    |> assign(:data, get_grouped_databases(term))
+    |> noreply()
   end
 
   defp apply_action(socket, :edit, %{"id" => id}) do
@@ -73,7 +81,13 @@ defmodule MelocotonWeb.DatabaseLive.Index do
     |> then(&{:noreply, &1})
   end
 
-  defp get_grouped_databases do
+  defp get_grouped_databases(term \\ nil)
+
+  defp get_grouped_databases(nil) do
     Enum.group_by(Databases.list_databases(), & &1.group)
+  end
+
+  defp get_grouped_databases(term) do
+    Enum.group_by(Databases.list_databases(term), & &1.group)
   end
 end

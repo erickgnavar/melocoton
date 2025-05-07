@@ -23,6 +23,17 @@ defmodule Melocoton.Databases do
     |> Repo.all()
   end
 
+  def list_databases(term) do
+    term = String.downcase("%#{term}%")
+
+    query =
+      from database in Database,
+        where: like(fragment("LOWER(?)", database.name), ^term),
+        preload: [:group]
+
+    Repo.all(query)
+  end
+
   @doc """
   Gets a single database.
 
