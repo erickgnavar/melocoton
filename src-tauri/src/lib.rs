@@ -36,8 +36,7 @@ fn generate_secret_key(length: usize) -> String {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() -> Result<(), Box<dyn Error>> {
     tauri::Builder::default()
-        // we use `move` to be able to borrow port value
-        .setup(move |app| {
+        .setup(|app| {
             let base_dir = app.path().app_data_dir()?; //
             let webserver_path = app
                 .path()
