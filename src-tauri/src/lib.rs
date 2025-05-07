@@ -64,6 +64,42 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             let url = Url::parse(&raw_url)?;
 
             let _ = webview.navigate(url);
+
+            #[cfg(desktop)]
+            {
+                use tauri_plugin_global_shortcut::{
+                    Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState,
+                };
+
+                let ctrl_n_shortcut = Shortcut::new(Some(Modifiers::META), Code::KeyN);
+                app.handle().plugin(
+                    tauri_plugin_global_shortcut::Builder::new()
+                        .with_handler(move |another_app, shortcut, event| {
+                            if shortcut == &ctrl_n_shortcut {
+                                match event.state() {
+                                    ShortcutState::Pressed => {
+                                        let _webview_window = tauri::WebviewWindowBuilder::new(
+                                            another_app,
+                                            // we need to have a
+                                            // unique application
+                                            // label so we use a
+                                            // random string
+                                            generate_secret_key(10),
+                                            tauri::WebviewUrl::App((&raw_url).into()),
+                                        )
+                                        .build()
+                                        .unwrap();
+                                    }
+                                    ShortcutState::Released => {}
+                                }
+                            }
+                        })
+                        .build(),
+                )?;
+
+                app.global_shortcut().register(ctrl_n_shortcut)?;
+            }
+
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
