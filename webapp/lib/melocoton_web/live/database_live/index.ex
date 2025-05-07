@@ -27,6 +27,16 @@ defmodule MelocotonWeb.DatabaseLive.Index do
     |> noreply()
   end
 
+  @impl true
+  def handle_event("delete", %{"id" => id}, socket) do
+    database = Databases.get_database!(id)
+    {:ok, _} = Databases.delete_database(database)
+
+    socket
+    |> assign(:data, get_grouped_databases())
+    |> then(&{:noreply, &1})
+  end
+
   defp apply_action(socket, :edit, %{"id" => id}) do
     socket
     |> assign(:page_title, "Edit Database")
@@ -66,16 +76,6 @@ defmodule MelocotonWeb.DatabaseLive.Index do
 
   @impl true
   def handle_info({MelocotonWeb.GroupLive.FormComponent, {:saved, _group}}, socket) do
-    socket
-    |> assign(:data, get_grouped_databases())
-    |> then(&{:noreply, &1})
-  end
-
-  @impl true
-  def handle_event("delete", %{"id" => id}, socket) do
-    database = Databases.get_database!(id)
-    {:ok, _} = Databases.delete_database(database)
-
     socket
     |> assign(:data, get_grouped_databases())
     |> then(&{:noreply, &1})
