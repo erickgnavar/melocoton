@@ -136,6 +136,9 @@ defmodule MelocotonWeb.SQLLive.Run do
             "ERROR"
         end
 
+      value when is_map(value) ->
+        Jason.encode!(value)
+
       value ->
         value
     end)
