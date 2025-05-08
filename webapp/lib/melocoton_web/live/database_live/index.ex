@@ -6,10 +6,8 @@ defmodule MelocotonWeb.DatabaseLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    groups = Databases.list_groups()
-
     socket
-    |> assign(:groups, groups)
+    |> assign(:groups, Databases.list_groups())
     |> assign(:data, get_grouped_databases())
     |> assign(:search_form, to_form(%{"term" => ""}))
     |> then(&{:ok, &1})
@@ -71,6 +69,7 @@ defmodule MelocotonWeb.DatabaseLive.Index do
   def handle_info({MelocotonWeb.DatabaseLive.FormComponent, {:saved, _database}}, socket) do
     socket
     |> assign(:data, get_grouped_databases())
+    |> assign(:groups, Databases.list_groups())
     |> then(&{:noreply, &1})
   end
 
@@ -78,6 +77,7 @@ defmodule MelocotonWeb.DatabaseLive.Index do
   def handle_info({MelocotonWeb.GroupLive.FormComponent, {:saved, _group}}, socket) do
     socket
     |> assign(:data, get_grouped_databases())
+    |> assign(:groups, Databases.list_groups())
     |> then(&{:noreply, &1})
   end
 
