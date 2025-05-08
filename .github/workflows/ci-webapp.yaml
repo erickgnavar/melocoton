@@ -1,0 +1,47 @@
+---
+name: CI Web app
+
+on:
+  push:
+    paths:
+      - webapp/**
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-24.04
+    container: elixir:1.17-alpine
+    defaults:
+      run:
+        working-directory: webapp
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          apk add --update bash openssl git build-base
+          mix local.hex --force && mix local.rebar --force
+
+      - name: Cache build and dependencies
+        uses: actions/cache@v4
+        id: cache-lock-file
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-
+
+      - name: Install elixir dependencies and build project
+        if: steps.cache-lock-file.outputs.cache-hit != 'true'
+        env:
+          MIX_ENV: test
+        run: |
+          mix deps.get
+          mix compile
+
+      - name: Run linters and tests
+        env:
+          MIX_ENV: test
+        run: mix ci

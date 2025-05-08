@@ -8,6 +8,7 @@ defmodule Melocoton.MixProject do
       elixir: "~> 1.14",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
+      test_coverage: [summary: [threshold: 40]],
       aliases: aliases(),
       deps: deps(),
       releases: releases()
@@ -93,6 +94,11 @@ defmodule Melocoton.MixProject do
         "tailwind melocoton --minify",
         "esbuild melocoton --minify",
         "phx.digest"
+      ],
+      ci: [
+        "format --check-formatted",
+        "deps.unlock --check-unused",
+        "test --cover"
       ]
     ]
   end
