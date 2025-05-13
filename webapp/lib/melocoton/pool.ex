@@ -20,8 +20,11 @@ defmodule Melocoton.Pool do
 
     # TODO: eval this and return an error in case url is wrong
     case database.type do
-      :sqlite -> repo.start_link(database: database.url, pool_size: 5)
-      :postgres -> repo.start_link(url: database.url, pool_size: 5)
+      :sqlite ->
+        repo.start_link(database: database.url, pool_size: 5)
+
+      :postgres ->
+        repo.start_link(url: database.url, pool_size: 5, ssl_opts: [verify: :verify_none])
     end
 
     {:reply, repo, state}
