@@ -80,6 +80,34 @@ pub fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
     Ok(())
 }
 
+async fn is_http_ready(address: &str, timeout_seconds: u64) -> bool {
+    let client = reqwest::Client::new();
+    let start_time = std::time::Instant::now();
+
+    while start_time.elapsed() < Duration::from_secs(timeout_seconds) {
+        match client.get(address).send().await {
+            Ok(response) if response.status().is_success() => {
+                println!("HTTP server is ready!");
+                return true;
+            }
+            Ok(response) => {
+                println!(
+                    "Received status: {} from {}, waiting...",
+                    response.status(),
+                    address
+                );
+            }
+            Err(e) => {
+                println!("Error connecting to {}: {}, retrying...", address, e);
+            }
+        }
+        sleep(Duration::from_millis(500)).await;
+    }
+
+    println!("Timeout reached, HTTP server not ready.");
+    false
+}
+
 async fn setup(
     app_handle: tauri::AppHandle,
     port: u16,
@@ -99,15 +127,15 @@ async fn setup(
     // start web server
     let _ = Command::new(webserver_path).spawn()?;
 
-    // TODO: instead of having fixed wait time we should try to make a
-    // request to check if the server is ready to receive requests
-    sleep(Duration::from_secs(2)).await;
-
-    let webview = app_handle.get_webview_window("main").unwrap();
     let raw_url = format!("http://localhost:{}", port);
-    let url = Url::parse(&raw_url)?;
+    let timeout = 10;
 
-    let _ = webview.navigate(url);
+    if is_http_ready(&raw_url, timeout).await {
+        let webview = app_handle.get_webview_window("main").unwrap();
+        let url = Url::parse(&raw_url)?;
+
+        let _ = webview.navigate(url);
+    }
 
     Ok(())
 }
