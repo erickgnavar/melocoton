@@ -5,10 +5,11 @@ use std::net::TcpListener;
 use std::path::Path;
 use std::process::Command;
 use std::sync::Mutex;
-use std::{thread, time::Duration};
+use tauri::async_runtime::spawn;
 use tauri::path::BaseDirectory;
 use tauri::Manager;
 use tauri::State;
+use tokio::time::{sleep, Duration};
 use url::Url;
 
 struct AppData {
@@ -58,38 +59,16 @@ fn generate_secret_key(length: usize) -> String {
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
-pub fn run() -> Result<(), Box<dyn Error>> {
+pub fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
     tauri::Builder::default()
         .setup(|app| {
-            let base_dir = app.path().app_data_dir()?;
-            let webserver_path = app
-                .path()
-                .resolve("binaries/webserver", BaseDirectory::Resource)?;
-            let database_path = base_dir.join(Path::new("melocoton.db"));
-
-            env::set_var("DATABASE_PATH", database_path);
-
-            env::set_var("SECRET_KEY_BASE", generate_secret_key(64));
-            env::set_var("PHX_SERVER", "1");
-            env::set_var("PHX_HOST", "localhost");
             let port = get_available_port()?;
 
             app.manage(Mutex::new(AppData { port: port }));
 
             println!("Running web application on port: {}", port);
 
-            env::set_var("PORT", port.to_string());
-
-            // start web server
-            Command::new(webserver_path).spawn()?;
-            // we need to wait a little bit for web server start
-            thread::sleep(Duration::from_millis(300));
-
-            let webview = app.get_webview_window("main").unwrap();
-            let raw_url = format!("http://localhost:{}", port);
-            let url = Url::parse(&raw_url)?;
-
-            let _ = webview.navigate(url);
+            spawn(setup(app.handle().clone(), port));
 
             Ok(())
         })
@@ -97,6 +76,38 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         .invoke_handler(tauri::generate_handler![open_new_window])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+
+    Ok(())
+}
+
+async fn setup(
+    app_handle: tauri::AppHandle,
+    port: u16,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
+    let base_dir = app_handle.path().app_data_dir()?;
+    let webserver_path = app_handle
+        .path()
+        .resolve("binaries/webserver", BaseDirectory::Resource)?;
+    let database_path = base_dir.join(Path::new("melocoton.db"));
+
+    env::set_var("DATABASE_PATH", database_path);
+    env::set_var("SECRET_KEY_BASE", generate_secret_key(64));
+    env::set_var("PHX_SERVER", "1");
+    env::set_var("PHX_HOST", "localhost");
+    env::set_var("PORT", port.to_string());
+
+    // start web server
+    let _ = Command::new(webserver_path).spawn()?;
+
+    // TODO: instead of having fixed wait time we should try to make a
+    // request to check if the server is ready to receive requests
+    sleep(Duration::from_secs(2)).await;
+
+    let webview = app_handle.get_webview_window("main").unwrap();
+    let raw_url = format!("http://localhost:{}", port);
+    let url = Url::parse(&raw_url)?;
+
+    let _ = webview.navigate(url);
 
     Ok(())
 }

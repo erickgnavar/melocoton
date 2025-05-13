@@ -3,6 +3,9 @@
   "productName": "melocoton",
   "version": "0.1.0",
   "identifier": "app.melocoton.app",
+  "build": {
+    "frontendDist": "../src"
+  },
   "app": {
     "withGlobalTauri": true,
     "windows": [
