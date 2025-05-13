@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "melocoton",
+  "productName": "Melocoton",
   "version": "0.1.0",
   "identifier": "app.melocoton.app",
   "build": {
@@ -10,7 +10,7 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "melocoton",
+        "title": "Melocoton",
         "width": 1024,
         "height": 768
       }
