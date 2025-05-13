@@ -4,10 +4,34 @@ use std::error::Error;
 use std::net::TcpListener;
 use std::path::Path;
 use std::process::Command;
+use std::sync::Mutex;
 use std::{thread, time::Duration};
 use tauri::path::BaseDirectory;
 use tauri::Manager;
+use tauri::State;
 use url::Url;
+
+struct AppData {
+    port: u16,
+}
+
+#[tauri::command]
+fn open_new_window(app_handle: tauri::AppHandle, state: State<'_, Mutex<AppData>>) {
+    let port = state.lock().unwrap().port;
+    let raw_url = format!("http://localhost:{}", port);
+
+    let _webview_window = tauri::WebviewWindowBuilder::new(
+        &app_handle,
+        // we need to have a
+        // unique application
+        // label so we use a
+        // random string
+        generate_secret_key(10),
+        tauri::WebviewUrl::App((raw_url).into()),
+    )
+    .build()
+    .unwrap();
+}
 
 fn get_available_port() -> Result<u16, Box<dyn Error>> {
     // Port 0 tells the OS to assign an available ephemeral port.
@@ -50,6 +74,8 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             env::set_var("PHX_HOST", "localhost");
             let port = get_available_port()?;
 
+            app.manage(Mutex::new(AppData { port: port }));
+
             println!("Running web application on port: {}", port);
 
             env::set_var("PORT", port.to_string());
@@ -65,45 +91,10 @@ pub fn run() -> Result<(), Box<dyn Error>> {
 
             let _ = webview.navigate(url);
 
-            #[cfg(desktop)]
-            {
-                use tauri_plugin_global_shortcut::{
-                    Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState,
-                };
-
-                let ctrl_n_shortcut = Shortcut::new(Some(Modifiers::META), Code::KeyN);
-                app.handle().plugin(
-                    tauri_plugin_global_shortcut::Builder::new()
-                        .with_handler(move |another_app, shortcut, event| {
-                            if shortcut == &ctrl_n_shortcut {
-                                match event.state() {
-                                    ShortcutState::Pressed => {
-                                        let _webview_window = tauri::WebviewWindowBuilder::new(
-                                            another_app,
-                                            // we need to have a
-                                            // unique application
-                                            // label so we use a
-                                            // random string
-                                            generate_secret_key(10),
-                                            tauri::WebviewUrl::App((&raw_url).into()),
-                                        )
-                                        .build()
-                                        .unwrap();
-                                    }
-                                    ShortcutState::Released => {}
-                                }
-                            }
-                        })
-                        .build(),
-                )?;
-
-                app.global_shortcut().register(ctrl_n_shortcut)?;
-            }
-
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![])
+        .invoke_handler(tauri::generate_handler![open_new_window])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 

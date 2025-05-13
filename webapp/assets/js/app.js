@@ -151,3 +151,16 @@ themeToggle.addEventListener("click", () => {
     localStorage.theme = "light";
   }
 });
+
+// this only work when running through Tauri web view
+if (window.__TAURI__) {
+  const { invoke } = window.__TAURI__.core;
+
+  document.addEventListener("keydown", async function (event) {
+    if (event.metaKey && event.key === "n") {
+      event.preventDefault();
+
+      await invoke("open_new_window");
+    }
+  });
+}
