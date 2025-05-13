@@ -61,7 +61,7 @@ fn generate_secret_key(length: usize) -> String {
 pub fn run() -> Result<(), Box<dyn Error>> {
     tauri::Builder::default()
         .setup(|app| {
-            let base_dir = app.path().app_data_dir()?; //
+            let base_dir = app.path().app_data_dir()?;
             let webserver_path = app
                 .path()
                 .resolve("binaries/webserver", BaseDirectory::Resource)?;
