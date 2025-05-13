@@ -15,7 +15,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          apk add --update bash openssl git build-base
+          apk add --update bash openssl git build-base tar # tar is required for cache action
           mix local.hex --force && mix local.rebar --force
 
       - name: Cache build and dependencies
