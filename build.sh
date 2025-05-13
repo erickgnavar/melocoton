@@ -1,9 +1,5 @@
 #! /bin/bash
 
-mkdir -p src-tauri/binaries
-
-cd webapp/ || exit 1
-
 mix deps.get
 
 rm -fr _build/prod 2 &>/dev/null
@@ -15,9 +11,7 @@ MIX_ENV=prod mix assets.deploy
 
 BURRITO_TARGET=macos MIX_ENV=prod mix release
 
-cp ./burrito_out/melocoton_macos ../src-tauri/binaries/webserver
-
-cd ..
+cp ./burrito_out/melocoton_macos ./src-tauri/binaries/webserver
 
 cd src-tauri || exit 1
 

@@ -3,16 +3,12 @@ name: CI Web app
 
 on:
   push:
-    paths:
-      - webapp/**
+    branches: [master]
 
 jobs:
   build-and-test:
     runs-on: ubuntu-24.04
     container: elixir:1.17-alpine
-    defaults:
-      run:
-        working-directory: webapp
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
