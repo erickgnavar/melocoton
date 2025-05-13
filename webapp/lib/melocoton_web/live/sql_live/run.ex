@@ -28,6 +28,7 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> assign(:error_message, nil)
     |> assign(:page_title, database.name)
     |> assign(:pid, self())
+    |> assign(:running_transaction?, false)
     |> ok()
   end
 

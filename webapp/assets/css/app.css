@@ -90,3 +90,17 @@ body {
 .env-indicator-production {
   animation: pulse-red 2s infinite;
 }
+
+/* Transaction indicator pulse animation */
+@keyframes pulse-transaction {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.transaction-pulse {
+  animation: pulse-transaction 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
