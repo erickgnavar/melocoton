@@ -93,10 +93,29 @@
               <div class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer">
                 <i class="fas fa-table mr-1.5 text-blue-500"></i>
                 <span>{table.name}</span>
-                <i class="fas fa-chevron-down ml-auto text-[10px]"></i>
+                <i
+                  id={"table-toggle-icon-#{table.name}-closed"}
+                  class="fas fa-chevron-down ml-auto text-[10px]"
+                  phx-click={
+                    JS.toggle(to: "#table-#{table.name}-columns")
+                    |> JS.toggle(to: "#table-toggle-icon-#{table.name}-open")
+                    |> JS.toggle(to: "#table-toggle-icon-#{table.name}-closed")
+                  }
+                >
+                </i>
+                <i
+                  id={"table-toggle-icon-#{table.name}-open"}
+                  class="fas fa-chevron-left ml-auto text-[10px] hidden"
+                  phx-click={
+                    JS.toggle(to: "#table-#{table.name}-columns")
+                    |> JS.toggle(to: "#table-toggle-icon-#{table.name}-closed")
+                    |> JS.toggle(to: "#table-toggle-icon-#{table.name}-open")
+                  }
+                >
+                </i>
               </div>
 
-              <ul class="pl-4 mt-0.5">
+              <ul class="pl-4 mt-0.5 hidden" id={"table-#{table.name}-columns"}>
                 <li
                   :for={col <- table.cols}
                   :if={@search_term && String.contains?(col.name, @search_term)}
