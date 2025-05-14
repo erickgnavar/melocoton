@@ -64,7 +64,7 @@ pub fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
         .setup(|app| {
             let port = get_available_port()?;
 
-            app.manage(Mutex::new(AppData { port: port }));
+            app.manage(Mutex::new(AppData { port }));
 
             println!("Running web application on port: {}", port);
 
