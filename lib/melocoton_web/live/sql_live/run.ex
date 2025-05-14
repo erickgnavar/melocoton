@@ -233,7 +233,26 @@ defmodule MelocotonWeb.SQLLive.Run do
     end
   end
 
-  defp get_indexes(_repo, :postgres) do
-    []
+  defp get_indexes(repo, :postgres) do
+    sql = """
+      SELECT
+          indexname,
+          tablename
+      FROM pg_indexes
+      WHERE schemaname = 'public'
+      ORDER BY
+          tablename,
+          indexname;
+    """
+
+    case repo.query(sql) do
+      {:ok, %{rows: rows}} ->
+        Enum.map(rows, fn [name, table] ->
+          %{name: name, table: table}
+        end)
+
+      {:error, _error} ->
+        []
+    end
   end
 end
