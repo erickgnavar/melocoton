@@ -20,8 +20,8 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> assign(:search_form, to_form(%{"term" => ""}))
     |> assign(:search_term, "")
     |> assign(:repo, repo)
-    |> assign(:tables, get_tables(repo, database.type))
-    |> assign(:indexes, get_indexes(repo, database.type))
+    |> assign_async(:tables, fn -> get_tables(repo, database.type) end)
+    |> assign_async(:indexes, fn -> get_indexes(repo, database.type) end)
     |> assign(:database, database)
     |> assign(:current_session, current_session)
     |> assign(:result, empty_result())
@@ -99,9 +99,12 @@ defmodule MelocotonWeb.SQLLive.Run do
   end
 
   def handle_event("reload-objects", _params, socket) do
+    repo = socket.assigns.repo
+    database = socket.assigns.database
+
     socket
-    |> assign(:tables, get_tables(socket.assigns.repo, socket.assigns.database.type))
-    |> assign(:indexes, get_indexes(socket.assigns.repo, socket.assigns.database.type))
+    |> assign_async(:tables, fn -> get_tables(repo, database.type) end)
+    |> assign_async(:indexes, fn -> get_indexes(repo, database.type) end)
     |> noreply()
   end
 
@@ -175,9 +178,10 @@ defmodule MelocotonWeb.SQLLive.Run do
 
           %{name: name, cols: cols}
         end)
+        |> then(&{:ok, %{tables: &1}})
 
-      {:error, _error} ->
-        []
+      {:error, error} ->
+        {:error, error}
     end
   end
 
@@ -213,6 +217,7 @@ defmodule MelocotonWeb.SQLLive.Run do
 
           %{name: name, cols: cols}
         end)
+        |> then(&{:ok, %{tables: &1}})
 
       {:error, _error} ->
         []
@@ -224,12 +229,14 @@ defmodule MelocotonWeb.SQLLive.Run do
 
     case repo.query(sql) do
       {:ok, %{rows: rows}} ->
-        Enum.map(rows, fn [name, table] ->
+        rows
+        |> Enum.map(fn [name, table] ->
           %{name: name, table: table}
         end)
+        |> then(&{:ok, %{indexes: &1}})
 
-      {:error, _error} ->
-        []
+      {:error, error} ->
+        {:error, error}
     end
   end
 
@@ -247,12 +254,14 @@ defmodule MelocotonWeb.SQLLive.Run do
 
     case repo.query(sql) do
       {:ok, %{rows: rows}} ->
-        Enum.map(rows, fn [name, table] ->
+        rows
+        |> Enum.map(fn [name, table] ->
           %{name: name, table: table}
         end)
+        |> then(&{:ok, %{indexes: &1}})
 
-      {:error, _error} ->
-        []
+      {:error, error} ->
+        {:error, error}
     end
   end
 end

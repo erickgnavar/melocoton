@@ -77,33 +77,38 @@
             <div class="text-xs font-medium">Tables</div>
             <i class="fas fa-chevron-down text-[10px]"></i>
           </div>
-          <div
-            :for={table <- @tables}
-            :if={
-              @search_term &&
-                (String.contains?(table.name, @search_term) ||
-                   Enum.any?(table.cols, &String.contains?(&1.name, @search_term)))
-            }
-            class="mt-1 text-xs"
-          >
-            <div class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer">
-              <i class="fas fa-table mr-1.5 text-blue-500"></i>
-              <span>{table.name}</span>
-              <i class="fas fa-chevron-down ml-auto text-[10px]"></i>
-            </div>
+          <.async_result :let={tables} assign={@tables}>
+            <:loading></:loading>
 
-            <ul class="pl-4 mt-0.5">
-              <li
-                :for={col <- table.cols}
-                :if={@search_term && String.contains?(col.name, @search_term)}
-                class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10"
-              >
-                <i class="fas fa-font mr-1.5 text-purple-600 dark:text-purple-500 text-[10px]">
-                </i>
-                <span>{col.name} ({col.type})</span>
-              </li>
-            </ul>
-          </div>
+            <:failed :let={failure}>{"#{inspect(failure)}"}</:failed>
+            <div
+              :for={table <- tables}
+              :if={
+                @search_term &&
+                  (String.contains?(table.name, @search_term) ||
+                     Enum.any?(table.cols, &String.contains?(&1.name, @search_term)))
+              }
+              class="mt-1 text-xs"
+            >
+              <div class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer">
+                <i class="fas fa-table mr-1.5 text-blue-500"></i>
+                <span>{table.name}</span>
+                <i class="fas fa-chevron-down ml-auto text-[10px]"></i>
+              </div>
+
+              <ul class="pl-4 mt-0.5">
+                <li
+                  :for={col <- table.cols}
+                  :if={@search_term && String.contains?(col.name, @search_term)}
+                  class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10"
+                >
+                  <i class="fas fa-font mr-1.5 text-purple-600 dark:text-purple-500 text-[10px]">
+                  </i>
+                  <span>{col.name} ({col.type})</span>
+                </li>
+              </ul>
+            </div>
+          </.async_result>
         </div>
         <div class="p-2 border-b border-app-border-light dark:border-app-border-dark dark-transition">
           <div class="flex items-center justify-between cursor-pointer" data-toggle="indexes">
@@ -111,17 +116,22 @@
             <i class="fas fa-chevron-down text-[10px]"></i>
           </div>
           <div id="indexes-content" class="mt-1 text-xs">
-            <div
-              :for={index <- @indexes}
-              :if={@search_term && String.contains?(index.name, @search_term)}
-              class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer"
-            >
-              <i class="fas fa-key mr-1.5 text-amber-500"></i>
-              <span>{index.name}</span>
-              <span class="ml-1 text-[9px] text-gray-500 dark:text-gray-400">
-                ({index.table})
-              </span>
-            </div>
+            <.async_result :let={indexes} assign={@indexes}>
+              <:loading></:loading>
+
+              <:failed :let={failure}>{"#{inspect(failure)}"}</:failed>
+              <div
+                :for={index <- indexes}
+                :if={@search_term && String.contains?(index.name, @search_term)}
+                class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer"
+              >
+                <i class="fas fa-key mr-1.5 text-amber-500"></i>
+                <span>{index.name}</span>
+                <span class="ml-1 text-[9px] text-gray-500 dark:text-gray-400">
+                  ({index.table})
+                </span>
+              </div>
+            </.async_result>
           </div>
         </div>
       </div>
