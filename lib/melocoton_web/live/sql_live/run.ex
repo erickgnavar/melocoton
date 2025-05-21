@@ -16,7 +16,6 @@ defmodule MelocotonWeb.SQLLive.Run do
       end
 
     socket
-    |> assign(:form, to_form(Databases.change_session(current_session, %{})))
     |> assign(:search_form, to_form(%{"term" => ""}))
     |> assign(:search_term, "")
     |> assign(:repo, repo)
@@ -36,7 +35,7 @@ defmodule MelocotonWeb.SQLLive.Run do
     %{cols: [], rows: [], num_rows: 0}
   end
 
-  @impl Phoenix.LiveView
+  @impl true
   def handle_event("validate", %{"session" => params}, socket) do
     {:ok, updated_session} = Databases.update_session(socket.assigns.current_session, params)
 
@@ -59,7 +58,6 @@ defmodule MelocotonWeb.SQLLive.Run do
     socket
     |> assign(:database, updated_database)
     |> assign(:current_session, session)
-    |> assign(:form, to_form(Databases.change_session(session, %{})))
     # load query into SQL editor
     |> push_event("load-query", %{"query" => session.query})
     |> noreply()
@@ -74,7 +72,6 @@ defmodule MelocotonWeb.SQLLive.Run do
 
     socket
     |> assign(:current_session, session)
-    |> assign(:form, to_form(Databases.change_session(session, %{})))
     # load query into SQL editor
     |> push_event("load-query", %{"query" => session.query})
     |> noreply()
