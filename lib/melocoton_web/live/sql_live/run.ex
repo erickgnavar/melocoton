@@ -2,7 +2,7 @@ defmodule MelocotonWeb.SQLLive.Run do
   use MelocotonWeb, :live_view
 
   require Logger
-  alias Melocoton.{Databases, Pool}
+  alias Melocoton.{Databases, Pool, DatabaseClient}
 
   @impl Phoenix.LiveView
   def mount(%{"database_id" => database_id}, _session, socket) do
@@ -19,8 +19,8 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> assign(:search_form, to_form(%{"term" => ""}))
     |> assign(:search_term, "")
     |> assign(:repo, repo)
-    |> assign_async(:tables, fn -> get_tables(repo, database.type) end)
-    |> assign_async(:indexes, fn -> get_indexes(repo, database.type) end)
+    |> assign_async(:tables, fn -> get_tables(repo) end)
+    |> assign_async(:indexes, fn -> get_indexes(repo) end)
     |> assign(:database, database)
     |> assign(:current_session, current_session)
     |> assign(:result, empty_result())
@@ -81,27 +81,26 @@ defmodule MelocotonWeb.SQLLive.Run do
   def handle_event("run-query", %{"query" => query}, socket) do
     Logger.info("Running query #{query}")
 
-    case socket.assigns.repo.query(query, []) do
+    case DatabaseClient.query(socket.assigns.repo, query) do
       {:ok, result} ->
         socket
-        |> assign(result: handle_response(result))
+        |> assign(result: result)
         |> assign(:error_message, nil)
         |> noreply()
 
-      {:error, error} ->
+      {:error, reason} ->
         socket
-        |> assign(:error_message, translate_query_error(error))
+        |> assign(:error_message, reason)
         |> noreply()
     end
   end
 
   def handle_event("reload-objects", _params, socket) do
     repo = socket.assigns.repo
-    database = socket.assigns.database
 
     socket
-    |> assign_async(:tables, fn -> get_tables(repo, database.type) end)
-    |> assign_async(:indexes, fn -> get_indexes(repo, database.type) end)
+    |> assign_async(:tables, fn -> get_tables(repo) end)
+    |> assign_async(:indexes, fn -> get_indexes(repo) end)
     |> noreply()
   end
 
@@ -110,155 +109,17 @@ defmodule MelocotonWeb.SQLLive.Run do
     session
   end
 
-  defp translate_query_error(%Postgrex.Error{postgres: %{message: message}}), do: message
-  defp translate_query_error(%Exqlite.Error{message: message}), do: message
-
-  defp handle_response(%{columns: cols, rows: rows, num_rows: num_rows}) do
-    cols = cols || []
-
-    rows =
-      rows
-      |> Kernel.||([])
-      |> Enum.map(&Enum.zip(cols, normalize_value(&1)))
-      |> Enum.map(&Enum.into(&1, %{}))
-
-    %{cols: cols, rows: rows, num_rows: num_rows}
-  end
-
-  defp normalize_value(values) do
-    Enum.map(values, fn
-      # handle uuid columns that are returned as raw binary data
-      <<raw_uuid::binary-size(16)>> ->
-        case Ecto.UUID.cast(raw_uuid) do
-          {:ok, casted_value} ->
-            casted_value
-
-          :error ->
-            "ERROR"
-        end
-
-      value when is_map(value) ->
-        Jason.encode!(value)
-
-      value ->
-        value
-    end)
-  end
-
-  defp get_tables(repo, :postgres) do
-    sql = """
-    SELECT table_name
-    FROM information_schema.tables
-    WHERE table_type = 'BASE TABLE' AND table_schema NOT IN ('pg_catalog', 'information_schema');
-    """
-
-    case repo.query(sql) do
-      {:ok, %{rows: rows}} ->
-        rows
-        |> Enum.map(&Enum.at(&1, 0))
-        |> Enum.map(fn name ->
-          cols =
-            case repo.query(
-                   "SELECT * FROM information_schema.columns WHERE table_schema = 'public' AND table_name = '#{name}';"
-                 ) do
-              {:ok, result} ->
-                result
-                |> handle_response()
-                |> Map.get(:rows)
-                |> Enum.map(fn row ->
-                  %{name: row["column_name"], type: row["data_type"]}
-                end)
-
-              {:error, _error} ->
-                []
-            end
-
-          %{name: name, cols: cols}
-        end)
-        |> then(&{:ok, %{tables: &1}})
-
-      {:error, error} ->
-        {:error, error}
+  defp get_tables(repo) do
+    case DatabaseClient.get_tables(repo) do
+      {:ok, tables} -> {:ok, %{tables: tables}}
+      {:error, error} -> {:error, error}
     end
   end
 
-  defp get_tables(repo, :sqlite) do
-    sql = """
-    SELECT
-      name
-    FROM
-      sqlite_schema
-    WHERE
-      type = 'table' AND
-      name NOT LIKE 'sqlite_%';
-    """
-
-    case repo.query(sql) do
-      {:ok, %{rows: rows}} ->
-        rows
-        |> Enum.map(&Enum.at(&1, 0))
-        |> Enum.map(fn name ->
-          cols =
-            case repo.query("PRAGMA table_info(#{name});") do
-              {:ok, result} ->
-                result
-                |> handle_response()
-                |> Map.get(:rows)
-                |> Enum.map(fn row ->
-                  %{name: row["name"], type: row["type"]}
-                end)
-
-              {:error, _error} ->
-                []
-            end
-
-          %{name: name, cols: cols}
-        end)
-        |> then(&{:ok, %{tables: &1}})
-
-      {:error, _error} ->
-        []
-    end
-  end
-
-  defp get_indexes(repo, :sqlite) do
-    sql = "SELECT name, tbl_name FROM sqlite_master WHERE type = 'index';"
-
-    case repo.query(sql) do
-      {:ok, %{rows: rows}} ->
-        rows
-        |> Enum.map(fn [name, table] ->
-          %{name: name, table: table}
-        end)
-        |> then(&{:ok, %{indexes: &1}})
-
-      {:error, error} ->
-        {:error, error}
-    end
-  end
-
-  defp get_indexes(repo, :postgres) do
-    sql = """
-      SELECT
-          indexname,
-          tablename
-      FROM pg_indexes
-      WHERE schemaname = 'public'
-      ORDER BY
-          tablename,
-          indexname;
-    """
-
-    case repo.query(sql) do
-      {:ok, %{rows: rows}} ->
-        rows
-        |> Enum.map(fn [name, table] ->
-          %{name: name, table: table}
-        end)
-        |> then(&{:ok, %{indexes: &1}})
-
-      {:error, error} ->
-        {:error, error}
+  defp get_indexes(repo) do
+    case DatabaseClient.get_indexes(repo) do
+      {:ok, indexes} -> {:ok, %{indexes: indexes}}
+      {:error, error} -> {:error, error}
     end
   end
 end
