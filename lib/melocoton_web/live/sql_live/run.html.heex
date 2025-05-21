@@ -1,17 +1,5 @@
 <div class="h-screen w-screen flex flex-col">
   <div class="bg-app-menubar-light dark:bg-app-menubar-dark border-b border-app-border-light dark:border-app-border-dark flex text-xs px-2 select-none h-7 items-center dark-transition">
-    <!-- Environment Indicator -->
-    <div class="flex items-center pr-2 border-r border-app-border-light dark:border-app-border-dark mr-2">
-      <div class={[
-        "w-2 h-2 rounded-full mr-1.5 env-indicator-production",
-        "bg-[#{@database.group.color}]"
-      ]}>
-      </div>
-      <span class={["font-medium uppercase", "text-[#{@database.group.color}]"]}>
-        {@database.group.name}
-      </span>
-    </div>
-
     <div
       class="px-2 py-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer"
       phx-click={JS.patch(~p"/databases")}
@@ -25,11 +13,6 @@
     <div class="px-2 py-1 hover:bg-black/10 dark:hover:bg-white/10">Help</div>
     <!-- Spacer -->
     <div class="flex-1"></div>
-    <!-- Database Name with Environment Color -->
-    <div class="px-2 py-1 mr-2 flex items-center uppercase ">
-      <i class={["fas fa-database mr-1.5", "text-[#{@database.group.color}]"]}></i>
-      <span>{@database.group.name}</span>
-    </div>
 
     <button id="theme-toggle" class="p-1 text-sm hover:bg-black/10 dark:hover:bg-white/10 rounded">
       <i class="fas fa-moon dark:hidden"></i>
@@ -169,12 +152,54 @@
     
 <!-- Main Content Area -->
     <main class="flex-1 flex flex-col overflow-hidden bg-app-content-light dark:bg-app-content-dark dark-transition">
-      <!-- Tabs with Environment Color -->
+      <div class="border-b border-app-border-light dark:border-app-border-dark p-2 flex items-center dark-transition">
+        <button
+          class="px-2 py-1 text-xs bg-app-accent-light text-white rounded hover:bg-app-accent-light/90 flex items-center mr-2"
+          phx-click="run-query"
+          phx-value-query={@current_session.query}
+        >
+          <i class="fas fa-play mr-1.5"></i> Run Query
+        </button>
+        <button class="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center mr-2 dark-transition">
+          <i class="fas fa-save mr-1.5"></i> Save
+        </button>
+        <a
+          :if={@result.rows != []}
+          class="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center mr-2 dark-transition"
+          href={~p"/export-csv/#{inspect(@pid)}"}
+          target="blank"
+        >
+          <i class="fas fa-file-export mr-1.5"></i> Export
+        </a>
+        <button class="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center mr-2 dark-transition">
+          <i class="fas fa-history mr-1.5"></i> History
+        </button>
+
+        <button
+          :if={@running_transaction?}
+          class="px-2 py-1 text-xs bg-transaction-active-light text-transaction-active rounded hover:bg-transaction-active-medium flex items-center mr-2 transaction-pulse"
+        >
+          <i class="fas fa-exchange-alt mr-1.5"></i> Transaction Active
+        </button>
+
+        <div class="flex-1"></div>
+
+        <div class="flex items-center text-xs">
+          <div class={["w-2 h-2 rounded-full mr-1.5", "bg-[#{@database.group.color}]"]}></div>
+          <span class={["font-medium uppercase", "text-[#{@database.group.color}]"]}>
+            {@database.group.name}
+          </span>
+          <span class="mx-1">|</span>
+          <i class="fas fa-database text-blue-500 mr-1.5"></i>
+          <span>{@database.name}</span>
+        </div>
+      </div>
+
       <div class="border-b border-app-border-light dark:border-app-border-dark flex text-xs dark-transition">
         <div
           :for={{session, index} <- Enum.with_index(@database.sessions, 1)}
           class={[
-            "px-3 py-1.5 bg-white dark:bg-gray-800 border-r border-app-border-light dark:border-app-border-dark flex items-center dark-transition",
+            "px-3 py-1.5 bg-white dark:bg-gray-800 border-r border-app-border-light dark:border-app-border-dark flex items-center dark-transition cursor-pointer",
             @current_session.id == session.id && "border-t-2"
           ]}
           phx-click="change-session"
@@ -202,9 +227,6 @@
           id="sql-editor"
           database={@database}
           session={@current_session}
-          running_transaction?={@running_transaction?}
-          result={@result}
-          pid={@pid}
         />
 
         <div class="border-t border-app-border-light dark:border-app-border-dark flex flex-col h-2/5 overflow-hidden dark-transition">
