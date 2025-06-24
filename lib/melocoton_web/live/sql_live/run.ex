@@ -28,6 +28,7 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> assign(:page_title, database.name)
     |> assign(:pid, self())
     |> assign(:running_transaction?, false)
+    |> assign(:table_explorer, nil)
     |> ok()
   end
 
@@ -47,6 +48,16 @@ defmodule MelocotonWeb.SQLLive.Run do
   def handle_event("validate-search", %{"term" => term}, socket) do
     socket
     |> assign(:search_term, term)
+    |> noreply()
+  end
+
+  def handle_event("set-table-explorer", %{"table" => table_name}, socket) do
+    # we translate empty value at HTML level to nil value inside the
+    # live view
+    table_name = (table_name == "" && nil) || table_name
+
+    socket
+    |> assign(:table_explorer, table_name)
     |> noreply()
   end
 
@@ -101,6 +112,13 @@ defmodule MelocotonWeb.SQLLive.Run do
     socket
     |> assign_async(:tables, fn -> get_tables(repo) end)
     |> assign_async(:indexes, fn -> get_indexes(repo) end)
+    |> noreply()
+  end
+
+  @impl true
+  def handle_info({MelocotonWeb.SqlLive.TableExplorerComponent, :reset_table_explorer}, socket) do
+    socket
+    |> assign(:table_explorer, nil)
     |> noreply()
   end
 

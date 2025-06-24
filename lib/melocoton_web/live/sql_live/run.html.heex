@@ -75,7 +75,9 @@
             >
               <div class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer">
                 <i class="fas fa-table mr-1.5 text-blue-500"></i>
-                <span>{table.name}</span>
+                <span phx-click="set-table-explorer" phx-value-table={table.name}>
+                  {table.name}
+                </span>
                 <i
                   id={"table-toggle-icon-#{table.name}-closed"}
                   class="fas fa-chevron-down ml-auto text-[10px]"
@@ -151,7 +153,10 @@
     </aside>
     
 <!-- Main Content Area -->
-    <main class="flex-1 flex flex-col overflow-hidden bg-app-content-light dark:bg-app-content-dark dark-transition">
+    <main
+      :if={is_nil(@table_explorer)}
+      class="flex-1 flex flex-col overflow-hidden bg-app-content-light dark:bg-app-content-dark dark-transition"
+    >
       <div class="border-b border-app-border-light dark:border-app-border-dark p-2 flex items-center dark-transition">
         <button
           class="px-2 py-1 text-xs bg-app-accent-light text-white rounded hover:bg-app-accent-light/90 flex items-center mr-2"
@@ -218,8 +223,7 @@
           <i class="fas fa-plus text-[10px]"></i>
         </button>
       </div>
-      
-<!-- Editor Area with Environment Color -->
+      <!-- Editor Area with Environment Color -->
       <div class="flex-1 flex flex-col overflow-hidden">
         <!-- SQL Editor -->
         <.live_component
@@ -313,5 +317,13 @@
         </div>
       </div>
     </main>
+    <.live_component
+      :if={!is_nil(@table_explorer)}
+      module={MelocotonWeb.SqlLive.TableExplorerComponent}
+      id="table-explorer"
+      repo={@repo}
+      table_name={@table_explorer}
+      database={@database}
+    />
   </div>
 </div>

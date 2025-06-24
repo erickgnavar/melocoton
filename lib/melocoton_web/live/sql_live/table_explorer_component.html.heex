@@ -1,0 +1,122 @@
+<div class="flex-1 flex flex-col overflow-hidden">
+  <div class="bg-app-menubar-light dark:bg-app-menubar-dark border-b border-app-border-light dark:border-app-border-dark p-3 flex items-center dark-transition">
+    <div class="flex items-center">
+      <button
+        class="mr-3 text-sm hover:bg-black/10 dark:hover:bg-white/10 p-1 rounded"
+        phx-click="go-back"
+        phx-target={@myself}
+        title="Back to Query"
+      >
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <div class="flex items-center">
+        <i class="fas fa-table text-blue-500 mr-2 text-lg"></i>
+        <h1 class="text-lg font-semibold" id="table-name">{@table_name}</h1>
+      </div>
+    </div>
+
+    <div class="flex-1"></div>
+
+    <div class="flex items-center text-xs">
+      <div class="w-2 h-2 rounded-full bg-env-production mr-1.5"></div>
+      <span class={["font-medium uppercase", "text-[#{@database.group.color}]"]}>
+        {@database.group.name}
+      </span>
+      <span class="mx-1">|</span>
+      <i class="fas fa-database text-blue-500 mr-1.5"></i>
+      <span>{@database.name}</span>
+    </div>
+  </div>
+
+  <div class="flex-1 overflow-auto">
+    <.async_result :let={result} assign={@result}>
+      <:loading></:loading>
+      <:failed :let={failure}>{"#{inspect(failure)}"}</:failed>
+
+      <table class="w-full text-xs border-collapse">
+        <thead>
+          <tr class="bg-gray-100 dark:bg-gray-800 dark-transition sticky top-0 z-10">
+            <th
+              :for={col <- result.cols}
+              class="w-10 border border-app-border-light dark:border-app-border-dark p-1.5 text-left dark-transition"
+            >
+              <div class="flex items-center">
+                <span>{col}</span>
+                <i class="fas fa-sort-up ml-1 text-[10px] text-app-accent-light"></i>
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            :for={row <- result.rows}
+            class="hover:bg-gray-50 dark:hover:bg-gray-900 dark-transition"
+          >
+            <td
+              :for={col <- result.cols}
+              class="border border-app-border-light dark:border-app-border-dark p-1.5 text-center dark-transition"
+            >
+              {Map.get(row, col)}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </.async_result>
+  </div>
+
+  <div class="bg-gray-50 dark:bg-gray-800 border-t border-app-border-light dark:border-app-border-dark p-2 flex items-center justify-between dark-transition">
+    <div class="text-xs text-gray-500 dark:text-gray-400">
+      Showing <span class="font-medium">1-10</span> of <span class="font-medium">100</span> rows
+    </div>
+
+    <div class="flex items-center space-x-1">
+      <button
+        class="p-1 text-xs bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 dark-transition"
+        phx-click="previous-page"
+        phx-target={@myself}
+        disabled={@page == 1}
+      >
+        <i class="fas fa-chevron-left text-[10px] text-gray-400"></i>
+      </button>
+      <button
+        :for={page <- @pages}
+        phx-click="change-page"
+        phx-value-page={page}
+        phx-target={@myself}
+        class={[
+          "px-2 py-1 text-xs rounded dark-transition",
+          (page == @page && "bg-app-accent-light text-white") ||
+            "bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
+        ]}
+      >
+        {page}
+      </button>
+      <button
+        class="p-1 text-xs bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 dark-transition"
+        phx-click="next-page"
+        phx-target={@myself}
+        disabled={@page == length(@pages)}
+      >
+        <i class="fas fa-chevron-right text-[10px]"></i>
+      </button>
+    </div>
+
+    <div class="flex items-center space-x-2">
+      <span class="text-xs">Rows per page:</span>
+
+      <.simple_form
+        for={@limit_form}
+        phx-change="validate-limit"
+        phx-submit="ignore"
+        phx-target={@myself}
+      >
+        <.input
+          field={@limit_form[:limit]}
+          type="select"
+          options={[{10, 10}, {25, 25}, {50, 50}, {100, 100}]}
+          label=""
+        />
+      </.simple_form>
+    </div>
+  </div>
+</div>
