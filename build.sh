@@ -9,7 +9,7 @@ npm install --prefix assets
 
 MIX_ENV=prod mix assets.deploy
 
-BURRITO_TARGET=macos MIX_ENV=prod mix release
+BURRITO_TARGET=macos MIX_ENV=prod mix release || exit 1
 
 cp ./burrito_out/melocoton_macos ./src-tauri/binaries/webserver
 
