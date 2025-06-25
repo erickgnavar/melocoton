@@ -41,7 +41,16 @@ defmodule Melocoton.Pool do
         :postgres -> "Ecto.Adapters.Postgres"
       end
 
-    module_name = Module.concat(Melocoton.Repos, "#{database.name |> Macro.camelize()}")
+    # we need to replace spaces because elixir modules can't have
+    # spaces in their name
+    module_name_str =
+      database.name
+      |> String.trim()
+      |> String.replace(" ", "_")
+      |> String.replace("-", "_")
+      |> Macro.camelize()
+
+    module_name = Module.concat(Melocoton.Repos, module_name_str)
 
     # check if already loaded so we avoid a warning about runtime code
     # reloaded
