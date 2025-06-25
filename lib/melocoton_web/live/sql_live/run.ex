@@ -8,6 +8,10 @@ defmodule MelocotonWeb.SQLLive.Run do
   def mount(%{"database_id" => database_id}, _session, socket) do
     database = Databases.get_database!(database_id)
     repo = Pool.get_repo(database)
+    # we need to get pid here because the call to get_tables/2 will be
+    # made in another process so we won't be able to get the correct
+    # PID
+    liveview_pid = self()
 
     current_session =
       case database.sessions do
@@ -19,7 +23,7 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> assign(:search_form, to_form(%{"term" => ""}))
     |> assign(:search_term, "")
     |> assign(:repo, repo)
-    |> assign_async(:tables, fn -> get_tables(repo) end)
+    |> assign_async(:tables, fn -> get_tables(repo, liveview_pid) end)
     |> assign_async(:indexes, fn -> get_indexes(repo) end)
     |> assign(:database, database)
     |> assign(:current_session, current_session)
@@ -108,9 +112,10 @@ defmodule MelocotonWeb.SQLLive.Run do
 
   def handle_event("reload-objects", _params, socket) do
     repo = socket.assigns.repo
+    liveview_pid = self()
 
     socket
-    |> assign_async(:tables, fn -> get_tables(repo) end)
+    |> assign_async(:tables, fn -> get_tables(repo, liveview_pid) end)
     |> assign_async(:indexes, fn -> get_indexes(repo) end)
     |> noreply()
   end
@@ -122,15 +127,36 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> noreply()
   end
 
+  @impl true
+  def handle_info({:send_schema, schema}, socket) do
+    # prepare tables information to fit
+    schema_for_editor =
+      schema
+      |> Enum.map(fn %{name: name, cols: cols} ->
+        {name, Enum.map(cols, & &1.name)}
+      end)
+      |> Enum.into(%{})
+
+    socket
+    |> push_event("load-schema", schema_for_editor)
+    |> noreply()
+  end
+
   defp create_session(database) do
     {:ok, session} = Databases.create_session(%{database_id: database.id, query: ""})
     session
   end
 
-  defp get_tables(repo) do
+  # receive the liveview of the PID so we can notify once the tables
+  # information is computed
+  defp get_tables(repo, liveview_pid) do
     case DatabaseClient.get_tables(repo) do
-      {:ok, tables} -> {:ok, %{tables: tables}}
-      {:error, error} -> {:error, error}
+      {:ok, tables} ->
+        Process.send_after(liveview_pid, {:send_schema, tables}, :timer.seconds(1))
+        {:ok, %{tables: tables}}
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 

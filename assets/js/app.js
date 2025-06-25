@@ -23,6 +23,7 @@ import { LiveSocket } from "phoenix_live_view";
 import topbar from "../vendor/topbar";
 
 import { EditorView, basicSetup } from "codemirror";
+import { Compartment } from "@codemirror/state";
 import { keymap } from "@codemirror/view";
 import { sql } from "@codemirror/lang-sql";
 import { vim } from "@replit/codemirror-vim";
@@ -38,6 +39,10 @@ const liveSocket = new LiveSocket("/live", Socket, {
     SQLEditor: {
       mounted() {
         const that = this;
+        const sqlExtensionCompartment = new Compartment();
+        // HACK: allow to load schema after receiving its value from
+        // server once the database was inspected
+        window.sqlExtensionCompartment = sqlExtensionCompartment;
 
         function keymaps() {
           return keymap.of([
@@ -70,7 +75,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
             vim(),
             keymaps(),
             basicSetup,
-            sql(),
+            sqlExtensionCompartment.of(sql({})),
             EditorView.updateListener.of((updateView) => {
               // update text area
               that.el.value = updateView.state.doc.toString();
@@ -111,6 +116,12 @@ window.addEventListener("phx:load-query", ({ detail }) => {
     changes: { from: 0, to: view.state.doc.length, insert: detail.query },
   });
   view.dispatch(newState);
+});
+
+window.addEventListener("phx:load-schema", ({ detail: schema }) => {
+  view.dispatch({
+    effects: sqlExtensionCompartment.reconfigure(sql({ schema: schema })),
+  });
 });
 
 // Show progress bar on live navigation and form submits
