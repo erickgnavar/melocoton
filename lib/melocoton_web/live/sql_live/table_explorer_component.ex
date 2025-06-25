@@ -75,7 +75,7 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
     # postgres and sqlite, otherwise the column name will be different
     # and we need to handle more case clauses
     case DatabaseClient.query(repo, "SELECT COUNT(*) AS count FROM #{table_name}") do
-      {:ok, %{rows: [%{"count" => count}]}} ->
+      {:ok, %{rows: [%{"count" => count}]}, _} ->
         div(count, limit) + 1
 
       {:error, _error} ->
@@ -88,7 +88,7 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
     sql = "SELECT * FROM #{table_name} LIMIT #{limit} OFFSET #{offset}"
 
     case DatabaseClient.query(repo, sql) do
-      {:ok, result} ->
+      {:ok, result, _} ->
         {:ok, %{result: result}}
 
       {:error, error} ->
