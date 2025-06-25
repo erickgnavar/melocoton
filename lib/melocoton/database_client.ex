@@ -4,9 +4,14 @@ defmodule Melocoton.DatabaseClient do
   """
 
   def query(repo, sql) do
-    case repo.query(sql, []) do
+    init_time = System.monotonic_time(:nanosecond)
+    result = repo.query(sql, [])
+    end_time = System.monotonic_time(:nanosecond)
+    total_time = System.convert_time_unit(end_time - init_time, :nanosecond, :millisecond)
+
+    case result do
       {:ok, result} ->
-        {:ok, handle_response(result)}
+        {:ok, handle_response(result), %{total_time: total_time}}
 
       {:error, error} ->
         {:error, translate_query_error(error)}

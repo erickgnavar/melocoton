@@ -33,6 +33,7 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> assign(:pid, self())
     |> assign(:running_transaction?, false)
     |> assign(:table_explorer, nil)
+    |> assign(:query_time, 0)
     |> ok()
   end
 
@@ -97,9 +98,10 @@ defmodule MelocotonWeb.SQLLive.Run do
     Logger.info("Running query #{query}")
 
     case DatabaseClient.query(socket.assigns.repo, query) do
-      {:ok, result} ->
+      {:ok, result, %{total_time: total_time}} ->
         socket
         |> assign(result: result)
+        |> assign(query_time: total_time)
         |> assign(:error_message, nil)
         |> noreply()
 

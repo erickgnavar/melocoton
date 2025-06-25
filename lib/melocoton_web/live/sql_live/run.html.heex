@@ -307,7 +307,7 @@
             "border-t border-app-border-light dark:border-app-border-dark p-1 text-[10px] text-gray-500 dark:text-gray-400 flex justify-between dark-transition text-white",
             "bg-[#{@database.group.color}]"
           ]}>
-            <div class="text-white">{@result.num_rows} rows returned in 0.012s</div>
+            <div class="text-white">{@result.num_rows} rows returned in {@query_time} ms</div>
             <div class="flex items-center text-white">
               <div class="w-1.5 h-1.5 rounded-full bg-white mr-1.5"></div>
               <span class="font-medium uppercase">{@database.group.name}</span>
