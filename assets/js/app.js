@@ -100,7 +100,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
     },
   },
   metadata: {
-    keydown: (e, el) => {
+    keydown: (e, _el) => {
       return {
         key: e.key,
         metaKey: e.metaKey,
@@ -167,7 +167,7 @@ themeToggle.addEventListener("click", () => {
 if (window.__TAURI__) {
   const { invoke } = window.__TAURI__.core;
 
-  document.addEventListener("keydown", async function (event) {
+  document.addEventListener("keydown", async (event) => {
     if (event.metaKey && event.key === "n") {
       event.preventDefault();
 
