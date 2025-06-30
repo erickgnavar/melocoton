@@ -25,7 +25,7 @@ import topbar from "../vendor/topbar";
 import { EditorView, basicSetup } from "codemirror";
 import { Compartment } from "@codemirror/state";
 import { keymap } from "@codemirror/view";
-import { sql } from "@codemirror/lang-sql";
+import { sql, PostgreSQL, SQLite, StandardSQL } from "@codemirror/lang-sql";
 import { vim } from "@replit/codemirror-vim";
 import { oneDark } from "@codemirror/theme-one-dark";
 
@@ -118,9 +118,15 @@ window.addEventListener("phx:load-query", ({ detail }) => {
   view.dispatch(newState);
 });
 
-window.addEventListener("phx:load-schema", ({ detail: schema }) => {
+window.addEventListener("phx:load-schema", ({ detail: { schema, type } }) => {
+  let dialect = StandardSQL;
+  if (type === "postgres") dialect = PostgreSQL;
+  if (type === "sqlite") dialect = SQLite;
+
   view.dispatch({
-    effects: sqlExtensionCompartment.reconfigure(sql({ schema: schema })),
+    effects: sqlExtensionCompartment.reconfigure(
+      sql({ schema: schema, dialect: dialect }),
+    ),
   });
 });
 

@@ -140,7 +140,7 @@ defmodule MelocotonWeb.SQLLive.Run do
       |> Enum.into(%{})
 
     socket
-    |> push_event("load-schema", schema_for_editor)
+    |> push_event("load-schema", %{schema: schema_for_editor, type: socket.assigns.database.type})
     |> noreply()
   end
 
