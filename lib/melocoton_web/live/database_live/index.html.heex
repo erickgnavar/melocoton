@@ -1,9 +1,11 @@
 <div class="h-screen w-screen flex flex-col">
   <div class="bg-app-menubar-light dark:bg-app-menubar-dark border-b border-app-border-light dark:border-app-border-dark flex text-xs px-2 select-none h-7 items-center dark-transition">
-    <div class="px-2 py-1 hover:bg-black/10 dark:hover:bg-white/10">File</div>
-    <div class="px-2 py-1 hover:bg-black/10 dark:hover:bg-white/10">Edit</div>
-    <div class="px-2 py-1 hover:bg-black/10 dark:hover:bg-white/10">View</div>
-    <div class="px-2 py-1 hover:bg-black/10 dark:hover:bg-white/10">Connection</div>
+    <div
+      class="px-2 py-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer"
+      phx-click={JS.patch(~p"/databases")}
+    >
+      Home
+    </div>
     <div class="px-2 py-1 hover:bg-black/10 dark:hover:bg-white/10">Help</div>
 
     <div class="flex-1"></div>
@@ -17,12 +19,12 @@
     <aside class="w-56 bg-app-sidebar-light dark:bg-app-sidebar-dark border-r border-app-border-light dark:border-app-border-dark flex flex-col dark-transition">
       <div class="p-2 border-b border-app-border-light dark:border-app-border-dark flex items-center justify-between dark-transition">
         <div class="text-xs font-medium">Connections</div>
-        <button
-          id="new-connection-btn"
+        <.link
           class="text-xs hover:bg-black/10 dark:hover:bg-white/10 p-1 rounded"
+          patch={~p"/databases/new"}
         >
           <i class="fas fa-plus"></i>
-        </button>
+        </.link>
       </div>
       <div class="overflow-y-auto flex-1 p-1">
         <!-- Connection Tree -->
@@ -44,11 +46,13 @@
                 :for={database <- databases}
                 class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer"
               >
-                <i class="fas fa-database mr-1.5 text-db-postgres"></i>
-                <span>{database.name}</span>
-                <span class="ml-1 text-[9px] text-gray-500 dark:text-gray-400">
-                  ({database.type})
-                </span>
+                <.link patch={~p"/databases/#{database}/run"}>
+                  <i class="fas fa-database mr-1.5 text-db-postgres"></i>
+                  <span>{database.name}</span>
+                  <span class="ml-1 text-[9px] text-gray-500 dark:text-gray-400">
+                    ({database.type})
+                  </span>
+                </.link>
               </li>
             </ul>
           </li>
