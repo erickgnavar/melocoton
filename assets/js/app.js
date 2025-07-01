@@ -28,6 +28,7 @@ import { keymap } from "@codemirror/view";
 import { sql, PostgreSQL, SQLite, StandardSQL } from "@codemirror/lang-sql";
 import { vim } from "@replit/codemirror-vim";
 import { oneDark } from "@codemirror/theme-one-dark";
+import { moveCompletionSelection } from "@codemirror/autocomplete";
 
 const csrfToken = document
   .querySelector("meta[name='csrf-token']")
@@ -46,6 +47,14 @@ const liveSocket = new LiveSocket("/live", Socket, {
 
         function keymaps() {
           return keymap.of([
+            {
+              key: "Ctrl-n",
+              run: moveCompletionSelection(true),
+            },
+            {
+              key: "Ctrl-p",
+              run: moveCompletionSelection(false),
+            },
             {
               key: "Mod-Enter",
               run() {
