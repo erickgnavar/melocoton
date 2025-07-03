@@ -26,12 +26,35 @@ import { EditorView, basicSetup } from "codemirror";
 import { Compartment } from "@codemirror/state";
 import { keymap } from "@codemirror/view";
 import { sql, PostgreSQL, SQLite, StandardSQL } from "@codemirror/lang-sql";
-import { vim } from "@replit/codemirror-vim";
+import { vim, Vim } from "@replit/codemirror-vim";
 import { oneDark } from "@codemirror/theme-one-dark";
 import {
   moveCompletionSelection,
   acceptCompletion,
 } from "@codemirror/autocomplete";
+import { format } from "sql-formatter";
+
+Vim.defineEx("format", "", (cm, _params) => {
+  const view = cm.cm6;
+  const { state } = view;
+  const code = state.doc.toString();
+
+  // TODO: define a way to apply format only to selected text in case
+  // there is any
+
+  const formatted = format(code, {
+    language: "sql",
+    indent: "  ",
+  });
+
+  view.dispatch({
+    changes: {
+      from: 0,
+      to: state.doc.length,
+      insert: formatted,
+    },
+  });
+});
 
 const csrfToken = document
   .querySelector("meta[name='csrf-token']")
