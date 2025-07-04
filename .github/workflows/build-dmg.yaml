@@ -1,0 +1,32 @@
+---
+name: Build DMG
+
+on:
+  push:
+    branches: [build-dmg]
+
+jobs:
+  build-dmg:
+    runs-on: macos-15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Prepare environment
+        run: |
+          brew install rust xz mise
+          mise install
+          eval "$(mise activate bash)"
+          mix local.hex --force && mix local.rebar --force
+
+      - name: build project
+        run: |
+          bash build.sh
+          dmg_file=$(find src-tauri/target/release/bundle/dmg/ -type f -name "*.dmg")
+          echo "dmg_file=$dmg_file" >> $GITHUB_ENV
+
+      - name: upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: melocoton
+          path: ${{ env.dmg_file }}
