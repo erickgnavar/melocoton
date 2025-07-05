@@ -35,5 +35,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           repository: erickgnavar/melocoton-releases
+          tag_name: v0
           files: ${{ env.dmg_file }}
           token: ${{ secrets.CUSTOM_GITHUB_TOKEN }}
