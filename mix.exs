@@ -35,6 +35,7 @@ defmodule Melocoton.MixProject do
         steps: [:assemble, &Burrito.wrap/1],
         burrito: [
           targets: [
+            linux: [os: :linux, cpu: :x86_64],
             macos: [os: :darwin, cpu: :aarch64]
           ]
         ]

@@ -15,8 +15,18 @@ npm install --prefix assets
 # compile assets
 MIX_ENV=prod mix assets.deploy
 
+# set up compilation target
+OS_NAME=$(uname -o)
+echo "Running on $OS_NAME..."
+
+if [[ "$OS_NAME" == "Darwin" ]]; then
+  export BURRITO_TARGET=macos
+elif [[ "$OS_NAME" == "Linux" ]]; then
+  export BURRITO_TARGET=linux
+fi
+
 # compile sidebar elixir application
-BURRITO_TARGET=macos MIX_ENV=prod mix release || exit 1
+MIX_ENV=prod mix release || exit 1
 
 cp ./burrito_out/melocoton_macos ./src-tauri/binaries/webserver
 

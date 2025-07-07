@@ -1,0 +1,111 @@
+---
+name: Build releases
+
+on:
+  push:
+    tags: "*"
+
+jobs:
+  build-macos:
+    runs-on: macos-15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Prepare environment
+        run: |
+          brew install rust xz mise
+          mise install
+          eval "$(mise activate bash)"
+          mix local.hex --force && mix local.rebar --force
+
+      - name: build project
+        run: |
+          bash build.sh
+          dmg_file=$(find src-tauri/target/release/bundle/dmg/ -type f -name "*.dmg")
+          mv $dmg_file melocoton.dmg
+          echo "dmg_file=melocoton.dmg" >> $GITHUB_ENV
+
+      - name: upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-installer
+          path: ${{ env.dmg_file }}
+
+  build-linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Prepare environment
+        run: |
+          sudo apt update
+          sudo apt install -y libwebkit2gtk-4.1-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libxdo-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+          curl https://mise.run | sh
+          export PATH=$PATH:~/.local/bin/
+          mise install
+          eval "$(mise activate bash)"
+          mix local.hex --force && mix local.rebar --force
+
+      - name: build project
+        run: |
+          bash build.sh
+          ls src-tauri/target/release/
+          deb_file=$(find src-tauri/target/release/bundle/deb/ -type f -name "*.deb")
+          rpm_file=$(find src-tauri/target/release/bundle/rpm/ -type f -name "*.rpm")
+          appimage_file=$(find src-tauri/target/release/bundle/appimage/ -type f -name "*.AppImage")
+          mv $deb_file melocoton.deb
+          echo "deb_file=melocoton.deb" >> $GITHUB_ENV
+          mv $rpm_file melocoton.rpm
+          echo "rpm_file=melocoton.rpm" >> $GITHUB_ENV
+          mv $appimage_file melocoton.AppImage
+          echo "appimage_file=melocoton.AppImage" >> $GITHUB_ENV
+
+      - name: upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-installers
+          path: |
+            melocoton.deb
+            melocoton.rpm
+            melocoton.AppImage
+
+  publish-releases:
+    runs-on: ubuntu-24.04
+    needs: [build-macos, build-linux]
+    steps:
+      - name: Download macos artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-installer
+          path: melocoton.dmg
+
+      - name: Download linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-installers
+          path: .
+
+      - name: Publish artifacts as release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          repository: erickgnavar/melocoton-releases
+          body: ""
+          tag_name: ${{ env.GITHUB_REF_NAME }}
+          files: |
+            melocoton.dmg
+            melocoton.deb
+            melocoton.rpm
+            melocoton.AppImage
+          token: ${{ secrets.CUSTOM_GITHUB_TOKEN }}
+          draft: false
+          make_latest: true
