@@ -98,7 +98,6 @@ jobs:
       - name: Publish artifacts as release assets
         uses: softprops/action-gh-release@v2
         with:
-          repository: erickgnavar/melocoton-releases
           body: ""
           tag_name: ${{ env.GITHUB_REF_NAME }}
           files: |
