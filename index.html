@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Melocoton - Simple Database Client</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                50: '#f0f9ff',
+                100: '#e0f2fe',
+                200: '#bae6fd',
+                300: '#7dd3fc',
+                400: '#38bdf8',
+                500: '#0ea5e9',
+                600: '#0284c7',
+                700: '#0369a1',
+                800: '#075985',
+                900: '#0c4a6e',
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      /* Carousel Styles */
+      .carousel {
+        position: relative;
+        overflow: hidden;
+      }
+      .carousel-inner {
+        display: flex;
+        transition: transform 0.5s ease;
+      }
+      .carousel-item {
+        min-width: 100%;
+      }
+      .carousel-indicators {
+        display: flex;
+        justify-content: center;
+        margin-top: 1rem;
+      }
+      .carousel-indicator {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin: 0 5px;
+        cursor: pointer;
+      }
+      /* Fade In Animation */
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .fade-in {
+        animation: fadeIn 0.6s ease-out forwards;
+      }
+      .delay-100 { animation-delay: 0.1s; }
+      .delay-200 { animation-delay: 0.2s; }
+      .delay-300 { animation-delay: 0.3s; }
+    </style>
+    <script defer data-domain="melocoton.app" src="https://plausible.io/js/script.js"></script>
+  </head>
+  <body class="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-200">
+    <!-- Navigation -->
+    <nav class="container mx-auto px-4 py-6 flex justify-between items-center">
+      <div class="flex items-center space-x-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary-600 dark:text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2 1 3 3 3h10c2 0 3-1 3-3V7c0-2-1-3-3-3H7c-2 0-3 1-3 3z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v4M15 3v4M9 17v4M15 17v4M3 9h18M3 15h18" />
+        </svg>
+        <span class="text-2xl font-bold">Melocoton</span>
+      </div>
+      <div class="flex items-center space-x-4">
+        <a href="#features" class="hidden md:block hover:text-primary-600 dark:hover:text-primary-400">Features</a>
+        <a href="#screenshots" class="hidden md:block hover:text-primary-600 dark:hover:text-primary-400">Screenshots</a>
+        <a href="#download" class="hidden md:block hover:text-primary-600 dark:hover:text-primary-400">Download</a>
+        <button id="darkModeToggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
+          <!-- Sun icon for dark mode -->
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          <!-- Moon icon for light mode -->
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 block dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+          </svg>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="container mx-auto px-4 py-16 md:py-24">
+      <div class="flex flex-col md:flex-row items-center">
+        <div class="md:w-1/2 mb-10 md:mb-0 fade-in">
+          <h1 class="text-4xl md:text-5xl font-bold mb-6">The Modern Database Client for Professionals</h1>
+          <p class="text-xl mb-8 text-gray-600 dark:text-gray-400">Manage your databases with ease. Connect to any SQL or NoSQL database with our powerful, intuitive interface.</p>
+          <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+            <a href="#download" class="bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-6 rounded-lg text-center transition-colors duration-200">
+              Download Now
+            </a>
+            <a href="#donate" class="bg-white dark:bg-gray-800 text-primary-600 dark:text-primary-400 border border-primary-600 dark:border-primary-400 font-bold py-3 px-6 rounded-lg text-center hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200">
+              Support Us
+            </a>
+          </div>
+        </div>
+        <div class="md:w-1/2 fade-in delay-200">
+          <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80" alt="Database Technology" class="rounded-lg shadow-xl">
+        </div>
+      </div>
+    </section>
+
+    <!-- Description Section -->
+    <section id="features" class="bg-gray-100 dark:bg-gray-800 py-16">
+      <div class="container mx-auto px-4">
+        <h2 class="text-3xl font-bold mb-12 text-center fade-in">Why Choose Melocoton?</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow-md fade-in">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-primary-600 dark:text-primary-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            <h3 class="text-xl font-bold mb-2">Vim key bindings</h3>
+            <p class="text-gray-600 dark:text-gray-300">Write and modify your queries using vim key bindings you alread know</p>
+          </div>
+          <div class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow-md fade-in delay-100">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-primary-600 dark:text-primary-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <h3 class="text-xl font-bold mb-2">Secure Connections</h3>
+            <p class="text-gray-600 dark:text-gray-300">Enterprise-grade security for all your database connections.</p>
+          </div>
+          <div class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow-md fade-in delay-200">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-primary-600 dark:text-primary-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <h3 class="text-xl font-bold mb-2">Intuitive Interface</h3>
+            <p class="text-gray-600 dark:text-gray-300">Designed for both beginners and experts. Powerful yet easy to use.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Screenshots Section with Carousel -->
+    <section id="screenshots" class="py-16">
+      <div class="container mx-auto px-4">
+        <h2 class="text-3xl font-bold mb-12 text-center fade-in">See Melocoton in Action</h2>
+
+        <!-- Carousel -->
+        <div class="carousel max-w-4xl mx-auto rounded-lg shadow-lg overflow-hidden fade-in delay-100">
+          <div class="carousel-inner">
+            <div class="carousel-item">
+              <img src="https://images.unsplash.com/photo-1607706189992-eae578626c86?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80" alt="Database Dashboard" class="w-full h-auto">
+              <div class="p-4 bg-white dark:bg-gray-700">
+                <h3 class="font-bold">Powerful Dashboard</h3>
+                <p class="text-gray-600 dark:text-gray-300">Monitor all your database connections in one place.</p>
+              </div>
+            </div>
+            <div class="carousel-item">
+              <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80" alt="Query Editor" class="w-full h-auto">
+              <div class="p-4 bg-white dark:bg-gray-700">
+                <h3 class="font-bold">VIM key bindings</h3>
+                <p class="text-gray-600 dark:text-gray-300">Write and modify your queries using vim key bindings you alread know</p>
+              </div>
+            </div>
+            <div class="carousel-item">
+              <img src="https://images.unsplash.com/photo-1551434678-e076c223a692?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80" alt="Data Visualization" class="w-full h-auto">
+              <div class="p-4 bg-white dark:bg-gray-700">
+                <h3 class="font-bold">Data Visualization</h3>
+                <p class="text-gray-600 dark:text-gray-300">Transform your query results into insightful charts and graphs.</p>
+              </div>
+            </div>
+            <div class="carousel-item">
+              <img src="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80" alt="Schema Browser" class="w-full h-auto">
+              <div class="p-4 bg-white dark:bg-gray-700">
+                <h3 class="font-bold">Schema Browser</h3>
+                <p class="text-gray-600 dark:text-gray-300">Easily navigate and modify your database structure.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Carousel Controls -->
+          <button class="absolute top-1/2 left-4 transform -translate-y-1/2 bg-white dark:bg-gray-800 rounded-full p-2 shadow-md hover:bg-gray-100 dark:hover:bg-gray-700" id="prevBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-800 dark:text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <button class="absolute top-1/2 right-4 transform -translate-y-1/2 bg-white dark:bg-gray-800 rounded-full p-2 shadow-md hover:bg-gray-100 dark:hover:bg-gray-700" id="nextBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-800 dark:text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Carousel Indicators -->
+        <div class="carousel-indicators mt-4">
+          <button class="carousel-indicator bg-primary-600 dark:bg-primary-400" data-slide="0"></button>
+          <button class="carousel-indicator bg-gray-300 dark:bg-gray-600" data-slide="1"></button>
+          <button class="carousel-indicator bg-gray-300 dark:bg-gray-600" data-slide="2"></button>
+          <button class="carousel-indicator bg-gray-300 dark:bg-gray-600" data-slide="3"></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Download Section -->
+    <section id="download" class="bg-primary-600 dark:bg-primary-700 text-white py-16">
+      <div class="container mx-auto px-4 text-center">
+        <h2 class="text-3xl font-bold mb-6 fade-in">Ready to Get Started?</h2>
+        <p class="text-xl mb-8 max-w-2xl mx-auto fade-in delay-100">Download Melocoton now and transform how you work with databases.</p>
+        <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4 fade-in delay-200">
+          <a href="https://github.com/erickgnavar/melocoton/releases/latest/download/melocoton.dmg" class="bg-white text-primary-600 font-bold py-3 px-6 rounded-lg hover:bg-gray-100 transition-colors duration-200">
+            <span class="flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+              </svg>
+              macOS
+            </span>
+          </a>
+          <div class="relative inline-block">
+            <button id="linuxDropdown" class="bg-white text-primary-600 font-bold py-3 px-6 rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+              </svg>
+              Linux
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <div id="linuxDropdownMenu" class="absolute bottom-full left-0 mb-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 hidden z-10">
+              <div class="py-2">
+                <a href="https://github.com/erickgnavar/melocoton/releases/latest/download/melocoton.deb" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center">
+                  <span class="w-6 h-6 mr-3 bg-orange-500 rounded-sm flex items-center justify-center text-white text-xs font-bold">U</span>
+                  Ubuntu (.deb)
+                </a>
+                <a href="https://github.com/erickgnavar/melocoton/releases/latest/download/melocoton.rpm" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center">
+                  <span class="w-6 h-6 mr-3 bg-blue-600 rounded-sm flex items-center justify-center text-white text-xs font-bold">F</span>
+                  Fedora (.rpm)
+                </a>
+                <a href="https://github.com/erickgnavar/melocoton/releases/latest/download/melocoton.rpm" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center">
+                  <span class="w-6 h-6 mr-3 bg-green-600 rounded-sm flex items-center justify-center text-white text-xs font-bold">S</span>
+                  openSUSE (.rpm)
+                </a>
+                <a href="https://github.com/erickgnavar/melocoton/releases/latest/download/melocoton.rpm" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center">
+                  <span class="w-6 h-6 mr-3 bg-red-600 rounded-sm flex items-center justify-center text-white text-xs font-bold">R</span>
+                  Red Hat (.rpm)
+                </a>
+                <a href="https://github.com/erickgnavar/melocoton/releases/latest/download/melocoton.AppImage" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center">
+                  <span class="w-6 h-6 mr-3 bg-gray-800 rounded-sm flex items-center justify-center text-white text-xs font-bold">T</span>
+                  AppImage (Universal)
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Donation Section -->
+    <section id="donate" class="py-16">
+      <div class="container mx-auto px-4 text-center">
+        <h2 class="text-3xl font-bold mb-6 fade-in">Support the Development</h2>
+        <p class="text-xl mb-8 max-w-2xl mx-auto text-gray-600 dark:text-gray-400 fade-in delay-100">Melocoton is an open-source project. Your donations help us continue improving the software.</p>
+        <a href="https://buymeacoffee.com/erickgnavar" class="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200">
+          Donate Now
+        </a>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-100 dark:bg-gray-800 py-12">
+      <div class="container mx-auto px-4">
+        <div class="flex flex-col md:flex-row justify-between items-center">
+          <div class="mb-6 md:mb-0">
+            <div class="flex items-center space-x-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-primary-600 dark:text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2 1 3 3 3h10c2 0 3-1 3-3V7c0-2-1-3-3-3H7c-2 0-3 1-3 3z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v4M15 3v4M9 17v4M15 17v4M3 9h18M3 15h18" />
+              </svg>
+              <span class="text-xl font-bold">Melocoton</span>
+            </div>
+            <p class="mt-2 text-gray-600 dark:text-gray-400">The modern database client for professionals.</p>
+          </div>
+          <div class="flex space-x-6">
+            <a href="https://github.com/erickgnavar/melocoton" class="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400">
+              <span class="sr-only">GitHub</span>
+              <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"></path>
+              </svg>
+            </a>
+            <a href="https://twitter.com/erickgnavar" class="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400">
+              <span class="sr-only">Twitter</span>
+              <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84"></path>
+              </svg>
+            </a>
+          </div>
+        </div>
+        <div class="mt-8 border-t border-gray-300 dark:border-gray-700 pt-8 text-center text-gray-600 dark:text-gray-400">
+          <p>&copy; 2025 Melocoton. All rights reserved.</p>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+      // Dark Mode Toggle
+      (function() {
+        // Check for saved theme preference or use the system preference
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+
+        // Toggle dark/light mode
+        document.getElementById('darkModeToggle').addEventListener('click', function() {
+          if (document.documentElement.classList.contains('dark')) {
+            document.documentElement.classList.remove('dark');
+            localStorage.theme = 'light';
+          } else {
+            document.documentElement.classList.add('dark');
+            localStorage.theme = 'dark';
+          }
+        });
+      })();
+
+      // Carousel Functionality
+      (function() {
+        const carousel = document.querySelector('.carousel-inner');
+        const items = document.querySelectorAll('.carousel-item');
+        const indicators = document.querySelectorAll('.carousel-indicator');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        let currentIndex = 0;
+        const totalItems = items.length;
+
+        // Initialize
+        updateCarousel();
+
+        // Event Listeners
+        prevBtn.addEventListener('click', () => {
+          currentIndex = (currentIndex - 1 + totalItems) % totalItems;
+          updateCarousel();
+        });
+
+        nextBtn.addEventListener('click', () => {
+          currentIndex = (currentIndex + 1) % totalItems;
+          updateCarousel();
+        });
+
+        // Add click event to indicators
+        indicators.forEach((indicator, index) => {
+          indicator.addEventListener('click', () => {
+            currentIndex = index;
+            updateCarousel();
+          });
+        });
+
+        // Auto slide every 5 seconds
+        let interval = setInterval(() => {
+          currentIndex = (currentIndex + 1) % totalItems;
+          updateCarousel();
+        }, 5000);
+
+        // Pause auto slide on hover
+        carousel.addEventListener('mouseenter', () => {
+          clearInterval(interval);
+        });
+
+        carousel.addEventListener('mouseleave', () => {
+          interval = setInterval(() => {
+            currentIndex = (currentIndex + 1) % totalItems;
+            updateCarousel();
+          }, 5000);
+        });
+
+        // Update carousel position and indicators
+        function updateCarousel() {
+          carousel.style.transform = `translateX(-${currentIndex * 100}%)`;
+
+          // Update indicators
+          indicators.forEach((indicator, index) => {
+            if (index === currentIndex) {
+              indicator.classList.add('bg-primary-600', 'dark:bg-primary-400');
+              indicator.classList.remove('bg-gray-300', 'dark:bg-gray-600');
+            } else {
+              indicator.classList.remove('bg-primary-600', 'dark:bg-primary-400');
+              indicator.classList.add('bg-gray-300', 'dark:bg-gray-600');
+            }
+          });
+        }
+
+        // Intersection Observer for animations
+        const fadeElements = document.querySelectorAll('.fade-in');
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              entry.target.style.opacity = 1;
+              observer.unobserve(entry.target);
+            }
+          });
+        }, {
+          threshold: 0.1
+        });
+
+        fadeElements.forEach(element => {
+          element.style.opacity = 0;
+          observer.observe(element);
+        });
+      })();
+
+      // Linux Dropdown Functionality
+      (function() {
+        const linuxDropdown = document.getElementById('linuxDropdown');
+        const linuxDropdownMenu = document.getElementById('linuxDropdownMenu');
+
+        linuxDropdown.addEventListener('click', function(e) {
+          e.preventDefault();
+          linuxDropdownMenu.classList.toggle('hidden');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+          if (!linuxDropdown.contains(e.target) && !linuxDropdownMenu.contains(e.target)) {
+            linuxDropdownMenu.classList.add('hidden');
+          }
+        });
+
+        // Close dropdown when pressing Escape
+        document.addEventListener('keydown', function(e) {
+          if (e.key === 'Escape') {
+            linuxDropdownMenu.classList.add('hidden');
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>
