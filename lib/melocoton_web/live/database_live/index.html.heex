@@ -162,7 +162,14 @@
                   <span>prod-server.example.com:5432</span>
                 </div>
               </div>
-              <div class="px-3 py-2 border-t border-app-border-light dark:border-app-border-dark flex justify-end dark-transition">
+              <div class="px-3 py-2 border-t border-app-border-light dark:border-app-border-dark flex justify-end dark-transition gap-2">
+                <.link
+                  class="px-2 py-1 bg-app-accent-light text-white text-[10px] rounded hover:bg-app-accent-light/90"
+                  phx-click="test-connection"
+                  phx-value-id={database.id}
+                >
+                  Test
+                </.link>
                 <.link
                   class="px-2 py-1 bg-app-accent-light text-white text-[10px] rounded hover:bg-app-accent-light/90"
                   patch={~p"/databases/#{database}/run"}

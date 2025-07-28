@@ -31,6 +31,8 @@ defmodule Melocoton.DatabaseClient do
 
   defp translate_query_error(%Postgrex.Error{postgres: %{message: message}}), do: message
   defp translate_query_error(%Exqlite.Error{message: message}), do: message
+  defp translate_query_error(%DBConnection.ConnectionError{message: message}), do: message
+  defp translate_query_error(%Postgrex.QueryError{message: message}), do: message
 
   defp do_get_tables(repo, Ecto.Adapters.Postgres) do
     sql = """
