@@ -5,7 +5,7 @@ defmodule Melocoton.MixProject do
     [
       app: :melocoton,
       version: "0.1.0",
-      elixir: "~> 1.17",
+      elixir: "~> 1.18",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       test_coverage: [summary: [threshold: 40]],
@@ -73,7 +73,7 @@ defmodule Melocoton.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
       {:bandit, "~> 1.5"},
-      {:burrito, "~> 1.3"},
+      {:burrito, "~> 1.4"},
       {:csv, "~> 3.2"}
     ]
   end
