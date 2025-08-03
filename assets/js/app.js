@@ -45,6 +45,9 @@ Vim.defineEx("format", "", (cm, _params) => {
   const formatted = format(code, {
     language: "sql",
     indent: "  ",
+    tabWidth: 2,
+    keywordCase: "upper",
+    linesBetweenQueries: 1,
   });
 
   view.dispatch({
