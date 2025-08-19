@@ -35,123 +35,22 @@ defmodule Melocoton.DatabaseClient do
   defp translate_query_error(%Postgrex.QueryError{message: message}), do: message
 
   defp do_get_tables(repo, Ecto.Adapters.Postgres) do
-    sql = """
-    SELECT table_name
-    FROM information_schema.tables
-    WHERE table_type = 'BASE TABLE' AND table_schema NOT IN ('pg_catalog', 'information_schema');
-    """
-
-    case repo.query(sql) do
-      {:ok, %{rows: rows}} ->
-        rows
-        |> Enum.map(&Enum.at(&1, 0))
-        |> Enum.map(fn name ->
-          cols =
-            case repo.query(
-                   "SELECT * FROM information_schema.columns WHERE table_schema = 'public' AND table_name = '#{name}';"
-                 ) do
-              {:ok, result} ->
-                result
-                |> handle_response()
-                |> Map.get(:rows)
-                |> Enum.map(fn row ->
-                  %{name: row["column_name"], type: row["data_type"]}
-                end)
-
-              {:error, _error} ->
-                []
-            end
-
-          %{name: name, cols: cols}
-        end)
-        |> then(&{:ok, &1})
-
-      {:error, error} ->
-        {:error, error}
-    end
+    Melocoton.Engines.Postgres.get_tables(repo)
   end
 
   defp do_get_tables(repo, Ecto.Adapters.SQLite3) do
-    sql = """
-    SELECT
-      name
-    FROM
-      sqlite_schema
-    WHERE
-      type = 'table' AND
-      name NOT LIKE 'sqlite_%';
-    """
-
-    case repo.query(sql) do
-      {:ok, %{rows: rows}} ->
-        rows
-        |> Enum.map(&Enum.at(&1, 0))
-        |> Enum.map(fn name ->
-          cols =
-            case repo.query("PRAGMA table_info(#{name});") do
-              {:ok, result} ->
-                result
-                |> handle_response()
-                |> Map.get(:rows)
-                |> Enum.map(fn row ->
-                  %{name: row["name"], type: row["type"]}
-                end)
-
-              {:error, _error} ->
-                []
-            end
-
-          %{name: name, cols: cols}
-        end)
-        |> then(&{:ok, &1})
-
-      {:error, _error} ->
-        []
-    end
+    Melocoton.Engines.Sqlite.get_tables(repo)
   end
 
   defp do_get_indexes(repo, Ecto.Adapters.Postgres) do
-    sql = """
-      SELECT
-          indexname,
-          tablename
-      FROM pg_indexes
-      WHERE schemaname = 'public'
-      ORDER BY
-          tablename,
-          indexname;
-    """
-
-    case repo.query(sql) do
-      {:ok, %{rows: rows}} ->
-        rows
-        |> Enum.map(fn [name, table] ->
-          %{name: name, table: table}
-        end)
-        |> then(&{:ok, &1})
-
-      {:error, error} ->
-        {:error, error}
-    end
+    Melocoton.Engines.Postgres.get_indexes(repo)
   end
 
   defp do_get_indexes(repo, Ecto.Adapters.SQLite3) do
-    sql = "SELECT name, tbl_name FROM sqlite_master WHERE type = 'index';"
-
-    case repo.query(sql) do
-      {:ok, %{rows: rows}} ->
-        rows
-        |> Enum.map(fn [name, table] ->
-          %{name: name, table: table}
-        end)
-        |> then(&{:ok, &1})
-
-      {:error, error} ->
-        {:error, error}
-    end
+    Melocoton.Engines.Sqlite.get_indexes(repo)
   end
 
-  defp handle_response(%{columns: cols, rows: rows, num_rows: num_rows}) do
+  def handle_response(%{columns: cols, rows: rows, num_rows: num_rows}) do
     cols = cols || []
 
     rows =
