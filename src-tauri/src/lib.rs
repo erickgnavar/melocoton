@@ -21,6 +21,7 @@ fn open_new_window(app_handle: tauri::AppHandle, state: State<'_, Mutex<AppData>
     let port = state.lock().unwrap().port;
     let raw_url = format!("http://localhost:{}", port);
 
+    // TODO: use application name as title instead of "tauri app"
     let _webview_window = tauri::WebviewWindowBuilder::new(
         &app_handle,
         // we need to have a
