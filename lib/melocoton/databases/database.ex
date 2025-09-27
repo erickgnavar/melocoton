@@ -4,6 +4,9 @@ defmodule Melocoton.Databases.Database do
 
   alias Melocoton.Databases.{Group, Session}
 
+  @postgres_regex ~r/^postgres(?:ql)?:\/\/(?:([^:@]+)(?::([^@]*))?@)?([^:\/]+)(?::(\d+))?\/([^?]+)(?:\?(.+))?$/
+  @sqlite_regex ~r/^\/(?:[^\/\0]+\/?)*$/
+
   schema "databases" do
     field :name, :string
     field :type, Ecto.Enum, values: [:sqlite, :postgres], default: :sqlite
@@ -20,5 +23,30 @@ defmodule Melocoton.Databases.Database do
     database
     |> cast(attrs, [:name, :type, :url, :group_id])
     |> validate_required([:name, :type, :url])
+    |> validate_url()
+  end
+
+  defp validate_url(%{valid?: false} = changeset), do: changeset
+
+  defp validate_url(changeset) do
+    url = get_field(changeset, :url)
+
+    changeset
+    |> get_field(:type)
+    |> case do
+      :postgres ->
+        if Regex.match?(@postgres_regex, url) do
+          changeset
+        else
+          add_error(changeset, :url, "Invalid connection string")
+        end
+
+      :sqlite ->
+        if Regex.match?(@sqlite_regex, url) do
+          changeset
+        else
+          add_error(changeset, :url, "Invalid connection string")
+        end
+    end
   end
 end

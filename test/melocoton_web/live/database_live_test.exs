@@ -4,8 +4,12 @@ defmodule MelocotonWeb.DatabaseLiveTest do
   import Phoenix.LiveViewTest
   import Melocoton.DatabasesFixtures
 
-  @create_attrs %{name: "some name", type: "sqlite", url: "some url"}
-  @update_attrs %{name: "some updated name", type: "postgres", url: "some updated url"}
+  @create_attrs %{name: "some name", type: "sqlite", url: "/tmp/data.db"}
+  @update_attrs %{
+    name: "some updated name",
+    type: "postgres",
+    url: "postgres://user:pass@localhost:5432/hellodb"
+  }
   @invalid_attrs %{name: nil, type: :sqlite, url: nil}
 
   defp create_database(_) do

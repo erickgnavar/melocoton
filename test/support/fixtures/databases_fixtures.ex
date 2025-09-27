@@ -16,7 +16,7 @@ defmodule Melocoton.DatabasesFixtures do
         group_id: group.id,
         name: "some name",
         type: :sqlite,
-        url: "some url"
+        url: "/tmp/data.db"
       })
       |> Melocoton.Databases.create_database()
 
