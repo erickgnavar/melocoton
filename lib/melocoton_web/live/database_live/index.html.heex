@@ -158,8 +158,10 @@
                   </span>
                 </div>
                 <div class="flex items-center">
-                  <i class="fas fa-server text-gray-400 w-4"></i>
-                  <span>prod-server.example.com:5432</span>
+                  <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-db-postgres-light dark:bg-db-postgres/20 text-db-postgres">
+                    <i class="fas fa-server text-gray-400 w-4"></i>
+                    {Melocoton.Databases.Database.show_public_url(database)}
+                  </span>
                 </div>
               </div>
               <div class="px-3 py-2 border-t border-app-border-light dark:border-app-border-dark flex justify-end dark-transition gap-2">
