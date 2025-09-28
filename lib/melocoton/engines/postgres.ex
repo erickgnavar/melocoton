@@ -1,6 +1,8 @@
 defmodule Melocoton.Engines.Postgres do
   @behaviour Melocoton.Behaviours.Engine
 
+  alias Melocoton.{DatabaseClient, Pool}
+
   @impl true
   def get_tables(repo) do
     sql = """
@@ -20,7 +22,7 @@ defmodule Melocoton.Engines.Postgres do
                  ) do
               {:ok, result} ->
                 result
-                |> Melocoton.DatabaseClient.handle_response()
+                |> DatabaseClient.handle_response()
                 |> Map.get(:rows)
                 |> Enum.map(fn row ->
                   %{name: row["column_name"], type: row["data_type"]}
@@ -62,6 +64,19 @@ defmodule Melocoton.Engines.Postgres do
 
       {:error, error} ->
         {:error, error}
+    end
+  end
+
+  @impl true
+  def test_connection(database) do
+    repo = Pool.get_repo(database)
+
+    case DatabaseClient.query(repo, "SELECT 1") do
+      {:ok, _result, _meta} ->
+        :ok
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 end

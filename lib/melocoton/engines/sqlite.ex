@@ -57,4 +57,13 @@ defmodule Melocoton.Engines.Sqlite do
         {:error, error}
     end
   end
+
+  @impl true
+  def test_connection(database) do
+    if File.exists?(database.url) do
+      :ok
+    else
+      {:error, "File doesn't exist"}
+    end
+  end
 end

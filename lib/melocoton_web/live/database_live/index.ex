@@ -3,7 +3,6 @@ defmodule MelocotonWeb.DatabaseLive.Index do
 
   alias Melocoton.Databases
   alias Melocoton.Databases.{Database, Group}
-  alias Melocoton.{DatabaseClient, Pool}
 
   require Logger
 
@@ -41,15 +40,15 @@ defmodule MelocotonWeb.DatabaseLive.Index do
   @impl true
   def handle_event("test-connection", %{"id" => id}, socket) do
     database = Databases.get_database!(id)
-    repo = Pool.get_repo(database)
 
-    # TODO: in case of sqlite we need to verify if the path exists,
-    # because an invalid path always will return true because a new
-    # database can be created
-    # for sqlite test that we can read the file o directory defined in
-    # URL
-    case DatabaseClient.query(repo, "SELECT 1") do
-      {:ok, _result, _} ->
+    engine =
+      case database.type do
+        :sqlite -> Melocoton.Engines.Sqlite
+        :postgres -> Melocoton.Engines.Postgres
+      end
+
+    case engine.test_connection(database) do
+      :ok ->
         socket
         |> put_flash(:info, gettext("Connection successful"))
         |> then(&{:noreply, &1})
