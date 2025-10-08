@@ -20,6 +20,8 @@ defmodule MelocotonWeb.SQLLive.Run do
       end
 
     socket
+    |> assign(:filter_results_form, to_form(%{"term" => ""}))
+    |> assign(:filter_term, "")
     |> assign(:search_form, to_form(%{"term" => ""}))
     |> assign(:search_term, "")
     |> assign(:repo, repo)
@@ -27,6 +29,7 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> assign_async(:indexes, fn -> get_indexes(repo) end)
     |> assign(:database, database)
     |> assign(:current_session, current_session)
+    |> assign(:filter_result, empty_result())
     |> assign(:result, empty_result())
     |> assign(:error_message, nil)
     |> assign(:page_title, database.name)
@@ -53,6 +56,33 @@ defmodule MelocotonWeb.SQLLive.Run do
   def handle_event("validate-search", %{"term" => term}, socket) do
     socket
     |> assign(:search_term, term)
+    |> noreply()
+  end
+
+  def handle_event("validate-filter-results", %{"term" => ""}, socket) do
+    socket
+    |> assign(:filter_result, empty_result())
+    |> assign(:filter_term, "")
+    |> noreply()
+  end
+
+  def handle_event("validate-filter-results", %{"term" => term}, socket) do
+    cols = Enum.map(socket.assigns.result.cols, &to_string/1)
+
+    rows =
+      socket.assigns.result.rows
+      |> Enum.filter(fn row ->
+        row
+        |> Map.take(cols)
+        |> Map.values()
+        |> Enum.map(&to_string/1)
+        |> Enum.join(" ")
+        |> String.contains?(term)
+      end)
+
+    socket
+    |> assign(:filter_result, Map.put(socket.assigns.result, :rows, rows))
+    |> assign(:filter_term, term)
     |> noreply()
   end
 
@@ -168,6 +198,10 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> noreply()
   end
 
+  def handle_event("do-nothing", _params, socket) do
+    {:noreply, socket}
+  end
+
   @impl true
   def handle_info({MelocotonWeb.SqlLive.TableExplorerComponent, :reset_table_explorer}, socket) do
     socket
@@ -213,5 +247,16 @@ defmodule MelocotonWeb.SQLLive.Run do
       {:ok, indexes} -> {:ok, %{indexes: indexes}}
       {:error, error} -> {:error, error}
     end
+  end
+
+  defp put_mark(%{value: value, term: term} = assigns) do
+    match =
+      value |> to_string() |> String.replace(term, "<mark>#{term}</mark>") |> Phoenix.HTML.raw()
+
+    assigns = assign(assigns, :value, match)
+
+    ~H"""
+    {@value}
+    """
   end
 end

@@ -230,24 +230,56 @@
         />
 
         <div class="border-t border-app-border-light dark:border-app-border-dark flex flex-col h-2/5 overflow-hidden dark-transition">
-          <div class="flex border-b border-app-border-light dark:border-app-border-dark text-xs dark-transition">
-            <div
-              class={[
-                "px-3 py-1 bg-white dark:bg-gray-800 dark-transition",
-                @result != [] && "border-b-2"
-              ]}
-              style={"border-bottom-color: #{@database.group.color};"}
-            >
-              {gettext("Results")}
+          <div class="flex items-center justify-between border-b border-app-border-light dark:border-app-border-dark dark-transition text-xs">
+            <div class="flex">
+              <div
+                class={[
+                  "px-3 py-1 bg-white dark:bg-gray-800 dark-transition",
+                  @result != [] && "border-b-2"
+                ]}
+                style={"border-bottom-color: #{@database.group.color};"}
+              >
+                {gettext("Results")}
+              </div>
+              <button class="px-3 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:bg-black/5 dark:hover:bg-white/5">
+                Messages
+              </button>
+              <button class="px-3 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:bg-black/5 dark:hover:bg-white/5">
+                Explain
+              </button>
             </div>
-            <div class={[
-              "px-3 py-1 border-b-2 border-transparent",
-              !is_nil(@error_message) && "border-b-2"
-            ]}>
-              Messages
-            </div>
-            <div class="px-3 py-1 border-b-2 border-transparent">
-              Query History
+
+            <div class="flex items-center px-2">
+              <div class="relative">
+                <.form
+                  for={@filter_results_form}
+                  phx-change="validate-filter-results"
+                  phx-submit="do-nothing"
+                >
+                  <.input
+                    type="text"
+                    field={@filter_results_form[:term]}
+                    placeholder="Search in results..."
+                    class="w-48 px-2 py-1 text-xs border border-app-border-light dark:border-app-border-dark rounded bg-app-input-light dark:bg-app-input-dark pr-16 dark-transition"
+                  />
+                </.form>
+
+                <div class="absolute inset-y-0 right-0 flex items-center px-2">
+                  <span
+                    id="search-match-count"
+                    class="text-[10px] text-gray-500 dark:text-gray-400 mr-2"
+                  >
+                  </span>
+                  <i class="fas fa-search text-gray-400 text-[10px]"></i>
+                </div>
+              </div>
+              <button
+                id="clear-results-search"
+                class="ml-1 text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1"
+                title="Clear search"
+              >
+                <i class="fas fa-times text-[10px]"></i>
+              </button>
             </div>
           </div>
           <div
@@ -267,12 +299,19 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr :for={row <- @result.rows}>
+                  <tr :for={
+                    row <- (@filter_result.rows != [] && @filter_result.rows) || @result.rows
+                  }>
                     <td
                       :for={col <- @result.cols}
                       class="border border-app-border-light dark:border-app-border-dark px-2 py-1 whitespace-nowrap dark-transition"
                     >
-                      {Map.get(row, col)}
+                      <span :if={@filter_term == ""}>
+                        {Map.get(row, col)}
+                      </span>
+                      <span :if={@filter_term != ""}>
+                        <.put_mark value={Map.get(row, col)} term={@filter_term} />
+                      </span>
                     </td>
                   </tr>
                 </tbody>
