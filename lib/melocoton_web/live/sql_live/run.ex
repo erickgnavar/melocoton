@@ -76,8 +76,9 @@ defmodule MelocotonWeb.SQLLive.Run do
         |> Map.take(cols)
         |> Map.values()
         |> Enum.map(&to_string/1)
+        |> Enum.map(&String.downcase/1)
         |> Enum.join(" ")
-        |> String.contains?(term)
+        |> String.contains?(String.downcase(term))
       end)
 
     socket
