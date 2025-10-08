@@ -56,6 +56,52 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> noreply()
   end
 
+  def handle_event("next-session", _params, socket) do
+    sessions = socket.assigns.database.sessions
+
+    session_index =
+      Enum.find_index(sessions, fn session ->
+        session.id == socket.assigns.current_session.id
+      end)
+
+    new_session_index =
+      if session_index + 1 == length(sessions) do
+        0
+      else
+        session_index + 1
+      end
+
+    new_session = Enum.at(sessions, new_session_index)
+
+    socket
+    |> assign(:current_session, new_session)
+    |> push_event("load-query", %{"query" => new_session.query})
+    |> noreply()
+  end
+
+  def handle_event("prev-session", _params, socket) do
+    sessions = socket.assigns.database.sessions
+
+    session_index =
+      Enum.find_index(sessions, fn session ->
+        session.id == socket.assigns.current_session.id
+      end)
+
+    new_session_index =
+      if session_index - 1 == -1 do
+        length(sessions) - 1
+      else
+        session_index - 1
+      end
+
+    new_session = Enum.at(sessions, new_session_index)
+
+    socket
+    |> assign(:current_session, new_session)
+    |> push_event("load-query", %{"query" => new_session.query})
+    |> noreply()
+  end
+
   def handle_event("set-table-explorer", %{"table" => table_name}, socket) do
     # we translate empty value at HTML level to nil value inside the
     # live view

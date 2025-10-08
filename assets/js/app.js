@@ -74,6 +74,17 @@ const liveSocket = new LiveSocket("/live", Socket, {
         // server once the database was inspected
         window.sqlExtensionCompartment = sqlExtensionCompartment;
 
+        Vim.defineEx("tabnext", "tabn", () => {
+          that.pushEvent("next-session", {});
+        });
+
+        Vim.defineEx("tabprev", "tabp", () => {
+          that.pushEvent("prev-session", {});
+        });
+
+        Vim.map("gt", ":tabnext<CR>", "normal");
+        Vim.map("gT", ":tabprev<CR>", "normal");
+
         function keymaps() {
           return keymap.of([
             {
