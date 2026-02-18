@@ -7,7 +7,7 @@ defmodule MelocotonWeb.SQLLive.Run do
   @impl Phoenix.LiveView
   def mount(%{"database_id" => database_id}, _session, socket) do
     database = Databases.get_database!(database_id)
-    repo = Pool.get_repo(database)
+    conn = Pool.get_repo(database)
     # we need to get pid here because the call to get_tables/2 will be
     # made in another process so we won't be able to get the correct
     # PID
@@ -24,9 +24,9 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> assign(:filter_term, "")
     |> assign(:search_form, to_form(%{"term" => ""}))
     |> assign(:search_term, "")
-    |> assign(:repo, repo)
-    |> assign_async(:tables, fn -> get_tables(repo, liveview_pid) end)
-    |> assign_async(:indexes, fn -> get_indexes(repo) end)
+    |> assign(:conn, conn)
+    |> assign_async(:tables, fn -> get_tables(conn, liveview_pid) end)
+    |> assign_async(:indexes, fn -> get_indexes(conn) end)
     |> assign(:database, database)
     |> assign(:current_session, current_session)
     |> assign(:filter_result, empty_result())
@@ -174,7 +174,7 @@ defmodule MelocotonWeb.SQLLive.Run do
   def handle_event("run-query", %{"query" => query}, socket) do
     Logger.info("Running query #{query}")
 
-    case DatabaseClient.query(socket.assigns.repo, query) do
+    case DatabaseClient.query(socket.assigns.conn, query) do
       {:ok, result, %{total_time: total_time}} ->
         socket
         |> assign(result: result)
@@ -190,12 +190,12 @@ defmodule MelocotonWeb.SQLLive.Run do
   end
 
   def handle_event("reload-objects", _params, socket) do
-    repo = socket.assigns.repo
+    conn = socket.assigns.conn
     liveview_pid = self()
 
     socket
-    |> assign_async(:tables, fn -> get_tables(repo, liveview_pid) end)
-    |> assign_async(:indexes, fn -> get_indexes(repo) end)
+    |> assign_async(:tables, fn -> get_tables(conn, liveview_pid) end)
+    |> assign_async(:indexes, fn -> get_indexes(conn) end)
     |> noreply()
   end
 
@@ -232,8 +232,8 @@ defmodule MelocotonWeb.SQLLive.Run do
 
   # receive the liveview of the PID so we can notify once the tables
   # information is computed
-  defp get_tables(repo, liveview_pid) do
-    case DatabaseClient.get_tables(repo) do
+  defp get_tables(conn, liveview_pid) do
+    case DatabaseClient.get_tables(conn) do
       {:ok, tables} ->
         Process.send_after(liveview_pid, {:send_schema, tables}, :timer.seconds(1))
         {:ok, %{tables: tables}}
@@ -243,8 +243,8 @@ defmodule MelocotonWeb.SQLLive.Run do
     end
   end
 
-  defp get_indexes(repo) do
-    case DatabaseClient.get_indexes(repo) do
+  defp get_indexes(conn) do
+    case DatabaseClient.get_indexes(conn) do
       {:ok, indexes} -> {:ok, %{indexes: indexes}}
       {:error, error} -> {:error, error}
     end

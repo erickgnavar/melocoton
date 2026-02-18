@@ -1,23 +1,24 @@
 defmodule Melocoton.Engines.Postgres do
   @behaviour Melocoton.Behaviours.Engine
 
-  alias Melocoton.{DatabaseClient, Pool}
+  alias Melocoton.{Connection, DatabaseClient, Pool}
 
   @impl true
-  def get_tables(repo) do
+  def get_tables(conn) do
     sql = """
     SELECT table_name
     FROM information_schema.tables
     WHERE table_type = 'BASE TABLE' AND table_schema NOT IN ('pg_catalog', 'information_schema');
     """
 
-    case repo.query(sql) do
+    case Connection.query(conn, sql) do
       {:ok, %{rows: rows}} ->
         rows
         |> Enum.map(&Enum.at(&1, 0))
         |> Enum.map(fn name ->
           cols =
-            case repo.query(
+            case Connection.query(
+                   conn,
                    "SELECT * FROM information_schema.columns WHERE table_schema = 'public' AND table_name = '#{name}';"
                  ) do
               {:ok, result} ->
@@ -42,7 +43,7 @@ defmodule Melocoton.Engines.Postgres do
   end
 
   @impl true
-  def get_indexes(repo) do
+  def get_indexes(conn) do
     sql = """
       SELECT
           indexname,
@@ -54,7 +55,7 @@ defmodule Melocoton.Engines.Postgres do
           indexname;
     """
 
-    case repo.query(sql) do
+    case Connection.query(conn, sql) do
       {:ok, %{rows: rows}} ->
         rows
         |> Enum.map(fn [name, table] ->
@@ -69,9 +70,9 @@ defmodule Melocoton.Engines.Postgres do
 
   @impl true
   def test_connection(database) do
-    repo = Pool.get_repo(database)
+    conn = Pool.get_repo(database)
 
-    case DatabaseClient.query(repo, "SELECT 1") do
+    case DatabaseClient.query(conn, "SELECT 1") do
       {:ok, _result, _meta} ->
         :ok
 
