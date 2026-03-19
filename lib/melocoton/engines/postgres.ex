@@ -6,35 +6,30 @@ defmodule Melocoton.Engines.Postgres do
   @impl true
   def get_tables(conn) do
     sql = """
-    SELECT table_name
-    FROM information_schema.tables
-    WHERE table_type = 'BASE TABLE' AND table_schema NOT IN ('pg_catalog', 'information_schema');
+    SELECT t.table_name, c.column_name, c.data_type
+    FROM information_schema.tables t
+    LEFT JOIN information_schema.columns c
+      ON c.table_schema = t.table_schema AND c.table_name = t.table_name
+    WHERE t.table_type = 'BASE TABLE'
+      AND t.table_schema NOT IN ('pg_catalog', 'information_schema')
+    ORDER BY t.table_name, c.ordinal_position;
     """
 
     case Connection.query(conn, sql) do
       {:ok, %{rows: rows}} ->
         rows
-        |> Enum.map(&Enum.at(&1, 0))
-        |> Enum.map(fn name ->
+        |> Enum.group_by(fn [table_name | _] -> table_name end)
+        |> Enum.map(fn {name, col_rows} ->
           cols =
-            case Connection.query(
-                   conn,
-                   "SELECT * FROM information_schema.columns WHERE table_schema = 'public' AND table_name = '#{name}';"
-                 ) do
-              {:ok, result} ->
-                result
-                |> DatabaseClient.handle_response()
-                |> Map.get(:rows)
-                |> Enum.map(fn row ->
-                  %{name: row["column_name"], type: row["data_type"]}
-                end)
-
-              {:error, _error} ->
-                []
-            end
+            col_rows
+            |> Enum.reject(fn [_, col_name, _] -> is_nil(col_name) end)
+            |> Enum.map(fn [_, col_name, data_type] ->
+              %{name: col_name, type: data_type}
+            end)
 
           %{name: name, cols: cols}
         end)
+        |> Enum.sort_by(& &1.name)
         |> then(&{:ok, &1})
 
       {:error, error} ->
