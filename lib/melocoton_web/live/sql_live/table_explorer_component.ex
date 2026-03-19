@@ -77,8 +77,8 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
   end
 
   defp get_estimated_count(repo, table_name, :postgres) do
-    escaped = String.replace(table_name, "'", "''")
-    sql = "SELECT reltuples::bigint AS count FROM pg_class WHERE relname = '#{escaped}'"
+    sql =
+      "SELECT reltuples::bigint AS count FROM pg_class WHERE relname = #{quote_identifier(table_name)}"
 
     case DatabaseClient.query(repo, sql) do
       {:ok, %{rows: [%{"count" => count}]}, _} when count >= 0 ->
