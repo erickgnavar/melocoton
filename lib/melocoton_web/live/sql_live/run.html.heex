@@ -309,7 +309,7 @@
                       class="border border-app-border-light dark:border-app-border-dark px-2 py-1 whitespace-nowrap dark-transition"
                     >
                       <span :if={@filter_term == ""}>
-                        {Map.get(row, col)}
+                        {inspect(Map.get(row, col), structs: false)}
                       </span>
                       <span :if={@filter_term != ""}>
                         <.put_mark value={Map.get(row, col)} term={@filter_term} />
