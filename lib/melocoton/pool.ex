@@ -33,6 +33,6 @@ defmodule Melocoton.Pool do
   end
 
   defp start_connection(%{type: :sqlite, url: url}) do
-    DBConnection.start_link(Exqlite.Connection, database: url, pool_size: 5)
+    DBConnection.start_link(Exqlite.Connection, database: url, pool_size: 1)
   end
 end
