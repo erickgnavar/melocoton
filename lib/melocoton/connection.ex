@@ -4,6 +4,9 @@ defmodule Melocoton.Connection do
 
   @type t :: %__MODULE__{pid: pid(), type: :postgres | :sqlite}
 
+  # 30 second query timeout to prevent long-running queries from blocking indefinitely
+  @query_timeout :timer.seconds(30)
+
   @doc """
   Quotes an identifier (table/column name) to prevent SQL injection.
   Escapes any embedded double quotes by doubling them.
@@ -13,7 +16,7 @@ defmodule Melocoton.Connection do
   end
 
   def query(%__MODULE__{pid: pid, type: :postgres}, sql) do
-    case Postgrex.query(pid, sql, []) do
+    case Postgrex.query(pid, sql, [], timeout: @query_timeout) do
       {:ok, %Postgrex.Result{columns: cols, rows: rows, num_rows: num_rows}} ->
         {:ok, %{columns: cols, rows: rows, num_rows: num_rows}}
 
@@ -25,7 +28,7 @@ defmodule Melocoton.Connection do
   def query(%__MODULE__{pid: pid, type: :sqlite}, sql) do
     stmt = %Exqlite.Query{name: sql, statement: sql}
 
-    case DBConnection.execute(pid, stmt, []) do
+    case DBConnection.execute(pid, stmt, [], timeout: @query_timeout) do
       {:ok, _query, %Exqlite.Result{columns: cols, rows: rows, num_rows: num_rows}} ->
         {:ok, %{columns: cols, rows: rows, num_rows: num_rows}}
 
