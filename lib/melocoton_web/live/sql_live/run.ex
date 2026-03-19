@@ -76,7 +76,10 @@ defmodule MelocotonWeb.SQLLive.Run do
         row
         |> Map.take(cols)
         |> Map.values()
-        |> Enum.map_join(" ", fn v -> v |> to_string() |> String.downcase() end)
+        |> Enum.map_join(" ", fn v ->
+          str = if is_binary(v), do: v, else: inspect(v, structs: false)
+          str |> String.downcase()
+        end)
         |> String.contains?(String.downcase(term))
       end)
 
@@ -342,8 +345,13 @@ defmodule MelocotonWeb.SQLLive.Run do
   end
 
   defp put_mark(%{value: value, term: term} = assigns) do
-    match =
-      value |> to_string() |> String.replace(term, "<mark>#{term}</mark>") |> Phoenix.HTML.raw()
+    str =
+      case value do
+        s when is_binary(s) -> s
+        other -> inspect(other, structs: false)
+      end
+
+    match = str |> String.replace(term, "<mark>#{term}</mark>") |> Phoenix.HTML.raw()
 
     assigns = assign(assigns, :value, match)
 
