@@ -53,11 +53,15 @@ defmodule Melocoton.Databases.Database do
   def show_public_url(%{type: :sqlite, url: url}), do: url
 
   def show_public_url(%{type: :postgres, url: url}) do
-    [user, _pass] = url |> URI.parse() |> Map.get(:userinfo) |> String.split(":")
+    parsed = URI.parse(url)
 
-    url
-    |> URI.parse()
-    |> Map.put(:userinfo, "#{user}:***")
-    |> URI.to_string()
+    case parsed.userinfo do
+      nil ->
+        url
+
+      userinfo ->
+        user = userinfo |> String.split(":", parts: 2) |> hd()
+        parsed |> Map.put(:userinfo, "#{user}:***") |> URI.to_string()
+    end
   end
 end

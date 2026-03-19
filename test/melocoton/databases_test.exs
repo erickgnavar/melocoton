@@ -66,6 +66,50 @@ defmodule Melocoton.DatabasesTest do
     end
   end
 
+  describe "show_public_url/1" do
+    alias Melocoton.Databases.Database
+
+    test "returns sqlite url as-is" do
+      db = %Database{name: "test", type: :sqlite, url: "/tmp/data.db"}
+      assert Database.show_public_url(db) == "/tmp/data.db"
+    end
+
+    test "masks password in postgres url" do
+      db = %Database{
+        name: "test",
+        type: :postgres,
+        url: "postgres://user:secret@localhost:5432/mydb"
+      }
+
+      assert Database.show_public_url(db) == "postgres://user:***@localhost:5432/mydb"
+    end
+
+    test "handles postgres url without credentials" do
+      db = %Database{name: "test", type: :postgres, url: "postgres://localhost:5432/mydb"}
+      assert Database.show_public_url(db) == "postgres://localhost:5432/mydb"
+    end
+
+    test "handles postgres url with empty password" do
+      db = %Database{name: "test", type: :postgres, url: "postgres://user:@localhost:5432/mydb"}
+      assert Database.show_public_url(db) == "postgres://user:***@localhost:5432/mydb"
+    end
+
+    test "handles password containing colons" do
+      db = %Database{
+        name: "test",
+        type: :postgres,
+        url: "postgres://user:pass:word:123@localhost:5432/mydb"
+      }
+
+      assert Database.show_public_url(db) == "postgres://user:***@localhost:5432/mydb"
+    end
+
+    test "handles user without password" do
+      db = %Database{name: "test", type: :postgres, url: "postgres://user@localhost:5432/mydb"}
+      assert Database.show_public_url(db) == "postgres://user:***@localhost:5432/mydb"
+    end
+  end
+
   describe "groups" do
     alias Melocoton.Databases.Group
 
