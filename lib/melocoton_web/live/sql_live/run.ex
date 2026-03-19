@@ -235,7 +235,7 @@ defmodule MelocotonWeb.SQLLive.Run do
   defp get_tables(conn, liveview_pid) do
     case DatabaseClient.get_tables(conn) do
       {:ok, tables} ->
-        Process.send_after(liveview_pid, {:send_schema, tables}, :timer.seconds(1))
+        send(liveview_pid, {:send_schema, tables})
         {:ok, %{tables: tables}}
 
       {:error, error} ->
