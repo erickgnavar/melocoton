@@ -2,7 +2,7 @@ defmodule MelocotonWeb.SQLLive.Run do
   use MelocotonWeb, :live_view
 
   require Logger
-  alias Melocoton.{Databases, Pool, DatabaseClient}
+  alias Melocoton.{DatabaseClient, Databases, Pool}
 
   @impl Phoenix.LiveView
   def mount(%{"database_id" => database_id}, _session, socket) do
@@ -75,9 +75,7 @@ defmodule MelocotonWeb.SQLLive.Run do
         row
         |> Map.take(cols)
         |> Map.values()
-        |> Enum.map(&to_string/1)
-        |> Enum.map(&String.downcase/1)
-        |> Enum.join(" ")
+        |> Enum.map_join(" ", fn v -> v |> to_string() |> String.downcase() end)
         |> String.contains?(String.downcase(term))
       end)
 

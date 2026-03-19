@@ -10,6 +10,7 @@ defmodule Melocoton.MixProject do
       start_permanent: Mix.env() == :prod,
       test_coverage: [summary: [threshold: 35]],
       aliases: aliases(),
+      preferred_cli_env: [ci: :test],
       deps: deps(),
       compilers: [:phoenix_live_view] ++ Mix.compilers(),
       listeners: [Phoenix.CodeReloader],
@@ -75,7 +76,9 @@ defmodule Melocoton.MixProject do
       {:dns_cluster, "~> 0.1.1"},
       {:bandit, "~> 1.5"},
       {:burrito, "~> 1.5"},
-      {:csv, "~> 3.2"}
+      {:csv, "~> 3.2"},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false}
     ]
   end
 
@@ -101,6 +104,8 @@ defmodule Melocoton.MixProject do
       ci: [
         "format --check-formatted",
         "deps.unlock --check-unused",
+        "credo --strict",
+        "deps.audit",
         "test --cover"
       ]
     ]
