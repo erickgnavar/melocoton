@@ -5,9 +5,9 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
   @initial_limit 20
 
   @impl true
-  def update(%{repo: repo, table_name: table_name} = assigns, socket) do
+  def update(%{repo: repo, table_name: table_name, database: database} = assigns, socket) do
     page = 1
-    pages = 1..get_num_pages(repo, table_name, @initial_limit)
+    pages = 1..get_num_pages(repo, table_name, database.type, @initial_limit)
 
     socket
     |> assign(assigns)
@@ -70,16 +70,33 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
     |> noreply()
   end
 
-  defp get_num_pages(repo, table_name, limit) do
-    # we need to add an alias so we can have the same result in
-    # postgres and sqlite, otherwise the column name will be different
-    # and we need to handle more case clauses
-    case DatabaseClient.query(repo, "SELECT COUNT(*) AS count FROM #{table_name}") do
-      {:ok, %{rows: [%{"count" => count}]}, _} ->
-        div(count, limit) + 1
+  defp get_num_pages(repo, table_name, db_type, limit) do
+    count = get_estimated_count(repo, table_name, db_type)
+    max(div(count, limit) + 1, 1)
+  end
 
-      {:error, _error} ->
-        1
+  defp get_estimated_count(repo, table_name, :postgres) do
+    sql = "SELECT reltuples::bigint AS count FROM pg_class WHERE relname = '#{table_name}'"
+
+    case DatabaseClient.query(repo, sql) do
+      {:ok, %{rows: [%{"count" => count}]}, _} when count >= 0 ->
+        count
+
+      _ ->
+        # Fall back to exact count if pg_class has no stats (e.g. never analyzed)
+        get_exact_count(repo, table_name)
+    end
+  end
+
+  defp get_estimated_count(repo, table_name, :sqlite) do
+    # sqlite_stat1 may not exist if ANALYZE has never been run, fall back to exact count
+    get_exact_count(repo, table_name)
+  end
+
+  defp get_exact_count(repo, table_name) do
+    case DatabaseClient.query(repo, "SELECT COUNT(*) AS count FROM #{table_name}") do
+      {:ok, %{rows: [%{"count" => count}]}, _} -> count
+      {:error, _error} -> 0
     end
   end
 
