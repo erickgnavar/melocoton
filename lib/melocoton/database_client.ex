@@ -27,10 +27,12 @@ defmodule Melocoton.DatabaseClient do
   @spec get_indexes(Connection.t()) :: {:ok, [map]} | {:error, String.t()}
   def get_indexes(%Connection{type: type} = conn), do: do_get_indexes(conn, type)
 
-  defp translate_query_error(%Postgrex.Error{postgres: %{message: message}}), do: message
-  defp translate_query_error(%Exqlite.Error{message: message}), do: message
-  defp translate_query_error(%DBConnection.ConnectionError{message: message}), do: message
-  defp translate_query_error(%Postgrex.QueryError{message: message}), do: message
+  def translate_query_error(%Postgrex.Error{postgres: %{message: message}}), do: message
+  def translate_query_error(%Exqlite.Error{message: message}), do: message
+  def translate_query_error(%DBConnection.ConnectionError{message: message}), do: message
+  def translate_query_error(%Postgrex.QueryError{message: message}), do: message
+  def translate_query_error(error) when is_binary(error), do: error
+  def translate_query_error(error), do: inspect(error)
 
   defp do_get_tables(conn, :postgres), do: Melocoton.Engines.Postgres.get_tables(conn)
   defp do_get_tables(conn, :sqlite), do: Melocoton.Engines.Sqlite.get_tables(conn)

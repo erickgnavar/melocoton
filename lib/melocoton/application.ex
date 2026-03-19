@@ -18,7 +18,8 @@ defmodule Melocoton.Application do
       # {Melocoton.Worker, arg},
       # Start to serve requests, typically the last entry
       MelocotonWeb.Endpoint,
-      Melocoton.Pool
+      Melocoton.Pool,
+      {Task.Supervisor, name: Melocoton.TransactionSession.Supervisor}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

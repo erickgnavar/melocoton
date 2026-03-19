@@ -2,7 +2,7 @@ defmodule MelocotonWeb.SQLLive.Run do
   use MelocotonWeb, :live_view
 
   require Logger
-  alias Melocoton.{DatabaseClient, Databases, Pool}
+  alias Melocoton.{DatabaseClient, Databases, Pool, TransactionSession}
 
   @impl Phoenix.LiveView
   def mount(%{"database_id" => database_id}, _session, socket) do
@@ -35,6 +35,7 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> assign(:page_title, database.name)
     |> assign(:pid, self())
     |> assign(:running_transaction?, false)
+    |> assign(:transaction_session, nil)
     |> assign(:table_explorer, nil)
     |> assign(:query_time, 0)
     |> ok()
@@ -171,19 +172,23 @@ defmodule MelocotonWeb.SQLLive.Run do
   @impl Phoenix.LiveView
   def handle_event("run-query", %{"query" => query}, socket) do
     Logger.info("Running query #{query}")
+    normalized = query |> String.trim() |> String.downcase()
 
-    case DatabaseClient.query(socket.assigns.conn, query) do
-      {:ok, result, %{total_time: total_time}} ->
-        socket
-        |> assign(result: result)
-        |> assign(query_time: total_time)
-        |> assign(:error_message, nil)
-        |> noreply()
+    cond do
+      normalized =~ ~r/^begin\b/ ->
+        handle_begin(socket)
 
-      {:error, reason} ->
-        socket
-        |> assign(:error_message, reason)
-        |> noreply()
+      normalized =~ ~r/^commit\b/ and socket.assigns.running_transaction? ->
+        handle_commit(socket)
+
+      normalized =~ ~r/^rollback\b/ and socket.assigns.running_transaction? ->
+        handle_rollback(socket)
+
+      socket.assigns.running_transaction? ->
+        handle_transaction_query(socket, query)
+
+      true ->
+        handle_regular_query(socket, query)
     end
   end
 
@@ -209,6 +214,19 @@ defmodule MelocotonWeb.SQLLive.Run do
   end
 
   @impl true
+  def handle_info({:DOWN, _ref, :process, pid, _reason}, socket)
+      when pid == socket.assigns.transaction_session and not is_nil(pid) do
+    socket
+    |> assign(:running_transaction?, false)
+    |> assign(:transaction_session, nil)
+    |> noreply()
+  end
+
+  def handle_info({:DOWN, _ref, :process, _pid, _reason}, socket) do
+    noreply(socket)
+  end
+
+  @impl true
   def handle_info({:send_schema, schema}, socket) do
     # prepare tables information to fit
     schema_for_editor =
@@ -221,6 +239,81 @@ defmodule MelocotonWeb.SQLLive.Run do
     socket
     |> push_event("load-schema", %{schema: schema_for_editor, type: socket.assigns.database.type})
     |> noreply()
+  end
+
+  defp handle_begin(socket) do
+    case TransactionSession.start(socket.assigns.conn, self()) do
+      {:ok, session_pid} ->
+        Process.monitor(session_pid)
+
+        socket
+        |> assign(:running_transaction?, true)
+        |> assign(:transaction_session, session_pid)
+        |> assign(:error_message, nil)
+        |> noreply()
+
+      {:error, reason} ->
+        socket
+        |> assign(:error_message, "Failed to start transaction: #{inspect(reason)}")
+        |> noreply()
+    end
+  end
+
+  defp handle_commit(socket) do
+    TransactionSession.commit(socket.assigns.transaction_session)
+
+    socket
+    |> assign(:running_transaction?, false)
+    |> assign(:transaction_session, nil)
+    |> assign(:error_message, nil)
+    |> noreply()
+  end
+
+  defp handle_rollback(socket) do
+    TransactionSession.rollback(socket.assigns.transaction_session)
+
+    socket
+    |> assign(:running_transaction?, false)
+    |> assign(:transaction_session, nil)
+    |> assign(:error_message, nil)
+    |> noreply()
+  end
+
+  defp handle_transaction_query(socket, query) do
+    init_time = System.monotonic_time(:nanosecond)
+    result = TransactionSession.query(socket.assigns.transaction_session, query)
+    end_time = System.monotonic_time(:nanosecond)
+    total_time = System.convert_time_unit(end_time - init_time, :nanosecond, :millisecond)
+
+    case result do
+      {:ok, raw_result} ->
+        socket
+        |> assign(result: DatabaseClient.handle_response(raw_result))
+        |> assign(query_time: total_time)
+        |> assign(:error_message, nil)
+        |> noreply()
+
+      {:error, reason} ->
+        socket
+        |> assign(:error_message, DatabaseClient.translate_query_error(reason))
+        |> noreply()
+    end
+  end
+
+  defp handle_regular_query(socket, query) do
+    case DatabaseClient.query(socket.assigns.conn, query) do
+      {:ok, result, %{total_time: total_time}} ->
+        socket
+        |> assign(result: result)
+        |> assign(query_time: total_time)
+        |> assign(:error_message, nil)
+        |> noreply()
+
+      {:error, reason} ->
+        socket
+        |> assign(:error_message, reason)
+        |> noreply()
+    end
   end
 
   defp create_session(database) do
