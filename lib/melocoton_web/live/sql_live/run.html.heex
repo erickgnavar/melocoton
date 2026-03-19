@@ -40,6 +40,7 @@
             <.input
               type="text"
               field={@search_form[:term]}
+              id="search-objects-term"
               placeholder="Search database objects..."
             />
           </.form>
@@ -259,6 +260,7 @@
                   <.input
                     type="text"
                     field={@filter_results_form[:term]}
+                    id="filter-results-term"
                     placeholder="Search in results..."
                     class="w-48 px-2 py-1 text-xs border border-app-border-light dark:border-app-border-dark rounded bg-app-input-light dark:bg-app-input-dark pr-16 dark-transition"
                   />
@@ -356,7 +358,7 @@
       :if={!is_nil(@table_explorer)}
       module={MelocotonWeb.SqlLive.TableExplorerComponent}
       id="table-explorer"
-      repo={@repo}
+      repo={@conn}
       table_name={@table_explorer}
       database={@database}
     />
