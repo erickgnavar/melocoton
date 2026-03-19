@@ -2,6 +2,7 @@ defmodule Melocoton.Engines.Sqlite do
   @behaviour Melocoton.Behaviours.Engine
 
   alias Melocoton.Connection
+  import Connection, only: [quote_identifier: 1]
 
   @impl true
   def get_tables(conn) do
@@ -21,7 +22,7 @@ defmodule Melocoton.Engines.Sqlite do
         |> Enum.map(&Enum.at(&1, 0))
         |> Enum.map(fn name ->
           cols =
-            case Connection.query(conn, "PRAGMA table_info(#{name});") do
+            case Connection.query(conn, "PRAGMA table_info(#{quote_identifier(name)});") do
               {:ok, result} ->
                 result
                 |> Melocoton.DatabaseClient.handle_response()

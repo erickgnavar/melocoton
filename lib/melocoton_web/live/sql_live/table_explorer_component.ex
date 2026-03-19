@@ -1,6 +1,7 @@
 defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
   use MelocotonWeb, :live_component
   alias Melocoton.DatabaseClient
+  import Melocoton.Connection, only: [quote_identifier: 1]
 
   @initial_limit 20
 
@@ -76,7 +77,8 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
   end
 
   defp get_estimated_count(repo, table_name, :postgres) do
-    sql = "SELECT reltuples::bigint AS count FROM pg_class WHERE relname = '#{table_name}'"
+    escaped = String.replace(table_name, "'", "''")
+    sql = "SELECT reltuples::bigint AS count FROM pg_class WHERE relname = '#{escaped}'"
 
     case DatabaseClient.query(repo, sql) do
       {:ok, %{rows: [%{"count" => count}]}, _} when count >= 0 ->
@@ -94,7 +96,10 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
   end
 
   defp get_exact_count(repo, table_name) do
-    case DatabaseClient.query(repo, "SELECT COUNT(*) AS count FROM #{table_name}") do
+    case DatabaseClient.query(
+           repo,
+           "SELECT COUNT(*) AS count FROM #{quote_identifier(table_name)}"
+         ) do
       {:ok, %{rows: [%{"count" => count}]}, _} -> count
       {:error, _error} -> 0
     end
@@ -102,7 +107,7 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
 
   defp get_result(repo, table_name, page, limit) do
     offset = (page - 1) * limit
-    sql = "SELECT * FROM #{table_name} LIMIT #{limit} OFFSET #{offset}"
+    sql = "SELECT * FROM #{quote_identifier(table_name)} LIMIT #{limit} OFFSET #{offset}"
 
     case DatabaseClient.query(repo, sql) do
       {:ok, result, _} ->

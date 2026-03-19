@@ -4,6 +4,14 @@ defmodule Melocoton.Connection do
 
   @type t :: %__MODULE__{pid: pid(), type: :postgres | :sqlite}
 
+  @doc """
+  Quotes an identifier (table/column name) to prevent SQL injection.
+  Escapes any embedded double quotes by doubling them.
+  """
+  def quote_identifier(name) when is_binary(name) do
+    ~s("#{String.replace(name, "\"", "\"\"")}")
+  end
+
   def query(%__MODULE__{pid: pid, type: :postgres}, sql) do
     case Postgrex.query(pid, sql, []) do
       {:ok, %Postgrex.Result{columns: cols, rows: rows, num_rows: num_rows}} ->
