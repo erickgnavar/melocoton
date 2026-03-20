@@ -10,12 +10,15 @@ defmodule Melocoton.MixProject do
       start_permanent: Mix.env() == :prod,
       test_coverage: [summary: [threshold: 35]],
       aliases: aliases(),
-      preferred_cli_env: [ci: :test],
       deps: deps(),
       compilers: [:phoenix_live_view] ++ Mix.compilers(),
       listeners: [Phoenix.CodeReloader],
       releases: releases()
     ]
+  end
+
+  def cli do
+    [preferred_envs: [ci: :test]]
   end
 
   # Configuration for the OTP application.
