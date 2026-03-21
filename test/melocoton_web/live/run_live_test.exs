@@ -68,6 +68,8 @@ defmodule MelocotonWeb.SQLLive.RunTest do
           "CREATE TABLE strict_table (id INTEGER PRIMARY KEY, required_field TEXT NOT NULL, optional_field TEXT)",
           "CREATE TABLE with_defaults (id INTEGER PRIMARY KEY, status TEXT DEFAULT 'active', count INTEGER DEFAULT 0)",
           "CREATE TABLE items (id INTEGER PRIMARY KEY, value TEXT)",
+          "CREATE TABLE cell_types (id INTEGER PRIMARY KEY, json_col TEXT, long_col TEXT, url_col TEXT, num_col REAL, bin_col BLOB)",
+          ~s[INSERT INTO cell_types (json_col, long_col, url_col, num_col, bin_col) VALUES ('{"key":"value"}', '#{String.duplicate("a", 150)}', 'https://example.com/path', 3.14, X'f3beabc69348')],
           "CREATE INDEX idx_posts_title ON posts(title)",
           "CREATE UNIQUE INDEX idx_posts_user_title ON posts(user_id, title)"
         ] ++ item_inserts
@@ -419,6 +421,50 @@ defmodule MelocotonWeb.SQLLive.RunTest do
       # Badge shows count of visible columns (1 of 2)
       assert html =~ "Columns"
       assert html =~ ">1</span>"
+    end
+  end
+
+  describe "table explorer cell rendering" do
+    test "renders JSON values with cell-json class", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      html = open_table_explorer(live_view, "cell_types")
+
+      assert html =~ "cell-json"
+      # JSON quotes are HTML-escaped
+      assert html =~ "key"
+      assert html =~ "value"
+    end
+
+    test "truncates long text values with ellipsis", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      html = open_table_explorer(live_view, "cell_types")
+
+      assert html =~ "cell-long-text"
+      # Ellipsis indicates truncation in the visible text
+      assert html =~ "…"
+    end
+
+    test "renders URLs with cell-url class", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      html = open_table_explorer(live_view, "cell_types")
+
+      assert html =~ "cell-url"
+      assert html =~ "https://example.com/path"
+    end
+
+    test "renders numbers with cell-number class", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      html = open_table_explorer(live_view, "cell_types")
+
+      assert html =~ "cell-number"
+      assert html =~ "3.14"
+    end
+
+    test "renders binary values in hex format", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      html = open_table_explorer(live_view, "cell_types")
+
+      assert html =~ "\\xf3beabc69348"
     end
   end
 

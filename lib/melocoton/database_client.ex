@@ -72,14 +72,21 @@ defmodule Melocoton.DatabaseClient do
             casted_value
 
           :error ->
-            "ERROR"
+            format_binary(raw_uuid)
         end
 
       value when is_map(value) ->
         Jason.encode!(value)
 
+      value when is_binary(value) ->
+        if String.valid?(value), do: value, else: format_binary(value)
+
       value ->
         value
     end)
+  end
+
+  defp format_binary(bin) do
+    "\\x" <> Base.encode16(bin, case: :lower)
   end
 end

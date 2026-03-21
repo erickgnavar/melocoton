@@ -243,24 +243,50 @@
                 class="p-1.5"
                 style="border-bottom: 0.5px solid var(--border-subtle); border-left: 0.5px solid var(--border-subtle);"
               >
-                <%= cond do %>
-                  <% is_nil(Map.get(row, col)) -> %>
+                <% value = Map.get(row, col) %>
+                <% type = cell_type(value) %>
+                <%= case type do %>
+                  <% :null -> %>
                     <span class="cell-null">null</span>
-                  <% Map.get(row, col) == true -> %>
-                    <span class="cell-bool-true">true</span>
-                  <% Map.get(row, col) == false -> %>
-                    <span class="cell-bool-false">false</span>
-                  <% is_binary(Map.get(row, col)) and String.starts_with?(Map.get(row, col), "http") -> %>
-                    <span class="cell-url" title={Map.get(row, col)}>
-                      <span :if={@filter == ""}>{Map.get(row, col)}</span>
+                  <% :boolean -> %>
+                    <span class={if value, do: "cell-bool-true", else: "cell-bool-false"}>
+                      {to_string(value)}
+                    </span>
+                  <% :url -> %>
+                    <span class="cell-url" title={value}>
+                      <span :if={@filter == ""}>{value}</span>
                       <span :if={@filter != ""}>
-                        <.put_mark value={Map.get(row, col)} term={@filter} />
+                        <.put_mark value={value} term={@filter} />
                       </span>
                     </span>
-                  <% true -> %>
-                    <span :if={@filter == ""}>{Map.get(row, col)}</span>
+                  <% :json -> %>
+                    <span class="cell-json" title={format_cell_value(value, :json)}>
+                      <span :if={@filter == ""}>{format_cell_value(value, :long_text)}</span>
+                      <span :if={@filter != ""}>
+                        <.put_mark value={value} term={@filter} />
+                      </span>
+                    </span>
+                  <% :long_text -> %>
+                    <span class="cell-long-text" title={value}>
+                      <span :if={@filter == ""}>{format_cell_value(value, :long_text)}…</span>
+                      <span :if={@filter != ""}>
+                        <.put_mark value={value} term={@filter} />
+                      </span>
+                    </span>
+                  <% :timestamp -> %>
+                    <span class="cell-timestamp">
+                      {Calendar.strftime(value, "%Y-%m-%d %H:%M:%S")}
+                    </span>
+                  <% :date -> %>
+                    <span class="cell-timestamp">{Calendar.strftime(value, "%Y-%m-%d")}</span>
+                  <% :time -> %>
+                    <span class="cell-timestamp">{Calendar.strftime(value, "%H:%M:%S")}</span>
+                  <% :number -> %>
+                    <span class="cell-number">{value}</span>
+                  <% _ -> %>
+                    <span :if={@filter == ""}>{to_string(value)}</span>
                     <span :if={@filter != ""}>
-                      <.put_mark value={Map.get(row, col)} term={@filter} />
+                      <.put_mark value={value} term={@filter} />
                     </span>
                 <% end %>
               </td>

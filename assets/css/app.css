@@ -258,6 +258,37 @@ input:focus, button:active, textarea:focus, select:focus,
   color: #2563eb;
 }
 
+.cell-json {
+  font-family: var(--font-mono, monospace);
+  color: #fb923c;
+  cursor: help;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+}
+[data-theme="light"] .cell-json {
+  color: #c2410c;
+}
+
+.cell-long-text {
+  cursor: help;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+}
+
+.cell-number {
+  font-family: var(--font-mono, monospace);
+  color: #22d3ee;
+}
+[data-theme="light"] .cell-number {
+  color: #0891b2;
+}
+
 .cell-pk {
   color: var(--text-tertiary);
   font-size: 11px;
