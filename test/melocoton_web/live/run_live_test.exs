@@ -141,6 +141,127 @@ defmodule MelocotonWeb.SQLLive.RunTest do
       assert html =~ "Showing"
     end
 
+    test "sorts by column ascending on first click", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      render_click(live_view, "set-table-explorer", %{"table" => "users"})
+      render_async(live_view)
+
+      live_view
+      |> element("[phx-click='sort-column'][phx-value-column='name']")
+      |> render_click()
+
+      html = render_async(live_view)
+
+      # alice comes before bob in ascending order
+      alice_pos = :binary.match(html, "alice") |> elem(0)
+      bob_pos = :binary.match(html, "bob") |> elem(0)
+      assert alice_pos < bob_pos
+      # Should show sort-up icon
+      assert html =~ "fa-sort-up"
+    end
+
+    test "sorts descending on second click", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      render_click(live_view, "set-table-explorer", %{"table" => "users"})
+      render_async(live_view)
+
+      # First click: ascending
+      live_view
+      |> element("[phx-click='sort-column'][phx-value-column='name']")
+      |> render_click()
+
+      render_async(live_view)
+
+      # Second click: descending
+      live_view
+      |> element("[phx-click='sort-column'][phx-value-column='name']")
+      |> render_click()
+
+      html = render_async(live_view)
+
+      # bob comes before alice in descending order
+      alice_pos = :binary.match(html, "alice") |> elem(0)
+      bob_pos = :binary.match(html, "bob") |> elem(0)
+      assert bob_pos < alice_pos
+      # Should show sort-down icon
+      assert html =~ "fa-sort-down"
+    end
+
+    test "clears sort on third click", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      render_click(live_view, "set-table-explorer", %{"table" => "users"})
+      render_async(live_view)
+
+      # Click three times: asc -> desc -> none
+      for _i <- 1..3 do
+        live_view
+        |> element("[phx-click='sort-column'][phx-value-column='name']")
+        |> render_click()
+
+        render_async(live_view)
+      end
+
+      html = render(live_view)
+
+      # No active sort icons — only neutral fa-sort should remain
+      refute html =~ "fa-sort-up"
+      refute html =~ "fa-sort-down"
+    end
+
+    test "sorting a different column resets to ascending", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      render_click(live_view, "set-table-explorer", %{"table" => "users"})
+      render_async(live_view)
+
+      # Sort by name descending
+      live_view
+      |> element("[phx-click='sort-column'][phx-value-column='name']")
+      |> render_click()
+
+      render_async(live_view)
+
+      live_view
+      |> element("[phx-click='sort-column'][phx-value-column='name']")
+      |> render_click()
+
+      render_async(live_view)
+
+      # Now sort by id — should start ascending
+      live_view
+      |> element("[phx-click='sort-column'][phx-value-column='id']")
+      |> render_click()
+
+      html = render_async(live_view)
+      assert html =~ "fa-sort-up"
+    end
+
+    test "sort persists across pagination", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      render_click(live_view, "set-table-explorer", %{"table" => "items"})
+      render_async(live_view)
+
+      # Sort by value descending — item_9 should come first (lexicographic)
+      live_view
+      |> element("[phx-click='sort-column'][phx-value-column='value']")
+      |> render_click()
+
+      render_async(live_view)
+
+      live_view
+      |> element("[phx-click='sort-column'][phx-value-column='value']")
+      |> render_click()
+
+      render_async(live_view)
+
+      # Go to next page — sort should still be active
+      live_view
+      |> element("[phx-click='next-page']")
+      |> render_click()
+
+      html = render_async(live_view)
+      assert html =~ "fa-sort-down"
+    end
+
     test "paginates with next and previous", %{conn: conn, database: database} do
       {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
       render_click(live_view, "set-table-explorer", %{"table" => "items"})

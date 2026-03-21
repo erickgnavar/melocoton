@@ -161,12 +161,31 @@
               </th>
               <th
                 :for={col <- result.cols}
-                class="p-1.5 text-left sticky top-0"
+                class="p-1.5 text-left sticky top-0 cursor-pointer select-none hover:bg-black/5 dark:hover:bg-white/5"
                 style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-medium); border-left: 0.5px solid var(--border-subtle); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary);"
+                phx-click="sort-column"
+                phx-value-column={col}
+                phx-target={@myself}
               >
                 <div class="flex items-center">
                   <span>{col}</span>
-                  <i class="fas fa-sort ml-1 text-[8px]" style="color: var(--text-tertiary);"></i>
+                  <%= cond do %>
+                    <% @sort_column == col and @sort_direction == :asc -> %>
+                      <i
+                        class="fas fa-sort-up ml-1 text-[8px]"
+                        style={"color: #{@database.group.color};"}
+                      >
+                      </i>
+                    <% @sort_column == col and @sort_direction == :desc -> %>
+                      <i
+                        class="fas fa-sort-down ml-1 text-[8px]"
+                        style={"color: #{@database.group.color};"}
+                      >
+                      </i>
+                    <% true -> %>
+                      <i class="fas fa-sort ml-1 text-[8px]" style="color: var(--text-tertiary);">
+                      </i>
+                  <% end %>
                 </div>
               </th>
             </tr>
