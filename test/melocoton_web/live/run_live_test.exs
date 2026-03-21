@@ -327,6 +327,101 @@ defmodule MelocotonWeb.SQLLive.RunTest do
     end
   end
 
+  describe "table explorer column visibility" do
+    test "columns dropdown opens and shows all columns", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "users")
+
+      live_view
+      |> element("[phx-click='toggle-columns-dropdown']")
+      |> render_click()
+
+      html = render(live_view)
+
+      assert html =~ "fa-check-square"
+      assert html =~ "phx-click=\"toggle-column\""
+    end
+
+    test "hiding a column removes it from the table", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "users")
+
+      # Open dropdown, then hide "name"
+      live_view |> element("[phx-click='toggle-columns-dropdown']") |> render_click()
+
+      live_view
+      |> element("[phx-click='toggle-column'][phx-value-column='name']")
+      |> render_click()
+
+      html = render(live_view)
+
+      refute html =~ "alice"
+      refute html =~ "bob"
+      assert html =~ "id"
+    end
+
+    test "cannot hide the last visible column", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "users")
+
+      live_view |> element("[phx-click='toggle-columns-dropdown']") |> render_click()
+
+      # Hide "name" first
+      live_view
+      |> element("[phx-click='toggle-column'][phx-value-column='name']")
+      |> render_click()
+
+      # Try to hide "id" — should be prevented (last column)
+      live_view
+      |> element("[phx-click='toggle-column'][phx-value-column='id']")
+      |> render_click()
+
+      html = render(live_view)
+
+      # "id" column data should still be visible
+      assert html =~ "1"
+      assert html =~ "2"
+    end
+
+    test "re-showing a hidden column restores it", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "users")
+
+      live_view |> element("[phx-click='toggle-columns-dropdown']") |> render_click()
+
+      # Hide then re-show "name"
+      live_view
+      |> element("[phx-click='toggle-column'][phx-value-column='name']")
+      |> render_click()
+
+      live_view
+      |> element("[phx-click='toggle-column'][phx-value-column='name']")
+      |> render_click()
+
+      html = render(live_view)
+
+      assert html =~ "alice"
+      assert html =~ "bob"
+    end
+
+    test "shows count badge when columns are hidden", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "users")
+
+      # Open dropdown and hide one column — badge with count should appear
+      live_view |> element("[phx-click='toggle-columns-dropdown']") |> render_click()
+
+      live_view
+      |> element("[phx-click='toggle-column'][phx-value-column='name']")
+      |> render_click()
+
+      html = render(live_view)
+      # Badge shows count of visible columns (1 of 2)
+      assert html =~ "Columns"
+      assert html =~ ">1</span>"
+    end
+  end
+
   describe "table explorer structure tab" do
     test "switches to structure tab and shows column details", %{
       conn: conn,

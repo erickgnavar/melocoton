@@ -17,6 +17,7 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
     |> assign(active_tab: "data")
     |> assign(limit: @initial_limit, page: page, pages: Enum.to_list(pages))
     |> assign(sort_column: nil, sort_direction: nil, filter: "", columns: columns)
+    |> assign(visible_columns: MapSet.new(columns), columns_dropdown_open: false)
     |> assign(:limit_form, to_form(%{"limit" => @initial_limit}))
     |> load_data()
     |> ok()
@@ -107,6 +108,36 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
     socket
     |> assign(filter: filter, page: 1)
     |> load_data()
+    |> noreply()
+  end
+
+  @impl true
+  def handle_event("toggle-columns-dropdown", _params, socket) do
+    socket
+    |> assign(columns_dropdown_open: !socket.assigns.columns_dropdown_open)
+    |> noreply()
+  end
+
+  @impl true
+  def handle_event("close-columns-dropdown", _params, socket) do
+    socket
+    |> assign(columns_dropdown_open: false)
+    |> noreply()
+  end
+
+  @impl true
+  def handle_event("toggle-column", %{"column" => column}, socket) do
+    visible = socket.assigns.visible_columns
+
+    visible =
+      if MapSet.member?(visible, column) and MapSet.size(visible) > 1 do
+        MapSet.delete(visible, column)
+      else
+        MapSet.put(visible, column)
+      end
+
+    socket
+    |> assign(visible_columns: visible)
     |> noreply()
   end
 

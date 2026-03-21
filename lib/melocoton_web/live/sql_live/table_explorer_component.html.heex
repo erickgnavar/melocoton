@@ -93,12 +93,57 @@
         <i class="fas fa-file-export mr-1.5 text-[10px]"></i> Export
       </button>
       <div class="w-px h-4" style="background: var(--border-medium);"></div>
-      <button
-        class="px-2 py-1 rounded flex items-center"
-        style="background: var(--bg-tertiary); color: var(--text-secondary);"
-      >
-        <i class="fas fa-columns mr-1.5 text-[10px]"></i> Columns
-      </button>
+      <div class="relative">
+        <button
+          class="px-2 py-1 rounded flex items-center"
+          style={
+            if @columns_dropdown_open do
+              "background: #{@database.group.color}22; color: #{@database.group.color};"
+            else
+              "background: var(--bg-tertiary); color: var(--text-secondary);"
+            end
+          }
+          phx-click="toggle-columns-dropdown"
+          phx-target={@myself}
+        >
+          <i class="fas fa-columns mr-1.5 text-[10px]"></i>
+          Columns
+          <%= if MapSet.size(@visible_columns) < length(@columns) do %>
+            <span
+              class="ml-1 px-1 rounded-full text-[9px] font-medium"
+              style={"background: #{@database.group.color}; color: white;"}
+            >
+              {MapSet.size(@visible_columns)}
+            </span>
+          <% end %>
+        </button>
+        <div
+          :if={@columns_dropdown_open}
+          class="absolute top-full left-0 mt-1 z-20 rounded shadow-lg py-1 text-xs min-w-[160px] max-h-[300px] overflow-y-auto"
+          style="background: var(--bg-secondary); border: 1px solid var(--border-medium);"
+          phx-click-away="close-columns-dropdown"
+          phx-target={@myself}
+        >
+          <div
+            :for={col <- @columns}
+            class="px-3 py-1.5 flex items-center gap-2 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5"
+            phx-click="toggle-column"
+            phx-value-column={col}
+            phx-target={@myself}
+          >
+            <i
+              class={"fas text-[10px] #{if MapSet.member?(@visible_columns, col), do: "fa-check-square", else: "fa-square"}"}
+              style={
+                if MapSet.member?(@visible_columns, col),
+                  do: "color: #{@database.group.color};",
+                  else: "color: var(--text-tertiary);"
+              }
+            >
+            </i>
+            <span style="color: var(--text-primary);">{col}</span>
+          </div>
+        </div>
+      </div>
       <button
         class="px-2 py-1 rounded flex items-center"
         style="background: var(--bg-tertiary); color: var(--text-secondary);"
@@ -151,7 +196,7 @@
                 #
               </th>
               <th
-                :for={col <- result.cols}
+                :for={col <- Enum.filter(result.cols, &MapSet.member?(@visible_columns, &1))}
                 class="p-1.5 text-left sticky top-0 cursor-pointer select-none hover:bg-black/5 dark:hover:bg-white/5"
                 style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-medium); border-left: 0.5px solid var(--border-subtle); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary);"
                 phx-click="sort-column"
@@ -194,7 +239,7 @@
                 {row_idx}
               </td>
               <td
-                :for={col <- result.cols}
+                :for={col <- Enum.filter(result.cols, &MapSet.member?(@visible_columns, &1))}
                 class="p-1.5"
                 style="border-bottom: 0.5px solid var(--border-subtle); border-left: 0.5px solid var(--border-subtle);"
               >
