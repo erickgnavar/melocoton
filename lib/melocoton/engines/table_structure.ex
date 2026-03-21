@@ -9,6 +9,7 @@ defmodule Melocoton.Engines.TableStructure do
     pk_columns: [],
     unique_constraints: [],
     foreign_keys: [],
+    referenced_by: [],
     check_constraints: [],
     indexes: [],
     size: %{}
@@ -47,6 +48,7 @@ defmodule Melocoton.Engines.TableStructure do
           pk_columns: [String.t()],
           unique_constraints: [unique_constraint()],
           foreign_keys: [foreign_key()],
+          referenced_by: [foreign_key()],
           check_constraints: [check_constraint()],
           indexes: [index()],
           size: map()

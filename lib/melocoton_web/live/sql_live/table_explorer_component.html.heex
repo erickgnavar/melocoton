@@ -57,7 +57,7 @@
     style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-medium);"
   >
     <div
-      :for={tab <- ["data", "structure", "indexes"]}
+      :for={tab <- ["data", "structure", "indexes", "relations"]}
       class="px-4 py-1.5 cursor-pointer"
       style={
         if tab == @active_tab do
@@ -71,12 +71,6 @@
       phx-target={@myself}
     >
       {String.capitalize(tab)}
-    </div>
-    <div
-      class="px-4 py-1.5 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5"
-      style="color: var(--text-tertiary);"
-    >
-      Relations
     </div>
   </div>
 
@@ -759,6 +753,199 @@
               No indexes found for this table.
             </div>
           <% end %>
+        </div>
+      </.async_result>
+    </div>
+  <% end %>
+
+  <%= if @active_tab == "relations" do %>
+    <div class="flex-1 overflow-auto">
+      <.async_result :let={structure} assign={@structure}>
+        <:loading>
+          <div class="flex items-center justify-center p-8" style="color: var(--text-tertiary);">
+            <i class="fas fa-spinner fa-spin mr-2"></i> Loading relations...
+          </div>
+        </:loading>
+        <:failed :let={failure}>
+          <div class="p-4 text-red-500 text-xs">{"#{inspect(failure)}"}</div>
+        </:failed>
+
+        <div class="p-4 space-y-5 text-xs">
+          <%!-- Relationship diagram --%>
+          <%= if length(structure.foreign_keys) > 0 or length(structure.referenced_by) > 0 do %>
+            <div>
+              <h3
+                class="text-[10px] font-semibold uppercase tracking-wide mb-2"
+                style="color: var(--text-tertiary);"
+              >
+                Diagram
+              </h3>
+              <div
+                class="rounded overflow-hidden"
+                style="background: var(--bg-tertiary); border: 1px solid var(--border-medium);"
+              >
+                <.relation_graph
+                  table_name={@table_name}
+                  foreign_keys={structure.foreign_keys}
+                  referenced_by={structure.referenced_by}
+                  color={@database.group.color}
+                />
+              </div>
+            </div>
+          <% end %>
+
+          <%!-- Outgoing: this table references --%>
+          <div>
+            <h3
+              class="text-[10px] font-semibold uppercase tracking-wide mb-2"
+              style="color: var(--text-tertiary);"
+            >
+              References (outgoing)
+            </h3>
+            <%= if length(structure.foreign_keys) > 0 do %>
+              <table class="w-full border-collapse">
+                <thead>
+                  <tr style="background: var(--bg-secondary);">
+                    <th
+                      class="p-2 text-left text-[10px] uppercase tracking-wide"
+                      style="color: var(--text-secondary); border-bottom: 1px solid var(--border-medium);"
+                    >
+                      Column
+                    </th>
+                    <th
+                      class="p-2 text-left text-[10px] uppercase tracking-wide"
+                      style="color: var(--text-secondary); border-bottom: 1px solid var(--border-medium);"
+                    >
+                      References
+                    </th>
+                    <th
+                      class="p-2 text-left text-[10px] uppercase tracking-wide"
+                      style="color: var(--text-secondary); border-bottom: 1px solid var(--border-medium);"
+                    >
+                      Constraint
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    :for={fk <- structure.foreign_keys}
+                    class="hover:bg-black/5 dark:hover:bg-white/5"
+                  >
+                    <td
+                      class="p-2 font-medium"
+                      style="border-bottom: 0.5px solid var(--border-subtle);"
+                    >
+                      {fk.column}
+                    </td>
+                    <td class="p-2" style="border-bottom: 0.5px solid var(--border-subtle);">
+                      <span
+                        class="cursor-pointer hover:underline"
+                        style={"color: #{@database.group.color};"}
+                        phx-click="set-table-explorer"
+                        phx-value-table={fk.foreign_table}
+                      >
+                        {fk.foreign_table}
+                      </span>.<span>{fk.foreign_column}</span>
+                    </td>
+                    <td
+                      class="p-2"
+                      style="border-bottom: 0.5px solid var(--border-subtle); color: var(--text-tertiary);"
+                    >
+                      {fk.name}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            <% else %>
+              <div
+                class="p-4 rounded"
+                style="background: var(--bg-tertiary); color: var(--text-tertiary);"
+              >
+                This table does not reference other tables.
+              </div>
+            <% end %>
+          </div>
+
+          <%!-- Incoming: referenced by other tables --%>
+          <div>
+            <h3
+              class="text-[10px] font-semibold uppercase tracking-wide mb-2"
+              style="color: var(--text-tertiary);"
+            >
+              Referenced by (incoming)
+            </h3>
+            <%= if length(structure.referenced_by) > 0 do %>
+              <table class="w-full border-collapse">
+                <thead>
+                  <tr style="background: var(--bg-secondary);">
+                    <th
+                      class="p-2 text-left text-[10px] uppercase tracking-wide"
+                      style="color: var(--text-secondary); border-bottom: 1px solid var(--border-medium);"
+                    >
+                      Table
+                    </th>
+                    <th
+                      class="p-2 text-left text-[10px] uppercase tracking-wide"
+                      style="color: var(--text-secondary); border-bottom: 1px solid var(--border-medium);"
+                    >
+                      Column
+                    </th>
+                    <th
+                      class="p-2 text-left text-[10px] uppercase tracking-wide"
+                      style="color: var(--text-secondary); border-bottom: 1px solid var(--border-medium);"
+                    >
+                      References
+                    </th>
+                    <th
+                      class="p-2 text-left text-[10px] uppercase tracking-wide"
+                      style="color: var(--text-secondary); border-bottom: 1px solid var(--border-medium);"
+                    >
+                      Constraint
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    :for={ref <- structure.referenced_by}
+                    class="hover:bg-black/5 dark:hover:bg-white/5"
+                  >
+                    <td
+                      class="p-2 font-medium"
+                      style="border-bottom: 0.5px solid var(--border-subtle);"
+                    >
+                      <span
+                        class="cursor-pointer hover:underline"
+                        style={"color: #{@database.group.color};"}
+                        phx-click="set-table-explorer"
+                        phx-value-table={ref.foreign_table}
+                      >
+                        {ref.foreign_table}
+                      </span>
+                    </td>
+                    <td class="p-2" style="border-bottom: 0.5px solid var(--border-subtle);">
+                      {ref.foreign_column}
+                    </td>
+                    <td class="p-2" style="border-bottom: 0.5px solid var(--border-subtle);">
+                      {ref.column}
+                    </td>
+                    <td
+                      class="p-2"
+                      style="border-bottom: 0.5px solid var(--border-subtle); color: var(--text-tertiary);"
+                    >
+                      {ref.name}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            <% else %>
+              <div
+                class="p-4 rounded"
+                style="background: var(--bg-tertiary); color: var(--text-tertiary);"
+              >
+                No other tables reference this table.
+              </div>
+            <% end %>
+          </div>
         </div>
       </.async_result>
     </div>

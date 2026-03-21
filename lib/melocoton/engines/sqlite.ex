@@ -133,15 +133,50 @@ defmodule Melocoton.Engines.Sqlite do
           %{name: row["name"], unique: row["unique"] == 1, columns: cols}
         end)
 
+      referenced_by = get_referenced_by(conn, table_name)
+
       {:ok,
        %TableStructure{
          columns: columns,
          pk_columns: pk_columns,
          unique_constraints: unique_constraints,
          foreign_keys: foreign_keys,
+         referenced_by: referenced_by,
          indexes: indexes,
          create_statement: create_statement
        }}
+    end
+  end
+
+  defp get_referenced_by(conn, table_name) do
+    tables_sql =
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name != '#{String.replace(table_name, "'", "''")}'"
+
+    case query_and_normalize(conn, tables_sql) do
+      {:ok, %{rows: rows}} ->
+        Enum.flat_map(rows, fn %{"name" => other_table} ->
+          fk_sql = "PRAGMA foreign_key_list(#{quote_identifier(other_table)})"
+
+          case query_and_normalize(conn, fk_sql) do
+            {:ok, %{rows: fk_rows}} ->
+              fk_rows
+              |> Enum.filter(&(&1["table"] == table_name))
+              |> Enum.map(fn row ->
+                %{
+                  name: "fk_#{other_table}_#{row["from"]}",
+                  column: row["to"],
+                  foreign_table: other_table,
+                  foreign_column: row["from"]
+                }
+              end)
+
+            _ ->
+              []
+          end
+        end)
+
+      _ ->
+        []
     end
   end
 

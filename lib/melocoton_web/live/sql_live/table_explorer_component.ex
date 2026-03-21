@@ -38,7 +38,7 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
 
   @impl true
   def handle_event("switch-tab", %{"tab" => tab}, socket)
-      when tab in ["structure", "indexes"] do
+      when tab in ["structure", "indexes", "relations"] do
     socket
     |> assign(active_tab: tab)
     |> load_structure()
@@ -234,6 +234,173 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
   defp build_order_clause(nil, _), do: ""
   defp build_order_clause(column, :asc), do: " ORDER BY #{quote_identifier(column)} ASC"
   defp build_order_clause(column, :desc), do: " ORDER BY #{quote_identifier(column)} DESC"
+
+  defp relation_graph(assigns) do
+    %{table_name: table_name, foreign_keys: fks, referenced_by: refs, color: color} = assigns
+
+    # Deduplicate table names
+    outgoing_tables = fks |> Enum.map(& &1.foreign_table) |> Enum.uniq()
+    incoming_tables = refs |> Enum.map(& &1.foreign_table) |> Enum.uniq()
+
+    # Layout: incoming on left, current in center, outgoing on right
+    left_count = length(incoming_tables)
+    right_count = length(outgoing_tables)
+    max_side = max(left_count, right_count)
+    height = max(max_side * 50 + 40, 120)
+    center_y = height / 2
+
+    # Current table box (center)
+    center_x = 250
+    box_w = 120
+    box_h = 30
+
+    # Build nodes: left side (incoming)
+    left_nodes =
+      incoming_tables
+      |> Enum.with_index()
+      |> Enum.map(fn {name, i} ->
+        y = spacing_y(i, left_count, height)
+        %{name: name, x: 50, y: y, side: :left}
+      end)
+
+    # Build nodes: right side (outgoing)
+    right_nodes =
+      outgoing_tables
+      |> Enum.with_index()
+      |> Enum.map(fn {name, i} ->
+        y = spacing_y(i, right_count, height)
+        %{name: name, x: 450, y: y, side: :right}
+      end)
+
+    assigns =
+      assign(assigns,
+        left_nodes: left_nodes,
+        right_nodes: right_nodes,
+        center_x: center_x,
+        center_y: center_y,
+        box_w: box_w,
+        box_h: box_h,
+        height: height,
+        color: color,
+        table_name: table_name
+      )
+
+    ~H"""
+    <svg
+      viewBox={"0 0 620 #{@height}"}
+      class="w-full"
+      style={"max-height: #{max(@height, 120)}px;"}
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <defs>
+        <marker id="arrow-out" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6" fill={@color} />
+        </marker>
+        <marker id="arrow-in" markerWidth="8" markerHeight="6" refX="0" refY="3" orient="auto">
+          <path d="M8,0 L0,3 L8,6" fill="var(--text-tertiary)" />
+        </marker>
+      </defs>
+      <%!-- Incoming arrows (left → center) --%>
+      <line
+        :for={node <- @left_nodes}
+        x1={node.x + @box_w / 2 + 60}
+        y1={node.y}
+        x2={@center_x - @box_w / 2 - 8}
+        y2={@center_y}
+        stroke="var(--text-tertiary)"
+        stroke-width="1.5"
+        stroke-dasharray="4,3"
+        marker-end="url(#arrow-in)"
+      />
+      <%!-- Outgoing arrows (center → right) --%>
+      <line
+        :for={node <- @right_nodes}
+        x1={@center_x + @box_w / 2}
+        y1={@center_y}
+        x2={node.x - @box_w / 2 + 60 - 8}
+        y2={node.y}
+        stroke={@color}
+        stroke-width="1.5"
+        marker-end="url(#arrow-out)"
+      />
+      <%!-- Left table boxes (incoming) --%>
+      <g :for={node <- @left_nodes}>
+        <rect
+          x={node.x}
+          y={node.y - @box_h / 2}
+          width={@box_w}
+          height={@box_h}
+          rx="4"
+          fill="var(--bg-secondary)"
+          stroke="var(--border-medium)"
+          stroke-width="1"
+        />
+        <text
+          x={node.x + @box_w / 2}
+          y={node.y + 4}
+          text-anchor="middle"
+          fill="var(--text-secondary)"
+          font-size="11"
+        >
+          {node.name}
+        </text>
+      </g>
+      <%!-- Center table box --%>
+      <rect
+        x={@center_x - @box_w / 2}
+        y={@center_y - @box_h / 2}
+        width={@box_w}
+        height={@box_h}
+        rx="4"
+        fill={@color <> "22"}
+        stroke={@color}
+        stroke-width="2"
+      />
+      <text
+        x={@center_x}
+        y={@center_y + 4}
+        text-anchor="middle"
+        fill={@color}
+        font-size="11"
+        font-weight="600"
+      >
+        {@table_name}
+      </text>
+      <%!-- Right table boxes (outgoing) --%>
+      <g :for={node <- @right_nodes}>
+        <rect
+          x={node.x}
+          y={node.y - @box_h / 2}
+          width={@box_w}
+          height={@box_h}
+          rx="4"
+          fill="var(--bg-secondary)"
+          stroke="var(--border-medium)"
+          stroke-width="1"
+        />
+        <text
+          x={node.x + @box_w / 2}
+          y={node.y + 4}
+          text-anchor="middle"
+          fill="var(--text-secondary)"
+          font-size="11"
+        >
+          {node.name}
+        </text>
+      </g>
+    </svg>
+    """
+  end
+
+  defp spacing_y(index, count, height) do
+    if count == 1 do
+      height / 2
+    else
+      padding = 30
+      usable = height - padding * 2
+      padding + index * (usable / (count - 1))
+    end
+  end
 
   defp format_column_type(col) do
     base = col["data_type"] || col["udt_name"] || ""

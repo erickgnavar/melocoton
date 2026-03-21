@@ -150,12 +150,32 @@ defmodule Melocoton.Engines.Postgres do
     ORDER BY i.relname;
     """
 
+    referenced_by_sql = """
+    SELECT
+      tc.constraint_name,
+      kcu.column_name,
+      kcu.table_name AS foreign_table,
+      ccu.column_name AS foreign_column
+    FROM information_schema.table_constraints tc
+    JOIN information_schema.key_column_usage kcu
+      ON tc.constraint_name = kcu.constraint_name
+      AND tc.table_schema = kcu.table_schema
+    JOIN information_schema.constraint_column_usage ccu
+      ON tc.constraint_name = ccu.constraint_name
+    WHERE ccu.table_name = '#{escaped}'
+      AND tc.table_schema = 'public'
+      AND tc.constraint_type = 'FOREIGN KEY'
+      AND kcu.table_name != '#{escaped}'
+    ORDER BY kcu.table_name, tc.constraint_name;
+    """
+
     with {:ok, columns_result} <- query_and_normalize(conn, columns_sql),
          {:ok, constraints_result} <- query_and_normalize(conn, constraints_sql),
          {:ok, fk_result} <- query_and_normalize(conn, fk_sql),
          {:ok, size_result} <- query_and_normalize(conn, size_sql),
          {:ok, check_result} <- query_and_normalize(conn, check_sql),
-         {:ok, indexes_result} <- query_and_normalize(conn, indexes_sql) do
+         {:ok, indexes_result} <- query_and_normalize(conn, indexes_sql),
+         {:ok, referenced_by_result} <- query_and_normalize(conn, referenced_by_sql) do
       pk_columns =
         constraints_result.rows
         |> Enum.filter(&(&1["constraint_type"] == "PRIMARY KEY"))
@@ -205,12 +225,27 @@ defmodule Melocoton.Engines.Postgres do
           }
         end)
 
+      referenced_by =
+        referenced_by_result.rows
+        |> Enum.group_by(& &1["constraint_name"])
+        |> Enum.map(fn {name, rows} ->
+          row = hd(rows)
+
+          %{
+            name: name,
+            column: row["foreign_column"],
+            foreign_table: row["foreign_table"],
+            foreign_column: row["column_name"]
+          }
+        end)
+
       {:ok,
        %TableStructure{
          columns: columns_result.rows,
          pk_columns: pk_columns,
          unique_constraints: unique_constraints,
          foreign_keys: foreign_keys,
+         referenced_by: referenced_by,
          check_constraints: check_constraints,
          indexes: indexes,
          size: size_info

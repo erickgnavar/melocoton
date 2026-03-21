@@ -501,4 +501,56 @@ defmodule MelocotonWeb.SQLLive.RunTest do
       assert html =~ "No indexes found"
     end
   end
+
+  describe "table explorer relations tab" do
+    defp open_relations_tab(live_view, table_name) do
+      render_click(live_view, "set-table-explorer", %{"table" => table_name})
+      render_async(live_view)
+
+      live_view
+      |> element("[phx-click='switch-tab'][phx-value-tab='relations']")
+      |> render_click()
+
+      render_async(live_view)
+    end
+
+    test "shows outgoing foreign keys", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      html = open_relations_tab(live_view, "posts")
+
+      assert html =~ "References (outgoing)"
+      assert html =~ "user_id"
+      assert html =~ "users"
+    end
+
+    test "shows incoming references", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      html = open_relations_tab(live_view, "users")
+
+      assert html =~ "Referenced by (incoming)"
+      assert html =~ "posts"
+    end
+
+    test "shows empty state when no outgoing references", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      html = open_relations_tab(live_view, "users")
+
+      assert html =~ "This table does not reference other tables"
+    end
+
+    test "shows empty state when no incoming references", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      html = open_relations_tab(live_view, "posts")
+
+      assert html =~ "No other tables reference this table"
+    end
+
+    test "table names are clickable to navigate", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      html = open_relations_tab(live_view, "posts")
+
+      assert html =~ "phx-click=\"set-table-explorer\""
+      assert html =~ "phx-value-table=\"users\""
+    end
+  end
 end
