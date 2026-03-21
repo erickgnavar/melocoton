@@ -243,52 +243,7 @@
                 class="p-1.5"
                 style="border-bottom: 0.5px solid var(--border-subtle); border-left: 0.5px solid var(--border-subtle);"
               >
-                <% value = Map.get(row, col) %>
-                <% type = cell_type(value) %>
-                <%= case type do %>
-                  <% :null -> %>
-                    <span class="cell-null">null</span>
-                  <% :boolean -> %>
-                    <span class={if value, do: "cell-bool-true", else: "cell-bool-false"}>
-                      {to_string(value)}
-                    </span>
-                  <% :url -> %>
-                    <span class="cell-url" title={value}>
-                      <span :if={@filter == ""}>{value}</span>
-                      <span :if={@filter != ""}>
-                        <.put_mark value={value} term={@filter} />
-                      </span>
-                    </span>
-                  <% :json -> %>
-                    <span class="cell-json" title={format_cell_value(value, :json)}>
-                      <span :if={@filter == ""}>{format_cell_value(value, :long_text)}</span>
-                      <span :if={@filter != ""}>
-                        <.put_mark value={value} term={@filter} />
-                      </span>
-                    </span>
-                  <% :long_text -> %>
-                    <span class="cell-long-text" title={value}>
-                      <span :if={@filter == ""}>{format_cell_value(value, :long_text)}…</span>
-                      <span :if={@filter != ""}>
-                        <.put_mark value={value} term={@filter} />
-                      </span>
-                    </span>
-                  <% :timestamp -> %>
-                    <span class="cell-timestamp">
-                      {Calendar.strftime(value, "%Y-%m-%d %H:%M:%S")}
-                    </span>
-                  <% :date -> %>
-                    <span class="cell-timestamp">{Calendar.strftime(value, "%Y-%m-%d")}</span>
-                  <% :time -> %>
-                    <span class="cell-timestamp">{Calendar.strftime(value, "%H:%M:%S")}</span>
-                  <% :number -> %>
-                    <span class="cell-number">{value}</span>
-                  <% _ -> %>
-                    <span :if={@filter == ""}>{to_string(value)}</span>
-                    <span :if={@filter != ""}>
-                      <.put_mark value={value} term={@filter} />
-                    </span>
-                <% end %>
+                <.data_cell value={Map.get(row, col)} filter={@filter} />
               </td>
             </tr>
           </tbody>

@@ -433,42 +433,6 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
     end
   end
 
-  @max_cell_length 100
-
-  defp cell_type(value) do
-    cond do
-      is_nil(value) -> :null
-      is_boolean(value) -> :boolean
-      is_binary(value) and String.starts_with?(value, "http") -> :url
-      is_binary(value) and json_string?(value) -> :json
-      is_binary(value) and byte_size(value) > @max_cell_length -> :long_text
-      is_binary(value) -> :text
-      is_integer(value) or is_float(value) -> :number
-      is_struct(value, Date) -> :date
-      is_struct(value, Time) -> :time
-      is_struct(value, NaiveDateTime) or is_struct(value, DateTime) -> :timestamp
-      is_struct(value, Decimal) -> :number
-      true -> :text
-    end
-  end
-
-  defp json_string?(str) do
-    trimmed = String.trim(str)
-
-    (String.starts_with?(trimmed, "{") and String.ends_with?(trimmed, "}")) or
-      (String.starts_with?(trimmed, "[") and String.ends_with?(trimmed, "]"))
-  end
-
-  defp format_cell_value(value, :json) do
-    case Jason.decode(value) do
-      {:ok, decoded} -> Jason.encode!(decoded, pretty: true)
-      _ -> value
-    end
-  end
-
-  defp format_cell_value(value, :long_text), do: String.slice(value, 0, @max_cell_length)
-  defp format_cell_value(value, _type), do: value
-
   defp format_column_type(col) do
     base = col["data_type"] || col["udt_name"] || ""
 

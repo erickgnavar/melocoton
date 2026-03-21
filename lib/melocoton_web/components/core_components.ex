@@ -698,4 +698,108 @@ defmodule MelocotonWeb.CoreComponents do
     {@value}
     """
   end
+
+  @doc """
+  Renders a database cell value with type-aware formatting.
+
+  Handles null, boolean, URL, JSON, long text, timestamp, date, time,
+  number, and plain text values. Supports optional filter term highlighting.
+  """
+  attr :value, :any, required: true
+  attr :filter, :string, default: ""
+
+  @max_cell_length 100
+
+  def data_cell(assigns) do
+    assigns = assign(assigns, :type, cell_type(assigns.value))
+
+    ~H"""
+    <%= case @type do %>
+      <% :null -> %>
+        <span class="cell-null">null</span>
+      <% :boolean -> %>
+        <span class={if @value, do: "cell-bool-true", else: "cell-bool-false"}>
+          {to_string(@value)}
+        </span>
+      <% :url -> %>
+        <span class="cell-url" title={@value}>
+          <span :if={@filter == ""}>{@value}</span>
+          <span :if={@filter != ""}><.put_mark value={@value} term={@filter} /></span>
+        </span>
+      <% :json -> %>
+        <span class="cell-json" title={format_cell_value(@value, :json)}>
+          <span :if={@filter == ""}>{format_cell_value(@value, :long_text)}</span>
+          <span :if={@filter != ""}><.put_mark value={@value} term={@filter} /></span>
+        </span>
+      <% :long_text -> %>
+        <span class="cell-long-text" title={@value}>
+          <span :if={@filter == ""}>{format_cell_value(@value, :long_text)}…</span>
+          <span :if={@filter != ""}><.put_mark value={@value} term={@filter} /></span>
+        </span>
+      <% :timestamp -> %>
+        <span class="cell-timestamp">{Calendar.strftime(@value, "%Y-%m-%d %H:%M:%S")}</span>
+      <% :date -> %>
+        <span class="cell-timestamp">{Calendar.strftime(@value, "%Y-%m-%d")}</span>
+      <% :time -> %>
+        <span class="cell-timestamp">{Calendar.strftime(@value, "%H:%M:%S")}</span>
+      <% :number -> %>
+        <span class="cell-number">{@value}</span>
+      <% _ -> %>
+        <span :if={@filter == ""}>{to_display_string(@value)}</span>
+        <span :if={@filter != ""}><.put_mark value={@value} term={@filter} /></span>
+    <% end %>
+    """
+  end
+
+  defp cell_type(nil), do: :null
+  defp cell_type(value) when is_boolean(value), do: :boolean
+  defp cell_type(value) when is_list(value) or is_map(value), do: :json
+  defp cell_type(value) when is_binary(value) and binary_part(value, 0, 4) == "http", do: :url
+
+  defp cell_type(value) when is_binary(value) and byte_size(value) > @max_cell_length,
+    do: :long_text
+
+  defp cell_type(value) when is_integer(value) or is_float(value), do: :number
+  defp cell_type(%Date{}), do: :date
+  defp cell_type(%Time{}), do: :time
+  defp cell_type(%NaiveDateTime{}), do: :timestamp
+  defp cell_type(%DateTime{}), do: :timestamp
+  defp cell_type(%Decimal{}), do: :number
+
+  defp cell_type(value) when is_binary(value) do
+    if json_string?(value), do: :json, else: :text
+  end
+
+  defp cell_type(_), do: :text
+
+  defp json_string?(str) do
+    trimmed = String.trim(str)
+
+    (String.starts_with?(trimmed, "{") and String.ends_with?(trimmed, "}")) or
+      (String.starts_with?(trimmed, "[") and String.ends_with?(trimmed, "]"))
+  end
+
+  defp format_cell_value(value, :json) when is_binary(value) do
+    case Jason.decode(value) do
+      {:ok, decoded} -> Jason.encode!(decoded, pretty: true)
+      _ -> value
+    end
+  end
+
+  defp format_cell_value(value, :json) when is_list(value) or is_map(value) do
+    Jason.encode!(value, pretty: true)
+  end
+
+  defp format_cell_value(value, :long_text) when is_binary(value) do
+    String.slice(value, 0, @max_cell_length)
+  end
+
+  defp format_cell_value(value, :long_text),
+    do: String.slice(to_display_string(value), 0, @max_cell_length)
+
+  defp format_cell_value(value, _type), do: value
+
+  defp to_display_string(value) when is_binary(value), do: value
+  defp to_display_string(value) when is_list(value) or is_map(value), do: Jason.encode!(value)
+  defp to_display_string(value), do: inspect(value, structs: false)
 end

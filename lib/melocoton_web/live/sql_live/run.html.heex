@@ -465,12 +465,7 @@
                       class="px-2 py-1 whitespace-nowrap"
                       style="border: 1px solid var(--border-subtle);"
                     >
-                      <span :if={@filter_term == ""}>
-                        {inspect(Map.get(row, col), structs: false)}
-                      </span>
-                      <span :if={@filter_term != ""}>
-                        <.put_mark value={Map.get(row, col)} term={@filter_term} />
-                      </span>
+                      <.data_cell value={Map.get(row, col)} filter={@filter_term} />
                     </td>
                   </tr>
                 </tbody>
