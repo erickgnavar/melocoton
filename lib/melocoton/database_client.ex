@@ -27,6 +27,11 @@ defmodule Melocoton.DatabaseClient do
   @spec get_indexes(Connection.t()) :: {:ok, [map]} | {:error, String.t()}
   def get_indexes(%Connection{type: type} = conn), do: do_get_indexes(conn, type)
 
+  @spec get_table_structure(Connection.t(), String.t()) ::
+          {:ok, Melocoton.Engines.TableStructure.t()} | {:error, String.t()}
+  def get_table_structure(%Connection{type: type} = conn, table_name),
+    do: do_get_table_structure(conn, table_name, type)
+
   def translate_query_error(%Postgrex.Error{postgres: %{message: message}}), do: message
   def translate_query_error(%Exqlite.Error{message: message}), do: message
   def translate_query_error(%DBConnection.ConnectionError{message: message}), do: message
@@ -39,6 +44,12 @@ defmodule Melocoton.DatabaseClient do
 
   defp do_get_indexes(conn, :postgres), do: Melocoton.Engines.Postgres.get_indexes(conn)
   defp do_get_indexes(conn, :sqlite), do: Melocoton.Engines.Sqlite.get_indexes(conn)
+
+  defp do_get_table_structure(conn, table_name, :postgres),
+    do: Melocoton.Engines.Postgres.get_table_structure(conn, table_name)
+
+  defp do_get_table_structure(conn, table_name, :sqlite),
+    do: Melocoton.Engines.Sqlite.get_table_structure(conn, table_name)
 
   def handle_response(%{columns: cols, rows: rows, num_rows: num_rows}) do
     cols = cols || []

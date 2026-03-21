@@ -4,6 +4,7 @@ defmodule Melocoton.Behaviours.Engine do
   """
 
   alias Melocoton.Databases.Database
+  alias Melocoton.Engines.TableStructure
 
   @typep repo :: atom
   @typep index :: %{name: String.t(), table: String.t()}
@@ -18,6 +19,12 @@ defmodule Melocoton.Behaviours.Engine do
   Return all the existing indexes inside the given repo connection
   """
   @callback get_indexes(repo) :: {:ok, [index]} | {:error, String.t()}
+
+  @doc """
+  Return the structure of a table: columns, constraints, foreign keys, etc.
+  """
+  @callback get_table_structure(repo, String.t()) ::
+              {:ok, TableStructure.t()} | {:error, String.t()}
 
   @doc """
   Validate if we can connect with the received database

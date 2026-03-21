@@ -2,6 +2,7 @@ defmodule Melocoton.Engines.Sqlite do
   @behaviour Melocoton.Behaviours.Engine
 
   alias Melocoton.Connection
+  alias Melocoton.Engines.TableStructure
   import Connection, only: [quote_identifier: 1]
 
   @impl true
@@ -58,6 +59,87 @@ defmodule Melocoton.Engines.Sqlite do
 
       {:error, error} ->
         {:error, error}
+    end
+  end
+
+  @impl true
+  def get_table_structure(conn, table_name) do
+    escaped = String.replace(table_name, "'", "''")
+    quoted = quote_identifier(table_name)
+
+    create_sql =
+      "SELECT sql FROM sqlite_schema WHERE type = 'table' AND name = '#{escaped}'"
+
+    columns_sql = "PRAGMA table_info(#{quoted})"
+    fk_sql = "PRAGMA foreign_key_list(#{quoted})"
+    index_sql = "PRAGMA index_list(#{quoted})"
+
+    with {:ok, create_result} <- query_and_normalize(conn, create_sql),
+         {:ok, columns_result} <- query_and_normalize(conn, columns_sql),
+         {:ok, fk_result} <- query_and_normalize(conn, fk_sql),
+         {:ok, index_result} <- query_and_normalize(conn, index_sql) do
+      create_statement =
+        case create_result.rows do
+          [%{"sql" => sql} | _] -> sql
+          _ -> nil
+        end
+
+      pk_columns =
+        columns_result.rows
+        |> Enum.filter(&(&1["pk"] != 0))
+        |> Enum.sort_by(& &1["pk"])
+        |> Enum.map(& &1["name"])
+
+      columns =
+        Enum.map(columns_result.rows, fn row ->
+          %{
+            "column_name" => row["name"],
+            "data_type" => row["type"],
+            "is_nullable" => if(row["notnull"] == 0, do: "YES", else: "NO"),
+            "column_default" => row["dflt_value"]
+          }
+        end)
+
+      foreign_keys =
+        Enum.map(fk_result.rows, fn row ->
+          %{
+            name: "fk_#{row["from"]}_#{row["table"]}",
+            column: row["from"],
+            foreign_table: row["table"],
+            foreign_column: row["to"]
+          }
+        end)
+
+      unique_constraints =
+        index_result.rows
+        |> Enum.filter(&(&1["unique"] == 1))
+        |> Enum.map(fn row ->
+          index_info_sql = "PRAGMA index_info(#{quote_identifier(row["name"])})"
+
+          cols =
+            case query_and_normalize(conn, index_info_sql) do
+              {:ok, info} -> Enum.map(info.rows, & &1["name"])
+              _ -> []
+            end
+
+          %{name: row["name"], columns: cols}
+        end)
+
+      {:ok,
+       %TableStructure{
+         columns: columns,
+         pk_columns: pk_columns,
+         unique_constraints: unique_constraints,
+         foreign_keys: foreign_keys,
+         create_statement: create_statement
+       }}
+    end
+  end
+
+  defp query_and_normalize(conn, sql) do
+    case Connection.query(conn, sql) do
+      {:ok, result} -> {:ok, Melocoton.DatabaseClient.handle_response(result)}
+      {:error, error} -> {:error, error}
     end
   end
 

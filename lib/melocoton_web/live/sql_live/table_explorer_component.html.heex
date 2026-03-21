@@ -57,16 +57,20 @@
     style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-medium);"
   >
     <div
-      class="px-4 py-1.5 font-medium border-b-2 cursor-pointer"
-      style={"border-bottom-color: #{@database.group.color}; background: var(--bg-primary);"}
+      :for={tab <- ["data", "structure"]}
+      class="px-4 py-1.5 cursor-pointer"
+      style={
+        if tab == @active_tab do
+          "font-weight: 500; border-bottom: 2px solid #{@database.group.color}; background: var(--bg-primary);"
+        else
+          "color: var(--text-tertiary);"
+        end
+      }
+      phx-click="switch-tab"
+      phx-value-tab={tab}
+      phx-target={@myself}
     >
-      Data
-    </div>
-    <div
-      class="px-4 py-1.5 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5"
-      style="color: var(--text-tertiary);"
-    >
-      Structure
+      {String.capitalize(tab)}
     </div>
     <div
       class="px-4 py-1.5 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5"
@@ -82,197 +86,561 @@
     </div>
   </div>
 
-  <%!-- Table toolbar --%>
-  <div
-    class="px-3 py-1.5 flex items-center gap-2 text-xs"
-    style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-medium);"
-  >
-    <button
-      class="px-2 py-1 rounded flex items-center"
-      style="background: var(--bg-tertiary); color: var(--text-secondary);"
+  <%= if @active_tab == "data" do %>
+    <%!-- Table toolbar --%>
+    <div
+      class="px-3 py-1.5 flex items-center gap-2 text-xs"
+      style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-medium);"
     >
-      <i class="fas fa-plus mr-1.5 text-[10px]"></i> Add row
-    </button>
-    <button
-      class="px-2 py-1 rounded flex items-center"
-      style="background: var(--bg-tertiary); color: var(--text-secondary);"
-    >
-      <i class="fas fa-file-export mr-1.5 text-[10px]"></i> Export
-    </button>
-    <div class="w-px h-4" style="background: var(--border-medium);"></div>
-    <button
-      class="px-2 py-1 rounded flex items-center"
-      style="background: var(--bg-tertiary); color: var(--text-secondary);"
-    >
-      <i class="fas fa-columns mr-1.5 text-[10px]"></i> Columns
-    </button>
-    <button
-      class="px-2 py-1 rounded flex items-center"
-      style="background: var(--bg-tertiary); color: var(--text-secondary);"
-    >
-      <i class="fas fa-filter mr-1.5 text-[10px]"></i> Filter
-    </button>
-    <button
-      class="px-2 py-1 rounded flex items-center"
-      style="background: var(--bg-tertiary); color: var(--text-secondary);"
-    >
-      <i class="fas fa-sort mr-1.5 text-[10px]"></i> Sort
-    </button>
-    <div class="flex-1"></div>
-    <div class="relative">
-      <input
-        type="text"
-        placeholder="Filter rows..."
-        class="w-40 px-2 py-1 text-xs rounded"
-        style="background: var(--bg-primary); border: 0.5px solid var(--border-medium); color: var(--text-primary);"
-      />
-      <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-        <i class="fas fa-search text-[10px]" style="color: var(--text-tertiary);"></i>
+      <button
+        class="px-2 py-1 rounded flex items-center"
+        style="background: var(--bg-tertiary); color: var(--text-secondary);"
+      >
+        <i class="fas fa-plus mr-1.5 text-[10px]"></i> Add row
+      </button>
+      <button
+        class="px-2 py-1 rounded flex items-center"
+        style="background: var(--bg-tertiary); color: var(--text-secondary);"
+      >
+        <i class="fas fa-file-export mr-1.5 text-[10px]"></i> Export
+      </button>
+      <div class="w-px h-4" style="background: var(--border-medium);"></div>
+      <button
+        class="px-2 py-1 rounded flex items-center"
+        style="background: var(--bg-tertiary); color: var(--text-secondary);"
+      >
+        <i class="fas fa-columns mr-1.5 text-[10px]"></i> Columns
+      </button>
+      <button
+        class="px-2 py-1 rounded flex items-center"
+        style="background: var(--bg-tertiary); color: var(--text-secondary);"
+      >
+        <i class="fas fa-filter mr-1.5 text-[10px]"></i> Filter
+      </button>
+      <button
+        class="px-2 py-1 rounded flex items-center"
+        style="background: var(--bg-tertiary); color: var(--text-secondary);"
+      >
+        <i class="fas fa-sort mr-1.5 text-[10px]"></i> Sort
+      </button>
+      <div class="flex-1"></div>
+      <div class="relative">
+        <input
+          type="text"
+          placeholder="Filter rows..."
+          class="w-40 px-2 py-1 text-xs rounded"
+          style="background: var(--bg-primary); border: 0.5px solid var(--border-medium); color: var(--text-primary);"
+        />
+        <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+          <i class="fas fa-search text-[10px]" style="color: var(--text-tertiary);"></i>
+        </div>
       </div>
     </div>
-  </div>
 
-  <%!-- Data table --%>
-  <div class="flex-1 overflow-auto">
-    <.async_result :let={result} assign={@result}>
-      <:loading>
-        <div class="flex items-center justify-center p-8" style="color: var(--text-tertiary);">
-          <i class="fas fa-spinner fa-spin mr-2"></i> Loading...
-        </div>
-      </:loading>
-      <:failed :let={failure}>
-        <div class="p-4 text-red-500 text-xs">{"#{inspect(failure)}"}</div>
-      </:failed>
+    <%!-- Data table --%>
+    <div class="flex-1 overflow-auto">
+      <.async_result :let={result} assign={@result}>
+        <:loading>
+          <div class="flex items-center justify-center p-8" style="color: var(--text-tertiary);">
+            <i class="fas fa-spinner fa-spin mr-2"></i> Loading...
+          </div>
+        </:loading>
+        <:failed :let={failure}>
+          <div class="p-4 text-red-500 text-xs">{"#{inspect(failure)}"}</div>
+        </:failed>
 
-      <table class="w-full text-xs border-collapse">
-        <thead>
-          <tr class="sticky top-0 z-10" style="background: var(--bg-secondary);">
-            <%!-- Row number gutter header --%>
-            <th
-              class="row-gutter p-1.5 sticky top-0"
-              style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-medium);"
+        <table class="w-full text-xs border-collapse">
+          <thead>
+            <tr class="sticky top-0 z-10" style="background: var(--bg-secondary);">
+              <%!-- Row number gutter header --%>
+              <th
+                class="row-gutter p-1.5 sticky top-0"
+                style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-medium);"
+              >
+                #
+              </th>
+              <th
+                :for={col <- result.cols}
+                class="p-1.5 text-left sticky top-0"
+                style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-medium); border-left: 0.5px solid var(--border-subtle); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary);"
+              >
+                <div class="flex items-center">
+                  <span>{col}</span>
+                  <i class="fas fa-sort ml-1 text-[8px]" style="color: var(--text-tertiary);"></i>
+                </div>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              :for={{row, row_idx} <- Enum.with_index(result.rows, (@page - 1) * @limit + 1)}
+              class="hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
             >
-              #
-            </th>
-            <th
-              :for={col <- result.cols}
-              class="p-1.5 text-left sticky top-0"
-              style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-medium); border-left: 0.5px solid var(--border-subtle); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary);"
-            >
-              <div class="flex items-center">
-                <span>{col}</span>
-                <i class="fas fa-sort ml-1 text-[8px]" style="color: var(--text-tertiary);"></i>
+              <%!-- Row number gutter --%>
+              <td
+                class="row-gutter p-1.5"
+                style="border-bottom: 0.5px solid var(--border-subtle);"
+              >
+                {row_idx}
+              </td>
+              <td
+                :for={col <- result.cols}
+                class="p-1.5"
+                style="border-bottom: 0.5px solid var(--border-subtle); border-left: 0.5px solid var(--border-subtle);"
+              >
+                <%= cond do %>
+                  <% is_nil(Map.get(row, col)) -> %>
+                    <span class="cell-null">null</span>
+                  <% Map.get(row, col) == true -> %>
+                    <span class="cell-bool-true">true</span>
+                  <% Map.get(row, col) == false -> %>
+                    <span class="cell-bool-false">false</span>
+                  <% is_binary(Map.get(row, col)) and String.starts_with?(Map.get(row, col), "http") -> %>
+                    <span class="cell-url" title={Map.get(row, col)}>{Map.get(row, col)}</span>
+                  <% true -> %>
+                    {Map.get(row, col)}
+                <% end %>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </.async_result>
+    </div>
+
+    <%!-- Pagination footer --%>
+    <div
+      class="px-3 py-2 flex items-center justify-between text-xs"
+      style="background: var(--bg-tertiary); border-top: 1px solid var(--border-medium);"
+    >
+      <%!-- Left: row count --%>
+      <div style="color: var(--text-tertiary);">
+        Showing
+        <span class="font-medium" style="color: var(--text-secondary);">
+          {(@page - 1) * @limit + 1}-{@page * @limit}
+        </span>
+        of
+        <span class="font-medium" style="color: var(--text-secondary);">
+          {length(@pages) * @limit}
+        </span>
+        rows
+      </div>
+
+      <%!-- Center: rows per page --%>
+      <div class="flex items-center gap-2" style="color: var(--text-tertiary);">
+        <span>Rows per page</span>
+        <.simple_form
+          for={@limit_form}
+          phx-change="validate-limit"
+          phx-submit="ignore"
+          phx-target={@myself}
+        >
+          <.input
+            field={@limit_form[:limit]}
+            type="select"
+            options={[{10, 10}, {25, 25}, {50, 50}, {100, 100}]}
+            label=""
+          />
+        </.simple_form>
+      </div>
+
+      <%!-- Right: page buttons --%>
+      <div class="flex items-center space-x-1">
+        <button
+          class="px-1.5 py-1 rounded"
+          style="background: var(--bg-secondary); color: var(--text-tertiary);"
+          phx-click="previous-page"
+          phx-target={@myself}
+          disabled={@page == 1}
+        >
+          <i class="fas fa-chevron-left text-[10px]"></i>
+        </button>
+        <button
+          :for={page <- @pages}
+          phx-click="change-page"
+          phx-value-page={page}
+          phx-target={@myself}
+          class="px-2 py-1 rounded"
+          style={
+            if page == @page do
+              "background: #{@database.group.color}22; border: 1px solid #{@database.group.color}44; color: #{@database.group.color};"
+            else
+              "background: var(--bg-secondary); color: var(--text-tertiary);"
+            end
+          }
+        >
+          {page}
+        </button>
+        <button
+          class="px-1.5 py-1 rounded"
+          style="background: var(--bg-secondary); color: var(--text-tertiary);"
+          phx-click="next-page"
+          phx-target={@myself}
+          disabled={@page == length(@pages)}
+        >
+          <i class="fas fa-chevron-right text-[10px]"></i>
+        </button>
+      </div>
+    </div>
+  <% end %>
+
+  <%= if @active_tab == "structure" do %>
+    <div class="flex-1 overflow-auto">
+      <.async_result :let={structure} assign={@structure}>
+        <:loading>
+          <div class="flex items-center justify-center p-8" style="color: var(--text-tertiary);">
+            <i class="fas fa-spinner fa-spin mr-2"></i> Loading structure...
+          </div>
+        </:loading>
+        <:failed :let={failure}>
+          <div class="p-4 text-red-500 text-xs">{"#{inspect(failure)}"}</div>
+        </:failed>
+
+        <div class="p-4 space-y-5 text-xs">
+          <%!-- CREATE TABLE SQL (SQLite only) --%>
+          <%= if structure.create_statement do %>
+            <div>
+              <h3
+                class="text-[10px] font-semibold uppercase tracking-wide mb-2"
+                style="color: var(--text-tertiary);"
+              >
+                Create Statement
+              </h3>
+              <pre
+                class="p-3 rounded overflow-x-auto text-xs"
+                style="background: var(--bg-tertiary); border: 1px solid var(--border-medium); color: var(--text-primary);"
+              >{structure.create_statement}</pre>
+            </div>
+          <% end %>
+
+          <%!-- Table size info (Postgres only) --%>
+          <%= if map_size(structure.size) > 0 do %>
+            <div>
+              <h3
+                class="text-[10px] font-semibold uppercase tracking-wide mb-2"
+                style="color: var(--text-tertiary);"
+              >
+                Table Info
+              </h3>
+              <div class="flex gap-4">
+                <div
+                  class="px-3 py-2 rounded"
+                  style="background: var(--bg-tertiary); border: 1px solid var(--border-medium);"
+                >
+                  <div class="text-[10px] uppercase" style="color: var(--text-tertiary);">
+                    Total Size
+                  </div>
+                  <div class="font-medium mt-0.5">{structure.size["total_size"]}</div>
+                </div>
+                <div
+                  class="px-3 py-2 rounded"
+                  style="background: var(--bg-tertiary); border: 1px solid var(--border-medium);"
+                >
+                  <div class="text-[10px] uppercase" style="color: var(--text-tertiary);">
+                    Table Size
+                  </div>
+                  <div class="font-medium mt-0.5">{structure.size["table_size"]}</div>
+                </div>
+                <div
+                  class="px-3 py-2 rounded"
+                  style="background: var(--bg-tertiary); border: 1px solid var(--border-medium);"
+                >
+                  <div class="text-[10px] uppercase" style="color: var(--text-tertiary);">
+                    Indexes Size
+                  </div>
+                  <div class="font-medium mt-0.5">{structure.size["indexes_size"]}</div>
+                </div>
+                <div
+                  class="px-3 py-2 rounded"
+                  style="background: var(--bg-tertiary); border: 1px solid var(--border-medium);"
+                >
+                  <div class="text-[10px] uppercase" style="color: var(--text-tertiary);">
+                    Estimated Rows
+                  </div>
+                  <div class="font-medium mt-0.5">{structure.size["estimated_rows"]}</div>
+                </div>
               </div>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            :for={{row, row_idx} <- Enum.with_index(result.rows, (@page - 1) * @limit + 1)}
-            class="hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
-          >
-            <%!-- Row number gutter --%>
-            <td class="row-gutter p-1.5" style="border-bottom: 0.5px solid var(--border-subtle);">
-              {row_idx}
-            </td>
-            <td
-              :for={col <- result.cols}
-              class="p-1.5"
-              style="border-bottom: 0.5px solid var(--border-subtle); border-left: 0.5px solid var(--border-subtle);"
+            </div>
+          <% end %>
+
+          <%!-- Columns --%>
+          <div>
+            <h3
+              class="text-[10px] font-semibold uppercase tracking-wide mb-2"
+              style="color: var(--text-tertiary);"
             >
-              <%= cond do %>
-                <% is_nil(Map.get(row, col)) -> %>
-                  <span class="cell-null">null</span>
-                <% Map.get(row, col) == true -> %>
-                  <span class="cell-bool-true">true</span>
-                <% Map.get(row, col) == false -> %>
-                  <span class="cell-bool-false">false</span>
-                <% is_binary(Map.get(row, col)) and String.starts_with?(Map.get(row, col), "http") -> %>
-                  <span class="cell-url" title={Map.get(row, col)}>{Map.get(row, col)}</span>
-                <% true -> %>
-                  {Map.get(row, col)}
-              <% end %>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </.async_result>
-  </div>
+              Columns
+            </h3>
+            <table class="w-full border-collapse">
+              <thead>
+                <tr style="background: var(--bg-secondary);">
+                  <th
+                    class="p-2 text-left text-[10px] uppercase tracking-wide"
+                    style="color: var(--text-secondary); border-bottom: 1px solid var(--border-medium);"
+                  >
+                    Name
+                  </th>
+                  <th
+                    class="p-2 text-left text-[10px] uppercase tracking-wide"
+                    style="color: var(--text-secondary); border-bottom: 1px solid var(--border-medium);"
+                  >
+                    Type
+                  </th>
+                  <th
+                    class="p-2 text-left text-[10px] uppercase tracking-wide"
+                    style="color: var(--text-secondary); border-bottom: 1px solid var(--border-medium);"
+                  >
+                    Nullable
+                  </th>
+                  <th
+                    class="p-2 text-left text-[10px] uppercase tracking-wide"
+                    style="color: var(--text-secondary); border-bottom: 1px solid var(--border-medium);"
+                  >
+                    Default
+                  </th>
+                  <th
+                    class="p-2 text-left text-[10px] uppercase tracking-wide"
+                    style="color: var(--text-secondary); border-bottom: 1px solid var(--border-medium);"
+                  >
+                    Attributes
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  :for={col <- structure.columns}
+                  class="hover:bg-black/5 dark:hover:bg-white/5"
+                >
+                  <td
+                    class="p-2 font-medium"
+                    style="border-bottom: 0.5px solid var(--border-subtle);"
+                  >
+                    <div class="flex items-center gap-1.5">
+                      <%= if (col["column_name"] || col["name"]) in structure.pk_columns do %>
+                        <i
+                          class="fas fa-key text-[9px]"
+                          style={"color: #{@database.group.color};"}
+                          title="Primary Key"
+                        >
+                        </i>
+                      <% end %>
+                      {col["column_name"] || col["name"]}
+                    </div>
+                  </td>
+                  <td class="p-2" style="border-bottom: 0.5px solid var(--border-subtle);">
+                    <span
+                      class="px-1.5 py-0.5 rounded text-[10px]"
+                      style="background: var(--bg-tertiary); color: var(--text-secondary);"
+                    >
+                      {format_column_type(col)}
+                    </span>
+                  </td>
+                  <td class="p-2" style="border-bottom: 0.5px solid var(--border-subtle);">
+                    <%= if (col["is_nullable"] || "YES") == "YES" do %>
+                      <span style="color: var(--text-tertiary);">YES</span>
+                    <% else %>
+                      <span class="font-medium">NO</span>
+                    <% end %>
+                  </td>
+                  <td class="p-2" style="border-bottom: 0.5px solid var(--border-subtle);">
+                    <%= if col["column_default"] do %>
+                      <code
+                        class="px-1 py-0.5 rounded text-[10px]"
+                        style="background: var(--bg-tertiary);"
+                      >
+                        {col["column_default"]}
+                      </code>
+                    <% else %>
+                      <span class="cell-null">null</span>
+                    <% end %>
+                  </td>
+                  <td class="p-2" style="border-bottom: 0.5px solid var(--border-subtle);">
+                    <div class="flex gap-1">
+                      <%= if (col["column_name"] || col["name"]) in structure.pk_columns do %>
+                        <span
+                          class="px-1.5 py-0.5 rounded text-[10px] font-medium"
+                          style={"background: #{@database.group.color}15; color: #{@database.group.color};"}
+                        >
+                          PK
+                        </span>
+                      <% end %>
+                      <%= if Enum.any?(structure.foreign_keys, & &1.column == (col["column_name"] || col["name"])) do %>
+                        <span
+                          class="px-1.5 py-0.5 rounded text-[10px] font-medium"
+                          style="background: var(--bg-tertiary); color: var(--text-secondary);"
+                        >
+                          FK
+                        </span>
+                      <% end %>
+                      <%= if Enum.any?(structure.unique_constraints, fn c -> (col["column_name"] || col["name"]) in c.columns end) do %>
+                        <span
+                          class="px-1.5 py-0.5 rounded text-[10px] font-medium"
+                          style="background: var(--bg-tertiary); color: var(--text-secondary);"
+                        >
+                          UQ
+                        </span>
+                      <% end %>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
-  <%!-- Pagination footer --%>
-  <div
-    class="px-3 py-2 flex items-center justify-between text-xs"
-    style="background: var(--bg-tertiary); border-top: 1px solid var(--border-medium);"
-  >
-    <%!-- Left: row count --%>
-    <div style="color: var(--text-tertiary);">
-      Showing
-      <span class="font-medium" style="color: var(--text-secondary);">
-        {(@page - 1) * @limit + 1}-{@page * @limit}
-      </span>
-      of
-      <span class="font-medium" style="color: var(--text-secondary);">
-        {length(@pages) * @limit}
-      </span>
-      rows
-    </div>
+          <%!-- Foreign Keys --%>
+          <%= if length(structure.foreign_keys) > 0 do %>
+            <div>
+              <h3
+                class="text-[10px] font-semibold uppercase tracking-wide mb-2"
+                style="color: var(--text-tertiary);"
+              >
+                Foreign Keys
+              </h3>
+              <table class="w-full border-collapse">
+                <thead>
+                  <tr style="background: var(--bg-secondary);">
+                    <th
+                      class="p-2 text-left text-[10px] uppercase tracking-wide"
+                      style="color: var(--text-secondary); border-bottom: 1px solid var(--border-medium);"
+                    >
+                      Constraint
+                    </th>
+                    <th
+                      class="p-2 text-left text-[10px] uppercase tracking-wide"
+                      style="color: var(--text-secondary); border-bottom: 1px solid var(--border-medium);"
+                    >
+                      Column
+                    </th>
+                    <th
+                      class="p-2 text-left text-[10px] uppercase tracking-wide"
+                      style="color: var(--text-secondary); border-bottom: 1px solid var(--border-medium);"
+                    >
+                      References
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    :for={fk <- structure.foreign_keys}
+                    class="hover:bg-black/5 dark:hover:bg-white/5"
+                  >
+                    <td
+                      class="p-2 font-medium"
+                      style="border-bottom: 0.5px solid var(--border-subtle);"
+                    >
+                      {fk.name}
+                    </td>
+                    <td class="p-2" style="border-bottom: 0.5px solid var(--border-subtle);">
+                      {fk.column}
+                    </td>
+                    <td class="p-2" style="border-bottom: 0.5px solid var(--border-subtle);">
+                      <span class="font-medium">{fk.foreign_table}</span>.<span>{fk.foreign_column}</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          <% end %>
 
-    <%!-- Center: rows per page --%>
-    <div class="flex items-center gap-2" style="color: var(--text-tertiary);">
-      <span>Rows per page</span>
-      <.simple_form
-        for={@limit_form}
-        phx-change="validate-limit"
-        phx-submit="ignore"
-        phx-target={@myself}
-      >
-        <.input
-          field={@limit_form[:limit]}
-          type="select"
-          options={[{10, 10}, {25, 25}, {50, 50}, {100, 100}]}
-          label=""
-        />
-      </.simple_form>
-    </div>
+          <%!-- Unique Constraints --%>
+          <%= if length(structure.unique_constraints) > 0 do %>
+            <div>
+              <h3
+                class="text-[10px] font-semibold uppercase tracking-wide mb-2"
+                style="color: var(--text-tertiary);"
+              >
+                Unique Constraints
+              </h3>
+              <table class="w-full border-collapse">
+                <thead>
+                  <tr style="background: var(--bg-secondary);">
+                    <th
+                      class="p-2 text-left text-[10px] uppercase tracking-wide"
+                      style="color: var(--text-secondary); border-bottom: 1px solid var(--border-medium);"
+                    >
+                      Constraint
+                    </th>
+                    <th
+                      class="p-2 text-left text-[10px] uppercase tracking-wide"
+                      style="color: var(--text-secondary); border-bottom: 1px solid var(--border-medium);"
+                    >
+                      Columns
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    :for={uc <- structure.unique_constraints}
+                    class="hover:bg-black/5 dark:hover:bg-white/5"
+                  >
+                    <td
+                      class="p-2 font-medium"
+                      style="border-bottom: 0.5px solid var(--border-subtle);"
+                    >
+                      {uc.name}
+                    </td>
+                    <td class="p-2" style="border-bottom: 0.5px solid var(--border-subtle);">
+                      {Enum.join(uc.columns, ", ")}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          <% end %>
 
-    <%!-- Right: page buttons --%>
-    <div class="flex items-center space-x-1">
-      <button
-        class="px-1.5 py-1 rounded"
-        style="background: var(--bg-secondary); color: var(--text-tertiary);"
-        phx-click="previous-page"
-        phx-target={@myself}
-        disabled={@page == 1}
-      >
-        <i class="fas fa-chevron-left text-[10px]"></i>
-      </button>
-      <button
-        :for={page <- @pages}
-        phx-click="change-page"
-        phx-value-page={page}
-        phx-target={@myself}
-        class="px-2 py-1 rounded"
-        style={
-          if page == @page do
-            "background: #{@database.group.color}22; border: 1px solid #{@database.group.color}44; color: #{@database.group.color};"
-          else
-            "background: var(--bg-secondary); color: var(--text-tertiary);"
-          end
-        }
-      >
-        {page}
-      </button>
-      <button
-        class="px-1.5 py-1 rounded"
-        style="background: var(--bg-secondary); color: var(--text-tertiary);"
-        phx-click="next-page"
-        phx-target={@myself}
-        disabled={@page == length(@pages)}
-      >
-        <i class="fas fa-chevron-right text-[10px]"></i>
-      </button>
+          <%!-- Check Constraints (Postgres only) --%>
+          <%= if length(structure.check_constraints) > 0 do %>
+            <div>
+              <h3
+                class="text-[10px] font-semibold uppercase tracking-wide mb-2"
+                style="color: var(--text-tertiary);"
+              >
+                Check Constraints
+              </h3>
+              <table class="w-full border-collapse">
+                <thead>
+                  <tr style="background: var(--bg-secondary);">
+                    <th
+                      class="p-2 text-left text-[10px] uppercase tracking-wide"
+                      style="color: var(--text-secondary); border-bottom: 1px solid var(--border-medium);"
+                    >
+                      Constraint
+                    </th>
+                    <th
+                      class="p-2 text-left text-[10px] uppercase tracking-wide"
+                      style="color: var(--text-secondary); border-bottom: 1px solid var(--border-medium);"
+                    >
+                      Definition
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    :for={cc <- structure.check_constraints}
+                    class="hover:bg-black/5 dark:hover:bg-white/5"
+                  >
+                    <td
+                      class="p-2 font-medium"
+                      style="border-bottom: 0.5px solid var(--border-subtle);"
+                    >
+                      {cc.name}
+                    </td>
+                    <td class="p-2" style="border-bottom: 0.5px solid var(--border-subtle);">
+                      <code
+                        class="px-1 py-0.5 rounded text-[10px]"
+                        style="background: var(--bg-tertiary);"
+                      >
+                        {cc.definition}
+                      </code>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          <% end %>
+        </div>
+      </.async_result>
     </div>
-  </div>
+  <% end %>
 
   <%!-- Status bar --%>
   <div

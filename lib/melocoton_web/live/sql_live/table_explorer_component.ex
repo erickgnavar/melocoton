@@ -12,6 +12,7 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
 
     socket
     |> assign(assigns)
+    |> assign(active_tab: "data")
     |> assign(limit: @initial_limit, page: page, pages: Enum.to_list(pages))
     |> assign(:limit_form, to_form(%{"limit" => @initial_limit}))
     |> assign_async(:result, fn -> get_result(repo, table_name, page, @initial_limit) end)
@@ -22,6 +23,31 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
   def handle_event("go-back", _params, socket) do
     notify_parent(:reset_table_explorer)
     {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("switch-tab", %{"tab" => "data"}, socket) do
+    %{repo: repo, table_name: table_name, page: page, limit: limit} = socket.assigns
+
+    socket
+    |> assign(active_tab: "data")
+    |> assign_async(:result, fn -> get_result(repo, table_name, page, limit) end)
+    |> noreply()
+  end
+
+  @impl true
+  def handle_event("switch-tab", %{"tab" => "structure"}, socket) do
+    %{repo: repo, table_name: table_name} = socket.assigns
+
+    socket
+    |> assign(active_tab: "structure")
+    |> assign_async(:structure, fn ->
+      case DatabaseClient.get_table_structure(repo, table_name) do
+        {:ok, structure} -> {:ok, %{structure: structure}}
+        {:error, error} -> {:error, error}
+      end
+    end)
+    |> noreply()
   end
 
   @impl true
@@ -115,6 +141,21 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
 
       {:error, error} ->
         {:error, error}
+    end
+  end
+
+  defp format_column_type(col) do
+    base = col["data_type"] || col["udt_name"] || ""
+
+    cond do
+      col["character_maximum_length"] ->
+        "#{base}(#{col["character_maximum_length"]})"
+
+      col["numeric_precision"] && col["numeric_scale"] ->
+        "#{base}(#{col["numeric_precision"]},#{col["numeric_scale"]})"
+
+      true ->
+        base
     end
   end
 
