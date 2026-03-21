@@ -4,7 +4,7 @@ defmodule MelocotonWeb.SQLLive.RunTest do
   import Phoenix.LiveViewTest
   import Melocoton.DatabasesFixtures
 
-  defp create_test_db(extra_sql \\ []) do
+  defp create_test_db(extra_sql) do
     db_path =
       Path.join(System.tmp_dir!(), "melocoton_test_#{System.unique_integer([:positive])}.db")
 
@@ -18,8 +18,31 @@ defmodule MelocotonWeb.SQLLive.RunTest do
     db_path
   end
 
+  defp open_structure_tab(live_view, table_name) do
+    render_click(live_view, "set-table-explorer", %{"table" => table_name})
+    render_async(live_view)
+
+    live_view
+    |> element("[phx-click='switch-tab'][phx-value-tab='structure']")
+    |> render_click()
+
+    render_async(live_view)
+  end
+
   setup do
-    db_path = create_test_db()
+    item_inserts = for i <- 1..25, do: "INSERT INTO items (value) VALUES ('item_#{i}')"
+
+    db_path =
+      create_test_db(
+        [
+          "CREATE TABLE posts (id INTEGER PRIMARY KEY, user_id INTEGER REFERENCES users(id), title TEXT)",
+          "INSERT INTO posts (user_id, title) VALUES (1, 'hello')",
+          "CREATE TABLE strict_table (id INTEGER PRIMARY KEY, required_field TEXT NOT NULL, optional_field TEXT)",
+          "CREATE TABLE with_defaults (id INTEGER PRIMARY KEY, status TEXT DEFAULT 'active', count INTEGER DEFAULT 0)",
+          "CREATE TABLE items (id INTEGER PRIMARY KEY, value TEXT)"
+        ] ++ item_inserts
+      )
+
     database = database_fixture(%{url: db_path, type: :sqlite})
 
     on_exit(fn -> File.rm(db_path) end)
@@ -94,6 +117,114 @@ defmodule MelocotonWeb.SQLLive.RunTest do
 
       # The table explorer renders but the async query will fail (table doesn't exist)
       assert html =~ "table-name"
+    end
+  end
+
+  describe "table explorer data tab" do
+    test "displays table data with column headers", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      render_click(live_view, "set-table-explorer", %{"table" => "users"})
+
+      html = render_async(live_view)
+
+      assert html =~ "id"
+      assert html =~ "name"
+      assert html =~ "alice"
+      assert html =~ "bob"
+    end
+
+    test "data tab is active by default", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      html = render_click(live_view, "set-table-explorer", %{"table" => "users"})
+
+      assert html =~ "Data"
+      assert html =~ "Showing"
+    end
+
+    test "paginates with next and previous", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      render_click(live_view, "set-table-explorer", %{"table" => "items"})
+      render_async(live_view)
+
+      live_view
+      |> element("[phx-click='next-page']")
+      |> render_click()
+
+      html = render_async(live_view)
+
+      assert html =~ "item_21"
+    end
+  end
+
+  describe "table explorer structure tab" do
+    test "switches to structure tab and shows column details", %{
+      conn: conn,
+      database: database
+    } do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      html = open_structure_tab(live_view, "users")
+
+      assert html =~ "Columns"
+      assert html =~ "id"
+      assert html =~ "name"
+      assert html =~ "INTEGER"
+      assert html =~ "TEXT"
+    end
+
+    test "shows CREATE TABLE statement for sqlite", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      html = open_structure_tab(live_view, "users")
+
+      assert html =~ "Create Statement"
+      assert html =~ "CREATE TABLE users"
+    end
+
+    test "shows primary key columns", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      html = open_structure_tab(live_view, "users")
+
+      assert html =~ "PK"
+    end
+
+    test "shows foreign keys when present", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      html = open_structure_tab(live_view, "posts")
+
+      assert html =~ "Foreign Keys"
+      assert html =~ "user_id"
+      assert html =~ "users"
+    end
+
+    test "can switch back to data tab from structure", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_structure_tab(live_view, "users")
+
+      live_view
+      |> element("[phx-click='switch-tab'][phx-value-tab='data']")
+      |> render_click()
+
+      html = render_async(live_view)
+
+      assert html =~ "alice"
+      assert html =~ "bob"
+      assert html =~ "Showing"
+    end
+
+    test "shows nullable info for columns", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      html = open_structure_tab(live_view, "strict_table")
+
+      assert html =~ "required_field"
+      assert html =~ "optional_field"
+      assert html =~ "NO"
+    end
+
+    test "shows default values for columns", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      html = open_structure_tab(live_view, "with_defaults")
+
+      assert html =~ "&#39;active&#39;"
+      assert html =~ "0"
     end
   end
 end
