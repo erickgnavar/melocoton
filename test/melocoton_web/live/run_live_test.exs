@@ -18,15 +18,43 @@ defmodule MelocotonWeb.SQLLive.RunTest do
     db_path
   end
 
-  defp open_structure_tab(live_view, table_name) do
-    render_click(live_view, "set-table-explorer", %{"table" => table_name})
+  # render_async may return early if a previously in-flight async resolves
+  # before the newly triggered one starts. Calling it twice ensures we drain
+  # both the old and the new async results.
+  defp flush_async(live_view) do
     render_async(live_view)
+    render_async(live_view)
+  end
+
+  defp open_table_explorer(live_view, table_name) do
+    render_click(live_view, "set-table-explorer", %{"table" => table_name})
+    flush_async(live_view)
+  end
+
+  defp apply_filter(live_view, filter) do
+    live_view
+    |> element("form[phx-change='filter-rows']")
+    |> render_change(%{"filter" => filter})
+
+    flush_async(live_view)
+  end
+
+  defp apply_sort(live_view, column) do
+    live_view
+    |> element("[phx-click='sort-column'][phx-value-column='#{column}']")
+    |> render_click()
+
+    flush_async(live_view)
+  end
+
+  defp open_structure_tab(live_view, table_name) do
+    open_table_explorer(live_view, table_name)
 
     live_view
     |> element("[phx-click='switch-tab'][phx-value-tab='structure']")
     |> render_click()
 
-    render_async(live_view)
+    flush_async(live_view)
   end
 
   setup do
@@ -125,9 +153,7 @@ defmodule MelocotonWeb.SQLLive.RunTest do
   describe "table explorer data tab" do
     test "displays table data with column headers", %{conn: conn, database: database} do
       {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
-      render_click(live_view, "set-table-explorer", %{"table" => "users"})
-
-      html = render_async(live_view)
+      html = open_table_explorer(live_view, "users")
 
       assert html =~ "id"
       assert html =~ "name"
@@ -137,7 +163,7 @@ defmodule MelocotonWeb.SQLLive.RunTest do
 
     test "data tab is active by default", %{conn: conn, database: database} do
       {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
-      html = render_click(live_view, "set-table-explorer", %{"table" => "users"})
+      html = open_table_explorer(live_view, "users")
 
       assert html =~ "Data"
       assert html =~ "Showing"
@@ -145,135 +171,82 @@ defmodule MelocotonWeb.SQLLive.RunTest do
 
     test "sorts by column ascending on first click", %{conn: conn, database: database} do
       {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
-      render_click(live_view, "set-table-explorer", %{"table" => "users"})
-      render_async(live_view)
+      open_table_explorer(live_view, "users")
 
-      live_view
-      |> element("[phx-click='sort-column'][phx-value-column='name']")
-      |> render_click()
-
-      html = render_async(live_view)
+      html = apply_sort(live_view, "name")
 
       # alice comes before bob in ascending order
       alice_pos = :binary.match(html, "alice") |> elem(0)
       bob_pos = :binary.match(html, "bob") |> elem(0)
       assert alice_pos < bob_pos
-      # Should show sort-up icon
       assert html =~ "fa-sort-up"
     end
 
     test "sorts descending on second click", %{conn: conn, database: database} do
       {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
-      render_click(live_view, "set-table-explorer", %{"table" => "users"})
-      render_async(live_view)
+      open_table_explorer(live_view, "users")
 
-      # First click: ascending
-      live_view
-      |> element("[phx-click='sort-column'][phx-value-column='name']")
-      |> render_click()
-
-      render_async(live_view)
-
-      # Second click: descending
-      live_view
-      |> element("[phx-click='sort-column'][phx-value-column='name']")
-      |> render_click()
-
-      html = render_async(live_view)
+      apply_sort(live_view, "name")
+      html = apply_sort(live_view, "name")
 
       # bob comes before alice in descending order
       alice_pos = :binary.match(html, "alice") |> elem(0)
       bob_pos = :binary.match(html, "bob") |> elem(0)
       assert bob_pos < alice_pos
-      # Should show sort-down icon
       assert html =~ "fa-sort-down"
     end
 
     test "clears sort on third click", %{conn: conn, database: database} do
       {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
-      render_click(live_view, "set-table-explorer", %{"table" => "users"})
-      render_async(live_view)
+      open_table_explorer(live_view, "users")
 
-      # Click three times: asc -> desc -> none
-      for _i <- 1..3 do
-        live_view
-        |> element("[phx-click='sort-column'][phx-value-column='name']")
-        |> render_click()
-
-        render_async(live_view)
-      end
+      for _i <- 1..3, do: apply_sort(live_view, "name")
 
       html = render(live_view)
 
-      # No active sort icons — only neutral fa-sort should remain
       refute html =~ "fa-sort-up"
       refute html =~ "fa-sort-down"
     end
 
     test "sorting a different column resets to ascending", %{conn: conn, database: database} do
       {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
-      render_click(live_view, "set-table-explorer", %{"table" => "users"})
-      render_async(live_view)
+      open_table_explorer(live_view, "users")
 
-      # Sort by name descending
-      live_view
-      |> element("[phx-click='sort-column'][phx-value-column='name']")
-      |> render_click()
-
-      render_async(live_view)
-
-      live_view
-      |> element("[phx-click='sort-column'][phx-value-column='name']")
-      |> render_click()
-
-      render_async(live_view)
+      # Sort by name descending (two clicks)
+      apply_sort(live_view, "name")
+      apply_sort(live_view, "name")
 
       # Now sort by id — should start ascending
-      live_view
-      |> element("[phx-click='sort-column'][phx-value-column='id']")
-      |> render_click()
-
-      html = render_async(live_view)
+      html = apply_sort(live_view, "id")
       assert html =~ "fa-sort-up"
     end
 
     test "sort persists across pagination", %{conn: conn, database: database} do
       {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
-      render_click(live_view, "set-table-explorer", %{"table" => "items"})
-      render_async(live_view)
+      open_table_explorer(live_view, "items")
 
-      # Sort by value descending — item_9 should come first (lexicographic)
-      live_view
-      |> element("[phx-click='sort-column'][phx-value-column='value']")
-      |> render_click()
-
-      render_async(live_view)
-
-      live_view
-      |> element("[phx-click='sort-column'][phx-value-column='value']")
-      |> render_click()
-
-      render_async(live_view)
+      # Sort by value descending (two clicks)
+      apply_sort(live_view, "value")
+      apply_sort(live_view, "value")
 
       # Go to next page — sort should still be active
       live_view
       |> element("[phx-click='next-page']")
       |> render_click()
 
-      html = render_async(live_view)
+      html = flush_async(live_view)
       assert html =~ "fa-sort-down"
     end
 
     test "paginates with next and previous", %{conn: conn, database: database} do
       {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
-      render_click(live_view, "set-table-explorer", %{"table" => "items"})
-      render_async(live_view)
+      open_table_explorer(live_view, "items")
 
       live_view
       |> element("[phx-click='next-page']")
       |> render_click()
 
-      html = render_async(live_view)
+      html = flush_async(live_view)
 
       assert html =~ "item_21"
     end
@@ -283,11 +256,7 @@ defmodule MelocotonWeb.SQLLive.RunTest do
       render_click(live_view, "set-table-explorer", %{"table" => "users"})
       render_async(live_view)
 
-      live_view
-      |> element("form[phx-change='filter-rows']")
-      |> render_change(%{"filter" => "alice"})
-
-      html = render_async(live_view)
+      html = apply_filter(live_view, "alice")
 
       assert html =~ "alice"
       refute html =~ "bob"
@@ -298,11 +267,7 @@ defmodule MelocotonWeb.SQLLive.RunTest do
       render_click(live_view, "set-table-explorer", %{"table" => "users"})
       render_async(live_view)
 
-      live_view
-      |> element("form[phx-change='filter-rows']")
-      |> render_change(%{"filter" => "ALICE"})
-
-      html = render_async(live_view)
+      html = apply_filter(live_view, "ALICE")
 
       # SQLite LIKE is case-insensitive for ASCII by default
       assert html =~ "alice"
@@ -314,19 +279,8 @@ defmodule MelocotonWeb.SQLLive.RunTest do
       render_click(live_view, "set-table-explorer", %{"table" => "users"})
       render_async(live_view)
 
-      # Apply filter
-      live_view
-      |> element("form[phx-change='filter-rows']")
-      |> render_change(%{"filter" => "alice"})
-
-      render_async(live_view)
-
-      # Clear filter
-      live_view
-      |> element("form[phx-change='filter-rows']")
-      |> render_change(%{"filter" => ""})
-
-      html = render_async(live_view)
+      apply_filter(live_view, "alice")
+      html = apply_filter(live_view, "")
 
       assert html =~ "alice"
       assert html =~ "bob"
@@ -337,11 +291,7 @@ defmodule MelocotonWeb.SQLLive.RunTest do
       render_click(live_view, "set-table-explorer", %{"table" => "users"})
       render_async(live_view)
 
-      live_view
-      |> element("form[phx-change='filter-rows']")
-      |> render_change(%{"filter" => "nonexistent"})
-
-      html = render_async(live_view)
+      html = apply_filter(live_view, "nonexistent")
 
       refute html =~ "alice"
       refute html =~ "bob"
@@ -352,12 +302,7 @@ defmodule MelocotonWeb.SQLLive.RunTest do
       render_click(live_view, "set-table-explorer", %{"table" => "users"})
       render_async(live_view)
 
-      # Filter by id value "1" — should match alice (id=1)
-      live_view
-      |> element("form[phx-change='filter-rows']")
-      |> render_change(%{"filter" => "alice"})
-
-      html = render_async(live_view)
+      html = apply_filter(live_view, "alice")
       assert html =~ "alice"
     end
 
@@ -366,11 +311,7 @@ defmodule MelocotonWeb.SQLLive.RunTest do
       render_click(live_view, "set-table-explorer", %{"table" => "users"})
       render_async(live_view)
 
-      live_view
-      |> element("form[phx-change='filter-rows']")
-      |> render_change(%{"filter" => "ali"})
-
-      html = render_async(live_view)
+      html = apply_filter(live_view, "ali")
 
       assert html =~ "<mark>ali</mark>"
       assert html =~ "ce"
@@ -433,7 +374,7 @@ defmodule MelocotonWeb.SQLLive.RunTest do
       |> element("[phx-click='switch-tab'][phx-value-tab='data']")
       |> render_click()
 
-      html = render_async(live_view)
+      html = flush_async(live_view)
 
       assert html =~ "alice"
       assert html =~ "bob"
@@ -460,14 +401,13 @@ defmodule MelocotonWeb.SQLLive.RunTest do
 
   describe "table explorer indexes tab" do
     defp open_indexes_tab(live_view, table_name) do
-      render_click(live_view, "set-table-explorer", %{"table" => table_name})
-      render_async(live_view)
+      open_table_explorer(live_view, table_name)
 
       live_view
       |> element("[phx-click='switch-tab'][phx-value-tab='indexes']")
       |> render_click()
 
-      render_async(live_view)
+      flush_async(live_view)
     end
 
     test "shows indexes for a table", %{conn: conn, database: database} do
@@ -504,14 +444,13 @@ defmodule MelocotonWeb.SQLLive.RunTest do
 
   describe "table explorer relations tab" do
     defp open_relations_tab(live_view, table_name) do
-      render_click(live_view, "set-table-explorer", %{"table" => table_name})
-      render_async(live_view)
+      open_table_explorer(live_view, table_name)
 
       live_view
       |> element("[phx-click='switch-tab'][phx-value-tab='relations']")
       |> render_click()
 
-      render_async(live_view)
+      flush_async(live_view)
     end
 
     test "shows outgoing foreign keys", %{conn: conn, database: database} do
