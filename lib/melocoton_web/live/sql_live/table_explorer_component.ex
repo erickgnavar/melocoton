@@ -16,9 +16,7 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
     |> assign(limit: @initial_limit, page: page, pages: Enum.to_list(pages))
     |> assign(sort_column: nil, sort_direction: nil)
     |> assign(:limit_form, to_form(%{"limit" => @initial_limit}))
-    |> assign_async(:result, fn ->
-      get_result(repo, table_name, page, @initial_limit, nil, nil)
-    end)
+    |> load_data()
     |> ok()
   end
 
@@ -30,20 +28,9 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
 
   @impl true
   def handle_event("switch-tab", %{"tab" => "data"}, socket) do
-    %{
-      repo: repo,
-      table_name: table_name,
-      page: page,
-      limit: limit,
-      sort_column: sort_column,
-      sort_direction: sort_direction
-    } = socket.assigns
-
     socket
     |> assign(active_tab: "data")
-    |> assign_async(:result, fn ->
-      get_result(repo, table_name, page, limit, sort_column, sort_direction)
-    end)
+    |> load_data()
     |> noreply()
   end
 
@@ -73,53 +60,29 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
         _ -> {column, :asc}
       end
 
-    %{repo: repo, table_name: table_name, page: page, limit: limit} = socket.assigns
-
     socket
     |> assign(sort_column: new_col, sort_direction: new_dir)
-    |> assign_async(:result, fn -> get_result(repo, table_name, page, limit, new_col, new_dir) end)
+    |> load_data()
     |> noreply()
   end
 
   @impl true
   def handle_event("previous-page", _params, socket) do
-    page = (socket.assigns.page == 1 && 1) || socket.assigns.page - 1
-
-    %{
-      repo: repo,
-      table_name: table_name,
-      limit: limit,
-      sort_column: sort_column,
-      sort_direction: sort_direction
-    } = socket.assigns
+    page = max(socket.assigns.page - 1, 1)
 
     socket
-    |> assign(:page, page)
-    |> assign_async(:result, fn ->
-      get_result(repo, table_name, page, limit, sort_column, sort_direction)
-    end)
+    |> assign(page: page)
+    |> load_data()
     |> noreply()
   end
 
   @impl true
   def handle_event("next-page", _params, socket) do
-    page =
-      (socket.assigns.page == length(socket.assigns.pages) && socket.assigns.page) ||
-        socket.assigns.page + 1
-
-    %{
-      repo: repo,
-      table_name: table_name,
-      limit: limit,
-      sort_column: sort_column,
-      sort_direction: sort_direction
-    } = socket.assigns
+    page = min(socket.assigns.page + 1, length(socket.assigns.pages))
 
     socket
-    |> assign(:page, page)
-    |> assign_async(:result, fn ->
-      get_result(repo, table_name, page, limit, sort_column, sort_direction)
-    end)
+    |> assign(page: page)
+    |> load_data()
     |> noreply()
   end
 
@@ -127,19 +90,9 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
   def handle_event("change-page", %{"page" => page}, socket) do
     {page, _} = Integer.parse(page)
 
-    %{
-      repo: repo,
-      table_name: table_name,
-      limit: limit,
-      sort_column: sort_column,
-      sort_direction: sort_direction
-    } = socket.assigns
-
     socket
     |> assign(page: page)
-    |> assign_async(:result, fn ->
-      get_result(repo, table_name, page, limit, sort_column, sort_direction)
-    end)
+    |> load_data()
     |> noreply()
   end
 
@@ -147,20 +100,25 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
   def handle_event("validate-limit", %{"limit" => limit}, socket) do
     {limit, _} = Integer.parse(limit)
 
+    socket
+    |> assign(limit: limit)
+    |> load_data()
+    |> noreply()
+  end
+
+  defp load_data(socket) do
     %{
       repo: repo,
       table_name: table_name,
       page: page,
+      limit: limit,
       sort_column: sort_column,
       sort_direction: sort_direction
     } = socket.assigns
 
-    socket
-    |> assign(limit: limit)
-    |> assign_async(:result, fn ->
+    assign_async(socket, :result, fn ->
       get_result(repo, table_name, page, limit, sort_column, sort_direction)
     end)
-    |> noreply()
   end
 
   defp get_num_pages(repo, table_name, db_type, limit) do
