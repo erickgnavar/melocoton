@@ -110,10 +110,8 @@ defmodule Melocoton.Engines.Sqlite do
           }
         end)
 
-      unique_constraints =
-        index_result.rows
-        |> Enum.filter(&(&1["unique"] == 1))
-        |> Enum.map(fn row ->
+      indexes_with_cols =
+        Enum.map(index_result.rows, fn row ->
           index_info_sql = "PRAGMA index_info(#{quote_identifier(row["name"])})"
 
           cols =
@@ -122,7 +120,17 @@ defmodule Melocoton.Engines.Sqlite do
               _ -> []
             end
 
-          %{name: row["name"], columns: cols}
+          {row, cols}
+        end)
+
+      unique_constraints =
+        indexes_with_cols
+        |> Enum.filter(fn {row, _cols} -> row["unique"] == 1 end)
+        |> Enum.map(fn {row, cols} -> %{name: row["name"], columns: cols} end)
+
+      indexes =
+        Enum.map(indexes_with_cols, fn {row, cols} ->
+          %{name: row["name"], unique: row["unique"] == 1, columns: cols}
         end)
 
       {:ok,
@@ -131,6 +139,7 @@ defmodule Melocoton.Engines.Sqlite do
          pk_columns: pk_columns,
          unique_constraints: unique_constraints,
          foreign_keys: foreign_keys,
+         indexes: indexes,
          create_statement: create_statement
        }}
     end

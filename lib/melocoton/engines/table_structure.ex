@@ -10,6 +10,7 @@ defmodule Melocoton.Engines.TableStructure do
     unique_constraints: [],
     foreign_keys: [],
     check_constraints: [],
+    indexes: [],
     size: %{}
   ]
 
@@ -34,6 +35,12 @@ defmodule Melocoton.Engines.TableStructure do
           definition: String.t()
         }
 
+  @type index :: %{
+          name: String.t(),
+          unique: boolean(),
+          columns: [String.t()]
+        }
+
   @type t :: %__MODULE__{
           create_statement: String.t() | nil,
           columns: [column()],
@@ -41,6 +48,7 @@ defmodule Melocoton.Engines.TableStructure do
           unique_constraints: [unique_constraint()],
           foreign_keys: [foreign_key()],
           check_constraints: [check_constraint()],
+          indexes: [index()],
           size: map()
         }
 end

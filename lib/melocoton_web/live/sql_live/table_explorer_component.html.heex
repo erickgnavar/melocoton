@@ -57,7 +57,7 @@
     style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-medium);"
   >
     <div
-      :for={tab <- ["data", "structure"]}
+      :for={tab <- ["data", "structure", "indexes"]}
       class="px-4 py-1.5 cursor-pointer"
       style={
         if tab == @active_tab do
@@ -71,12 +71,6 @@
       phx-target={@myself}
     >
       {String.capitalize(tab)}
-    </div>
-    <div
-      class="px-4 py-1.5 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5"
-      style="color: var(--text-tertiary);"
-    >
-      Indexes
     </div>
     <div
       class="px-4 py-1.5 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5"
@@ -665,6 +659,104 @@
                   </tr>
                 </tbody>
               </table>
+            </div>
+          <% end %>
+        </div>
+      </.async_result>
+    </div>
+  <% end %>
+
+  <%= if @active_tab == "indexes" do %>
+    <div class="flex-1 overflow-auto">
+      <.async_result :let={structure} assign={@structure}>
+        <:loading>
+          <div class="flex items-center justify-center p-8" style="color: var(--text-tertiary);">
+            <i class="fas fa-spinner fa-spin mr-2"></i> Loading indexes...
+          </div>
+        </:loading>
+        <:failed :let={failure}>
+          <div class="p-4 text-red-500 text-xs">{"#{inspect(failure)}"}</div>
+        </:failed>
+
+        <div class="p-4 text-xs">
+          <%= if length(structure.indexes) > 0 do %>
+            <table class="w-full border-collapse">
+              <thead>
+                <tr style="background: var(--bg-secondary);">
+                  <th
+                    class="p-2 text-left text-[10px] uppercase tracking-wide"
+                    style="color: var(--text-secondary); border-bottom: 1px solid var(--border-medium);"
+                  >
+                    Name
+                  </th>
+                  <th
+                    class="p-2 text-left text-[10px] uppercase tracking-wide"
+                    style="color: var(--text-secondary); border-bottom: 1px solid var(--border-medium);"
+                  >
+                    Columns
+                  </th>
+                  <th
+                    class="p-2 text-left text-[10px] uppercase tracking-wide"
+                    style="color: var(--text-secondary); border-bottom: 1px solid var(--border-medium);"
+                  >
+                    Unique
+                  </th>
+                  <th
+                    :if={Enum.any?(structure.indexes, &Map.has_key?(&1, :size))}
+                    class="p-2 text-left text-[10px] uppercase tracking-wide"
+                    style="color: var(--text-secondary); border-bottom: 1px solid var(--border-medium);"
+                  >
+                    Size
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  :for={idx <- structure.indexes}
+                  class="hover:bg-black/5 dark:hover:bg-white/5"
+                >
+                  <td
+                    class="p-2 font-medium"
+                    style="border-bottom: 0.5px solid var(--border-subtle);"
+                  >
+                    {idx.name}
+                  </td>
+                  <td class="p-2" style="border-bottom: 0.5px solid var(--border-subtle);">
+                    <div class="flex gap-1">
+                      <span
+                        :for={col <- idx.columns}
+                        class="px-1.5 py-0.5 rounded text-[10px]"
+                        style="background: var(--bg-tertiary); color: var(--text-secondary);"
+                      >
+                        {col}
+                      </span>
+                    </div>
+                  </td>
+                  <td class="p-2" style="border-bottom: 0.5px solid var(--border-subtle);">
+                    <%= if idx.unique do %>
+                      <span
+                        class="px-1.5 py-0.5 rounded text-[10px] font-medium"
+                        style={"background: #{@database.group.color}15; color: #{@database.group.color};"}
+                      >
+                        YES
+                      </span>
+                    <% else %>
+                      <span style="color: var(--text-tertiary);">NO</span>
+                    <% end %>
+                  </td>
+                  <td
+                    :if={Enum.any?(structure.indexes, &Map.has_key?(&1, :size))}
+                    class="p-2"
+                    style="border-bottom: 0.5px solid var(--border-subtle);"
+                  >
+                    <span style="color: var(--text-secondary);">{Map.get(idx, :size)}</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          <% else %>
+            <div class="flex items-center justify-center p-8" style="color: var(--text-tertiary);">
+              No indexes found for this table.
             </div>
           <% end %>
         </div>

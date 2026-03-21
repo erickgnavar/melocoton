@@ -37,17 +37,11 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
   end
 
   @impl true
-  def handle_event("switch-tab", %{"tab" => "structure"}, socket) do
-    %{repo: repo, table_name: table_name} = socket.assigns
-
+  def handle_event("switch-tab", %{"tab" => tab}, socket)
+      when tab in ["structure", "indexes"] do
     socket
-    |> assign(active_tab: "structure")
-    |> assign_async(:structure, fn ->
-      case DatabaseClient.get_table_structure(repo, table_name) do
-        {:ok, structure} -> {:ok, %{structure: structure}}
-        {:error, error} -> {:error, error}
-      end
-    end)
+    |> assign(active_tab: tab)
+    |> load_structure()
     |> noreply()
   end
 
@@ -114,6 +108,17 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
     |> assign(filter: filter, page: 1)
     |> load_data()
     |> noreply()
+  end
+
+  defp load_structure(socket) do
+    %{repo: repo, table_name: table_name} = socket.assigns
+
+    assign_async(socket, :structure, fn ->
+      case DatabaseClient.get_table_structure(repo, table_name) do
+        {:ok, structure} -> {:ok, %{structure: structure}}
+        {:error, error} -> {:error, error}
+      end
+    end)
   end
 
   defp load_data(socket) do

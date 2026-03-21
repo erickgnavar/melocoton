@@ -133,11 +133,29 @@ defmodule Melocoton.Engines.Postgres do
     ORDER BY conname;
     """
 
+    indexes_sql = """
+    SELECT
+      i.relname AS index_name,
+      ix.indisunique AS is_unique,
+      pg_size_pretty(pg_relation_size(i.oid)) AS size,
+      array_agg(a.attname ORDER BY array_position(ix.indkey, a.attnum)) AS columns
+    FROM pg_index ix
+    JOIN pg_class t ON t.oid = ix.indrelid
+    JOIN pg_class i ON i.oid = ix.indexrelid
+    JOIN pg_namespace n ON n.oid = t.relnamespace
+    JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY(ix.indkey)
+    WHERE t.relname = '#{escaped}'
+      AND n.nspname = 'public'
+    GROUP BY i.relname, ix.indisunique, i.oid
+    ORDER BY i.relname;
+    """
+
     with {:ok, columns_result} <- query_and_normalize(conn, columns_sql),
          {:ok, constraints_result} <- query_and_normalize(conn, constraints_sql),
          {:ok, fk_result} <- query_and_normalize(conn, fk_sql),
          {:ok, size_result} <- query_and_normalize(conn, size_sql),
-         {:ok, check_result} <- query_and_normalize(conn, check_sql) do
+         {:ok, check_result} <- query_and_normalize(conn, check_sql),
+         {:ok, indexes_result} <- query_and_normalize(conn, indexes_sql) do
       pk_columns =
         constraints_result.rows
         |> Enum.filter(&(&1["constraint_type"] == "PRIMARY KEY"))
@@ -177,6 +195,16 @@ defmodule Melocoton.Engines.Postgres do
           _ -> %{}
         end
 
+      indexes =
+        Enum.map(indexes_result.rows, fn row ->
+          %{
+            name: row["index_name"],
+            unique: row["is_unique"],
+            columns: row["columns"],
+            size: row["size"]
+          }
+        end)
+
       {:ok,
        %TableStructure{
          columns: columns_result.rows,
@@ -184,6 +212,7 @@ defmodule Melocoton.Engines.Postgres do
          unique_constraints: unique_constraints,
          foreign_keys: foreign_keys,
          check_constraints: check_constraints,
+         indexes: indexes,
          size: size_info
        }}
     end

@@ -39,7 +39,9 @@ defmodule MelocotonWeb.SQLLive.RunTest do
           "INSERT INTO posts (user_id, title) VALUES (1, 'hello')",
           "CREATE TABLE strict_table (id INTEGER PRIMARY KEY, required_field TEXT NOT NULL, optional_field TEXT)",
           "CREATE TABLE with_defaults (id INTEGER PRIMARY KEY, status TEXT DEFAULT 'active', count INTEGER DEFAULT 0)",
-          "CREATE TABLE items (id INTEGER PRIMARY KEY, value TEXT)"
+          "CREATE TABLE items (id INTEGER PRIMARY KEY, value TEXT)",
+          "CREATE INDEX idx_posts_title ON posts(title)",
+          "CREATE UNIQUE INDEX idx_posts_user_title ON posts(user_id, title)"
         ] ++ item_inserts
       )
 
@@ -453,6 +455,50 @@ defmodule MelocotonWeb.SQLLive.RunTest do
 
       assert html =~ "&#39;active&#39;"
       assert html =~ "0"
+    end
+  end
+
+  describe "table explorer indexes tab" do
+    defp open_indexes_tab(live_view, table_name) do
+      render_click(live_view, "set-table-explorer", %{"table" => table_name})
+      render_async(live_view)
+
+      live_view
+      |> element("[phx-click='switch-tab'][phx-value-tab='indexes']")
+      |> render_click()
+
+      render_async(live_view)
+    end
+
+    test "shows indexes for a table", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      html = open_indexes_tab(live_view, "posts")
+
+      assert html =~ "idx_posts_title"
+      assert html =~ "title"
+    end
+
+    test "shows unique badge for unique indexes", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      html = open_indexes_tab(live_view, "posts")
+
+      assert html =~ "idx_posts_user_title"
+      assert html =~ "YES"
+    end
+
+    test "shows multiple columns for composite indexes", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      html = open_indexes_tab(live_view, "posts")
+
+      assert html =~ "user_id"
+      assert html =~ "title"
+    end
+
+    test "shows empty state when no indexes", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      html = open_indexes_tab(live_view, "users")
+
+      assert html =~ "No indexes found"
     end
   end
 end
