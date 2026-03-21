@@ -1,65 +1,104 @@
-<div class="h-screen w-screen flex flex-col">
-  <div class="bg-app-menubar-light dark:bg-app-menubar-dark border-b border-app-border-light dark:border-app-border-dark flex text-xs px-2 select-none h-7 items-center dark-transition">
+<div
+  class="h-screen w-screen flex flex-col"
+  style="background: var(--bg-primary); color: var(--text-primary);"
+>
+  <%!-- Environment top rail — 3px colored stripe --%>
+  <div class="w-full h-[3px]" style={"background: #{@database.group.color};"}></div>
+
+  <%!-- Menu bar --%>
+  <div
+    class="flex text-xs px-2 select-none h-7 items-center"
+    style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-medium);"
+  >
     <div
-      class="px-2 py-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer"
+      class="px-2 py-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded"
       phx-click={JS.patch(~p"/databases")}
     >
       Home
     </div>
-    <div class="px-2 py-1 hover:bg-black/10 dark:hover:bg-white/10">Help</div>
-    <!-- Spacer -->
+    <div class="px-2 py-1 hover:bg-black/10 dark:hover:bg-white/10 rounded">Help</div>
     <div class="flex-1"></div>
 
-    <button id="theme-toggle" class="p-1 text-sm hover:bg-black/10 dark:hover:bg-white/10 rounded">
+    <button
+      id="theme-toggle"
+      class="p-1 text-sm hover:bg-black/10 dark:hover:bg-white/10 rounded"
+    >
       <i class="fas fa-moon dark:hidden"></i>
       <i class="fas fa-sun hidden dark:block"></i>
     </button>
   </div>
 
   <div class="flex-1 flex overflow-hidden">
-    <aside class="w-56  bg-app-sidebar-light dark:bg-app-sidebar-dark border-r border-app-border-light dark:border-app-border-dark flex flex-col dark-transition">
-      <div class="p-2 border-b border-app-border-light dark:border-app-border-dark flex items-center justify-between dark-transition">
+    <%!-- Sidebar --%>
+    <aside
+      class="w-56 flex flex-col"
+      style="background: var(--bg-secondary); border-right: 1px solid var(--border-medium);"
+    >
+      <%!-- Database name header --%>
+      <div
+        class="p-2 flex items-center justify-between"
+        style="border-bottom: 1px solid var(--border-medium);"
+      >
         <div class="flex items-center">
-          <div class={["w-2 h-2 rounded-full mr-1.5", "bg-[#{@database.group.color}]"]}></div>
+          <div
+            class="w-2 h-2 rounded-full mr-1.5 flex-shrink-0"
+            style={"background: #{@database.group.color};"}
+          >
+          </div>
           <div class="text-xs font-medium flex items-center">
-            <i class="fas fa-database text-blue-500 mr-1.5"></i>
+            <i class="fas fa-database mr-1.5" style="color: var(--text-tertiary);"></i>
             <span>{@database.name}</span>
           </div>
         </div>
         <button
           class="text-xs hover:bg-black/10 dark:hover:bg-white/10 p-1 rounded"
+          style="color: var(--text-tertiary);"
           phx-click="reload-objects"
         >
           <i class="fas fa-sync-alt"></i>
         </button>
       </div>
 
-      <div class="p-2 border-b border-app-border-light dark:border-app-border-dark dark-transition">
+      <%!-- Search --%>
+      <div class="p-2" style="border-bottom: 1px solid var(--border-medium);">
         <div class="relative">
           <.form for={@search_form} phx-change="validate-search">
             <.input
               type="text"
               field={@search_form[:term]}
               id="search-objects-term"
-              placeholder="Search database objects..."
+              placeholder="Search tables, columns..."
             />
           </.form>
-
           <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-            <i class="fas fa-search text-gray-400 text-[10px]"></i>
+            <i class="fas fa-search text-[10px]" style="color: var(--text-tertiary);"></i>
           </div>
         </div>
       </div>
 
+      <%!-- Collapsible tree: Tables with inline columns and index counts --%>
       <div class="overflow-y-auto overscroll-none flex-1 p-1">
-        <div class="p-2 border-b border-app-border-light dark:border-app-border-dark dark-transition">
+        <div class="p-2" style="border-bottom: 1px solid var(--border-medium);">
           <div class="flex items-center justify-between cursor-pointer" data-toggle="tables">
-            <div class="text-xs font-medium">Tables</div>
-            <i class="fas fa-chevron-down text-[10px]"></i>
+            <div
+              class="text-[11px] font-medium uppercase tracking-wide"
+              style="color: var(--text-secondary);"
+            >
+              Tables
+            </div>
+            <.async_result :let={tables} assign={@tables}>
+              <:loading>
+                <span class="text-[10px]" style="color: var(--text-tertiary);">...</span>
+              </:loading>
+              <:failed :let={_failure}><span class="text-[10px] text-red-500">err</span></:failed>
+              <span class="text-[10px]" style="color: var(--text-tertiary);">
+                {length(tables)}
+              </span>
+            </.async_result>
           </div>
+
           <.async_result :let={tables} assign={@tables}>
             <:loading></:loading>
-
             <:failed :let={failure}>{"#{inspect(failure)}"}</:failed>
             <div
               :for={table <- tables}
@@ -70,14 +109,11 @@
               }
               class="mt-1 text-xs"
             >
-              <div class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer">
-                <i class="fas fa-table mr-1.5 text-blue-500"></i>
-                <span phx-click="set-table-explorer" phx-value-table={table.name}>
-                  {table.name}
-                </span>
+              <div class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded">
                 <i
                   id={"table-toggle-icon-#{table.name}-closed"}
-                  class="fas fa-chevron-down ml-auto text-[10px]"
+                  class="fas fa-chevron-right mr-1 text-[8px]"
+                  style="color: var(--text-tertiary);"
                   phx-click={
                     JS.toggle(to: "#table-#{table.name}-columns")
                     |> JS.toggle(to: "#table-toggle-icon-#{table.name}-open")
@@ -87,7 +123,8 @@
                 </i>
                 <i
                   id={"table-toggle-icon-#{table.name}-open"}
-                  class="fas fa-chevron-left ml-auto text-[10px] hidden"
+                  class="fas fa-chevron-down mr-1 text-[8px] hidden"
+                  style="color: var(--text-tertiary);"
                   phx-click={
                     JS.toggle(to: "#table-#{table.name}-columns")
                     |> JS.toggle(to: "#table-toggle-icon-#{table.name}-closed")
@@ -95,40 +132,58 @@
                   }
                 >
                 </i>
+                <span
+                  class="flex-1 cursor-pointer"
+                  phx-click="set-table-explorer"
+                  phx-value-table={table.name}
+                >
+                  {table.name}
+                </span>
               </div>
 
-              <ul class="pl-4 mt-0.5 hidden" id={"table-#{table.name}-columns"}>
+              <ul
+                class="mt-0.5 hidden"
+                id={"table-#{table.name}-columns"}
+                style="padding-left: 26px;"
+              >
                 <li
                   :for={col <- table.cols}
                   :if={@search_term && String.contains?(col.name, @search_term)}
-                  class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10"
+                  class="flex items-center justify-between p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded"
                 >
-                  <i class="fas fa-font mr-1.5 text-purple-600 dark:text-purple-500 text-[10px]">
-                  </i>
-                  <span>{col.name} ({col.type})</span>
+                  <span>{col.name}</span>
+                  <span class="font-mono text-[9px]" style="color: var(--text-tertiary);">
+                    {col.type}
+                  </span>
                 </li>
               </ul>
             </div>
           </.async_result>
         </div>
-        <div class="p-2 border-b border-app-border-light dark:border-app-border-dark dark-transition">
+
+        <%!-- Indexes section --%>
+        <div class="p-2" style="border-bottom: 1px solid var(--border-medium);">
           <div class="flex items-center justify-between cursor-pointer" data-toggle="indexes">
-            <div class="text-xs font-medium">Indexes</div>
-            <i class="fas fa-chevron-down text-[10px]"></i>
+            <div
+              class="text-[11px] font-medium uppercase tracking-wide"
+              style="color: var(--text-secondary);"
+            >
+              Indexes
+            </div>
+            <i class="fas fa-chevron-down text-[8px]" style="color: var(--text-tertiary);"></i>
           </div>
           <div id="indexes-content" class="mt-1 text-xs">
             <.async_result :let={indexes} assign={@indexes}>
               <:loading></:loading>
-
               <:failed :let={failure}>{"#{inspect(failure)}"}</:failed>
               <div
                 :for={index <- indexes}
                 :if={@search_term && String.contains?(index.name, @search_term)}
-                class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer"
+                class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded"
               >
-                <i class="fas fa-key mr-1.5 text-amber-500"></i>
+                <i class="fas fa-key mr-1.5 text-amber-500 text-[10px]"></i>
                 <span>{index.name}</span>
-                <span class="ml-1 text-[9px] text-gray-500 dark:text-gray-400">
+                <span class="ml-1 text-[9px]" style="color: var(--text-tertiary);">
                   ({index.table})
                 </span>
               </div>
@@ -136,44 +191,74 @@
           </div>
         </div>
       </div>
-      <div class="p-2 border-t border-app-border-light dark:border-app-border-dark text-[10px] text-gray-500 dark:text-gray-400 dark-transition">
+
+      <%!-- Sidebar footer: connection info --%>
+      <div
+        class="p-2 text-[10px]"
+        style="border-top: 1px solid var(--border-medium); color: var(--text-tertiary);"
+      >
         <div class="flex items-center">
-          <div class={["w-1.5 h-1.5 rounded-full mr-1.5", "bg-[#{@database.group.color}]"]}></div>
+          <div
+            class="w-1.5 h-1.5 rounded-full mr-1.5"
+            style={"background: #{@database.group.color};"}
+          >
+          </div>
           <span>
             Connected to
-            <span class={"uppercase text-[#{@database.group.color}]"}>
+            <span class="uppercase font-medium" style={"color: #{@database.group.color};"}>
               {@database.group.name}
             </span>
           </span>
         </div>
       </div>
     </aside>
-    
-<!-- Main Content Area -->
+
+    <%!-- Main Content Area --%>
     <main
       :if={is_nil(@table_explorer)}
-      class="flex-1 flex flex-col overflow-hidden bg-app-content-light dark:bg-app-content-dark dark-transition"
+      class="flex-1 flex flex-col overflow-hidden"
+      style="background: var(--bg-primary);"
     >
-      <div class="border-b border-app-border-light dark:border-app-border-dark p-2 flex items-center dark-transition">
+      <%!-- Toolbar with connection pill and actions --%>
+      <div class="p-2 flex items-center" style="border-bottom: 1px solid var(--border-medium);">
+        <%!-- Connection pill (two-part) --%>
+        <div class="flex items-center mr-3 rounded overflow-hidden text-xs">
+          <div
+            class="px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-white"
+            style={"background: #{@database.group.color};"}
+          >
+            {@database.group.name}
+          </div>
+          <div
+            class="px-2.5 py-1 flex items-center"
+            style="background: var(--bg-tertiary); color: var(--text-secondary);"
+          >
+            {@database.name}
+            <i class="fas fa-chevron-down ml-1.5 text-[8px]"></i>
+          </div>
+        </div>
+
+        <div class="flex-1"></div>
+
         <button
-          class="px-2 py-1 text-xs bg-app-accent-light text-white rounded hover:bg-app-accent-light/90 flex items-center mr-2"
-          phx-click="run-query"
-          phx-value-query={@current_session.query}
+          class="px-2 py-1 text-xs rounded flex items-center mr-2"
+          style="background: var(--bg-tertiary); color: var(--text-secondary);"
         >
-          <i class="fas fa-play mr-1.5"></i> Run Query
-        </button>
-        <button class="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center mr-2 dark-transition">
           <i class="fas fa-save mr-1.5"></i> Save
         </button>
         <a
           :if={@result.rows != []}
-          class="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center mr-2 dark-transition"
+          class="px-2 py-1 text-xs rounded flex items-center mr-2"
+          style="background: var(--bg-tertiary); color: var(--text-secondary);"
           href={~p"/export-csv/#{inspect(@pid)}"}
           target="blank"
         >
           <i class="fas fa-file-export mr-1.5"></i> Export
         </a>
-        <button class="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center mr-2 dark-transition">
+        <button
+          class="px-2 py-1 text-xs rounded flex items-center mr-2"
+          style="background: var(--bg-tertiary); color: var(--text-secondary);"
+        >
           <i class="fas fa-history mr-1.5"></i> History
         </button>
 
@@ -184,30 +269,48 @@
           <i class="fas fa-exchange-alt mr-1.5"></i> Transaction Active
         </button>
 
-        <div class="flex-1"></div>
-
-        <div class="flex items-center text-xs">
-          <div class={["w-2 h-2 rounded-full mr-1.5", "bg-[#{@database.group.color}]"]}></div>
-          <span class={["font-medium uppercase", "text-[#{@database.group.color}]"]}>
-            {@database.group.name}
+        <%!-- Run button with inline shortcut --%>
+        <button
+          class="px-3 py-1 text-xs text-white rounded hover:opacity-90 flex items-center font-medium"
+          style={"background: #{@database.group.color};"}
+          phx-click="run-query"
+          phx-value-query={@current_session.query}
+        >
+          <i class="fas fa-play mr-1.5 text-[10px]"></i>
+          Run
+          <span
+            class="ml-2 text-[10px] px-1.5 py-0.5 rounded"
+            style="background: rgba(255,255,255,0.15); border: 0.5px solid rgba(255,255,255,0.2);"
+          >
+            &#8984;&#8629;
           </span>
-          <span class="mx-1">|</span>
-          <i class="fas fa-database text-blue-500 mr-1.5"></i>
-          <span>{@database.name}</span>
-        </div>
+        </button>
       </div>
 
-      <div class="border-b border-app-border-light dark:border-app-border-dark flex text-xs dark-transition">
+      <%!-- Tab bar with env dots --%>
+      <div class="flex text-xs" style="border-bottom: 1px solid var(--border-medium);">
         <div
           :for={{session, index} <- Enum.with_index(@database.sessions, 1)}
           class={[
-            "px-3 py-1.5 bg-white dark:bg-gray-800 border-r border-app-border-light dark:border-app-border-dark flex items-center dark-transition cursor-pointer",
-            @current_session.id == session.id && "border-t-2"
+            "px-3 py-1.5 flex items-center cursor-pointer",
+            @current_session.id == session.id && "border-b-2"
           ]}
+          style={
+            if @current_session.id == session.id do
+              "border-bottom-color: #{@database.group.color}; background: var(--bg-primary);"
+            else
+              "background: var(--bg-secondary); color: var(--text-tertiary);"
+            end
+          }
           phx-click="change-session"
           phx-value-session-id={session.id}
-          style={"border-top-color: #{@database.group.color};"}
         >
+          <%!-- Env dot before tab name --%>
+          <div
+            class="w-[6px] h-[6px] rounded-full mr-1.5"
+            style={"background: #{@database.group.color};"}
+          >
+          </div>
           <span>#{index}</span>
           <button class="ml-2 hover:bg-black/10 dark:hover:bg-white/10 rounded p-0.5">
             <i class="fas fa-times text-[10px]"></i>
@@ -220,9 +323,35 @@
           <i class="fas fa-plus text-[10px]"></i>
         </button>
       </div>
-      <!-- Editor Area with Environment Color -->
+
+      <%!-- Editor toolbar with env label and keyboard shortcuts --%>
+      <div
+        class="flex items-center justify-between px-3 py-1 text-[11px]"
+        style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-subtle);"
+      >
+        <div class="flex items-center">
+          <span style="color: var(--text-secondary);">
+            query_{Enum.find_index(@database.sessions, &(&1.id == @current_session.id)) ||
+              0 |> Kernel.+(1)}.sql
+          </span>
+          <span class="mx-1.5" style="color: var(--text-tertiary);">·</span>
+          <span
+            class="text-[10px] uppercase tracking-wide font-medium"
+            style={"color: #{@database.group.color};"}
+          >
+            {@database.group.name}
+          </span>
+        </div>
+        <div class="flex items-center gap-3" style="color: var(--text-tertiary);">
+          <span><span class="kbd-chip">&#8984;/</span> comment</span>
+          <span><span class="kbd-chip">&#8984;&#8679;F</span> format</span>
+          <span><span class="kbd-chip">&#8984;&#8629;</span> run</span>
+        </div>
+      </div>
+
+      <%!-- Editor Area --%>
       <div class="flex-1 flex flex-col overflow-hidden">
-        <!-- SQL Editor -->
+        <%!-- SQL Editor --%>
         <.live_component
           module={MelocotonWeb.SqlLive.SqlEditorComponent}
           id="sql-editor"
@@ -230,27 +359,49 @@
           session={@current_session}
         />
 
-        <div class="border-t border-app-border-light dark:border-app-border-dark flex flex-col h-2/5 overflow-hidden dark-transition">
-          <div class="flex items-center justify-between border-b border-app-border-light dark:border-app-border-dark dark-transition text-xs">
+        <%!-- Results Panel --%>
+        <div
+          class="flex flex-col h-2/5 overflow-hidden"
+          style="border-top: 1px solid var(--border-medium);"
+        >
+          <%!-- Results tab bar with metadata --%>
+          <div
+            class="flex items-center justify-between text-xs"
+            style="border-bottom: 1px solid var(--border-medium);"
+          >
             <div class="flex">
               <div
-                class={[
-                  "px-3 py-1 bg-white dark:bg-gray-800 dark-transition",
-                  @result != [] && "border-b-2"
-                ]}
-                style={"border-bottom-color: #{@database.group.color};"}
+                class={["px-3 py-1.5 font-medium", @result != [] && "border-b-2"]}
+                style={
+                  if @result != [] do
+                    "border-bottom-color: #{@database.group.color}; background: var(--bg-primary);"
+                  else
+                    "background: var(--bg-primary);"
+                  end
+                }
               >
                 {gettext("Results")}
               </div>
-              <button class="px-3 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:bg-black/5 dark:hover:bg-white/5">
+              <button
+                class="px-3 py-1.5 font-medium hover:bg-black/5 dark:hover:bg-white/5"
+                style="color: var(--text-tertiary);"
+              >
                 Messages
               </button>
-              <button class="px-3 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:bg-black/5 dark:hover:bg-white/5">
+              <button
+                class="px-3 py-1.5 font-medium hover:bg-black/5 dark:hover:bg-white/5"
+                style="color: var(--text-tertiary);"
+              >
                 Explain
               </button>
             </div>
 
-            <div class="flex items-center px-2">
+            <div class="flex items-center gap-3 px-3">
+              <%!-- Row count and query time in tab bar --%>
+              <span class="text-[10px]" style="color: var(--text-tertiary);">
+                {@result.num_rows} rows · {@query_time} ms
+              </span>
+
               <div class="relative">
                 <.form
                   for={@filter_results_form}
@@ -261,29 +412,33 @@
                     type="text"
                     field={@filter_results_form[:term]}
                     id="filter-results-term"
-                    placeholder="Search in results..."
-                    class="w-48 px-2 py-1 text-xs border border-app-border-light dark:border-app-border-dark rounded bg-app-input-light dark:bg-app-input-dark pr-16 dark-transition"
+                    placeholder="Filter..."
+                    class="w-36 px-2 py-0.5 text-xs rounded pr-12"
                   />
                 </.form>
 
                 <div class="absolute inset-y-0 right-0 flex items-center px-2">
                   <span
                     id="search-match-count"
-                    class="text-[10px] text-gray-500 dark:text-gray-400 mr-2"
+                    class="text-[10px] mr-1"
+                    style="color: var(--text-tertiary);"
                   >
                   </span>
-                  <i class="fas fa-search text-gray-400 text-[10px]"></i>
+                  <i class="fas fa-search text-[10px]" style="color: var(--text-tertiary);"></i>
                 </div>
               </div>
               <button
                 id="clear-results-search"
-                class="ml-1 text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1"
+                class="text-xs p-1 hover:bg-black/5 dark:hover:bg-white/5 rounded"
+                style="color: var(--text-tertiary);"
                 title="Clear search"
               >
                 <i class="fas fa-times text-[10px]"></i>
               </button>
             </div>
           </div>
+
+          <%!-- Results table --%>
           <div
             :if={@result != [] and is_nil(@error_message)}
             class="overflow-auto overscroll-none flex-1 p-0"
@@ -291,10 +446,11 @@
             <div class="overflow-x-auto">
               <table class="w-full border-collapse text-xs">
                 <thead>
-                  <tr class="bg-gray-100 dark:bg-gray-800 dark-transition">
+                  <tr style="background: var(--bg-secondary);">
                     <th
                       :for={col <- @result.cols}
-                      class="border border-app-border-light dark:border-app-border-dark px-2 py-1 text-left font-medium dark-transition"
+                      class="px-2 py-1 text-left font-medium"
+                      style="border: 1px solid var(--border-subtle);"
                     >
                       {col}
                     </th>
@@ -306,7 +462,8 @@
                   }>
                     <td
                       :for={col <- @result.cols}
-                      class="border border-app-border-light dark:border-app-border-dark px-2 py-1 whitespace-nowrap dark-transition"
+                      class="px-2 py-1 whitespace-nowrap"
+                      style="border: 1px solid var(--border-subtle);"
                     >
                       <span :if={@filter_term == ""}>
                         {inspect(Map.get(row, col), structs: false)}
@@ -321,9 +478,24 @@
             </div>
           </div>
 
+          <%!-- Empty state --%>
+          <div
+            :if={@result == [] or (@result.rows == [] and is_nil(@error_message))}
+            class="flex-1 flex items-center justify-center"
+            style="color: var(--text-tertiary);"
+          >
+            <div class="text-center text-xs">
+              <p>Run a query to see results</p>
+              <p class="mt-1">
+                <span class="kbd-chip">&#8984;&#8629;</span>
+              </p>
+            </div>
+          </div>
+
+          <%!-- Error message --%>
           <div
             :if={!is_nil(@error_message)}
-            class="border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-2 m-2 text-xs rounded dark-transition"
+            class="border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-2 m-2 text-xs rounded"
           >
             <div class="flex">
               <div class="flex-shrink-0 text-red-500">
@@ -333,27 +505,36 @@
                 <p class="text-red-700 dark:text-red-400 font-medium">
                   {@error_message}
                 </p>
-                <p class="text-gray-500 dark:text-gray-400 mt-1 text-[10px]">
-                  Position: 1-5 • Error code: 42601
-                </p>
               </div>
             </div>
           </div>
 
-          <div class={[
-            "border-t border-app-border-light dark:border-app-border-dark p-1 text-[10px] text-gray-500 dark:text-gray-400 flex justify-between dark-transition text-white",
-            "bg-[#{@database.group.color}]"
-          ]}>
-            <div class="text-white">{@result.num_rows} rows returned in {@query_time} ms</div>
-            <div class="flex items-center text-white">
-              <div class="w-1.5 h-1.5 rounded-full bg-white mr-1.5"></div>
-              <span class="font-medium uppercase">{@database.group.name}</span>
-              @ {@database.name}
+          <%!-- Status bar --%>
+          <div
+            class="flex items-center justify-between px-3 h-6 text-[10px]"
+            style="background: var(--bg-secondary); border-top: 1px solid var(--border-medium);"
+          >
+            <div class="flex items-center gap-3">
+              <%!-- Env chip --%>
+              <span
+                class="uppercase font-medium px-1.5 py-0.5 rounded-lg tracking-wide"
+                style={"background: #{@database.group.color}22; color: #{@database.group.color};"}
+              >
+                {@database.group.name}
+              </span>
+              <span style="color: var(--text-secondary);">{@database.name}</span>
+              <span style="color: var(--text-tertiary);">|</span>
+              <span style="color: var(--text-tertiary);">{@database.type}</span>
+            </div>
+            <div class="flex items-center">
+              <span style="color: var(--text-tertiary);" class="mr-1.5">connected</span>
+              <div class="w-[6px] h-[6px] rounded-full bg-green-500"></div>
             </div>
           </div>
         </div>
       </div>
     </main>
+
     <.live_component
       :if={!is_nil(@table_explorer)}
       module={MelocotonWeb.SqlLive.TableExplorerComponent}

@@ -4,6 +4,106 @@
 
 /* This file is for your main application CSS */
 
+/* ===== Theme Color System (CSS Custom Properties) ===== */
+
+/* Light mode (default) */
+[data-theme="light"] {
+  --bg-primary:        #ffffff;
+  --bg-secondary:      #f5f5f4;
+  --bg-tertiary:       #eeecea;
+  --text-primary:      #1a1a18;
+  --text-secondary:    #57534e;
+  --text-tertiary:     #a8a29e;
+  --border-subtle:     rgba(0, 0, 0, 0.08);
+  --border-medium:     rgba(0, 0, 0, 0.15);
+  --border-strong:     rgba(0, 0, 0, 0.25);
+
+  /* Environment colors — tinted backgrounds & text */
+  --env-local-bg:      #dcfce7;
+  --env-local-text:    #15803d;
+  --env-dev-bg:        #e0f2fe;
+  --env-dev-text:      #0369a1;
+  --env-prod-bg:       #ede9fe;
+  --env-prod-text:     #5b21b6;
+  --env-staging-bg:    #fef3c7;
+  --env-staging-text:  #92400e;
+
+  /* DB type badges */
+  --badge-postgres-bg:   #dbeafe;
+  --badge-postgres-text: #1d4ed8;
+  --badge-sqlite-bg:     #e0f2fe;
+  --badge-sqlite-text:   #0369a1;
+
+  /* Syntax highlighting */
+  --syntax-keyword:   #6d28d9;
+  --syntax-table:     #059669;
+  --syntax-number:    #c2410c;
+  --syntax-comment:   #78716c;
+  --syntax-string:    #b45309;
+  --syntax-lineno:    #d6d3d1;
+
+  /* Scrollbar */
+  --scrollbar-thumb:       #888;
+  --scrollbar-thumb-hover: #666;
+
+  /* Focus */
+  --focus-color: #0078d7;
+}
+
+/* Dark mode */
+[data-theme="dark"] {
+  --bg-primary:        #1c1c1a;
+  --bg-secondary:      #242422;
+  --bg-tertiary:       #2c2c2a;
+  --text-primary:      #f5f5f0;
+  --text-secondary:    #a8a29e;
+  --text-tertiary:     #78716c;
+  --border-subtle:     rgba(255, 255, 255, 0.06);
+  --border-medium:     rgba(255, 255, 255, 0.12);
+  --border-strong:     rgba(255, 255, 255, 0.20);
+
+  /* Environment colors — tinted backgrounds & text */
+  --env-local-bg:      #14291f;
+  --env-local-text:    #86efac;
+  --env-dev-bg:        #0c2233;
+  --env-dev-text:      #7dd3fc;
+  --env-prod-bg:       #2e1a4a;
+  --env-prod-text:     #c4b5fd;
+  --env-staging-bg:    #422006;
+  --env-staging-text:  #fcd34d;
+
+  /* DB type badges */
+  --badge-postgres-bg:   #1e3a5f;
+  --badge-postgres-text: #93c5fd;
+  --badge-sqlite-bg:     #0c2233;
+  --badge-sqlite-text:   #7dd3fc;
+
+  /* Syntax highlighting */
+  --syntax-keyword:   #818cf8;
+  --syntax-table:     #34d399;
+  --syntax-number:    #fb923c;
+  --syntax-comment:   #57534e;
+  --syntax-string:    #fbbf24;
+  --syntax-lineno:    #44403c;
+
+  /* Scrollbar */
+  --scrollbar-thumb:       #555;
+  --scrollbar-thumb-hover: #444;
+
+  /* Focus */
+  --focus-color: #3b99fc;
+}
+
+/* ===== Environment Color Constants ===== */
+:root {
+  --env-local:      #22c55e;
+  --env-dev:        #0ea5e9;
+  --env-prod:       #7c3aed;
+  --env-staging:    #f59e0b;
+}
+
+/* ===== Base Styles ===== */
+
 /* avoid over scrolling in main layout */
 html {
   overflow: hidden;
@@ -24,30 +124,18 @@ html {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #888;
+  background: var(--scrollbar-thumb, #888);
   border-radius: 4px;
 }
 
-.dark ::-webkit-scrollbar-thumb {
-  background: #555;
-}
-
 ::-webkit-scrollbar-thumb:hover {
-  background: #666;
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: #444;
+  background: var(--scrollbar-thumb-hover, #666);
 }
 
 /* Native-like focus styles */
 *:focus {
-  outline: 2px solid #0078d7;
+  outline: 2px solid var(--focus-color, #0078d7);
   outline-offset: -2px;
-}
-
-.dark *:focus {
-  outline-color: #3b99fc;
 }
 
 /* Native-like selection */
@@ -71,13 +159,126 @@ body {
   width: 100%;
 }
 
-/* Dark mode transitions */
-.dark-transition {
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s
-    ease;
+/* Theme transitions */
+*, *::before, *::after {
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.1s ease;
 }
 
-/* Environment indicator pulse animation for production */
+/* Exclude transitions on interactive elements for instant feedback */
+input:focus, button:active, textarea:focus, select:focus,
+.cm-editor *, .cm-editor {
+  transition: none;
+}
+
+/* ===== Card hover actions ===== */
+.card-actions {
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.card:hover .card-actions {
+  opacity: 1;
+}
+
+/* ===== DB type badge pills ===== */
+.badge-postgres {
+  background: var(--badge-postgres-bg);
+  color: var(--badge-postgres-text);
+}
+.badge-sqlite {
+  background: var(--badge-sqlite-bg);
+  color: var(--badge-sqlite-text);
+}
+
+/* ===== Keyboard shortcut chips ===== */
+.kbd-chip {
+  background: var(--bg-secondary);
+  border: 0.5px solid var(--border-medium);
+  font-size: 10px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-family: inherit;
+}
+
+/* ===== Table Explorer — Cell value type rendering ===== */
+.cell-bool-true {
+  display: inline-block;
+  background: #052e16;
+  color: #4ade80;
+  font-size: 10px;
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: 8px;
+}
+[data-theme="light"] .cell-bool-true {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.cell-bool-false {
+  display: inline-block;
+  background: #2d0f0f;
+  color: #f87171;
+  font-size: 10px;
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: 8px;
+}
+[data-theme="light"] .cell-bool-false {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.cell-null {
+  display: inline-block;
+  background: var(--bg-tertiary);
+  color: var(--text-tertiary);
+  font-size: 10px;
+  font-style: normal;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.cell-timestamp {
+  color: #a78bfa;
+  font-family: var(--font-mono, monospace);
+}
+[data-theme="light"] .cell-timestamp {
+  color: #7c3aed;
+}
+
+.cell-url {
+  color: #60a5fa;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+}
+[data-theme="light"] .cell-url {
+  color: #2563eb;
+}
+
+.cell-pk {
+  color: var(--text-tertiary);
+  font-size: 11px;
+}
+
+/* Row number gutter */
+.row-gutter {
+  width: 32px;
+  text-align: right;
+  color: var(--text-tertiary);
+  font-size: 10px;
+  border-right: 0.5px solid var(--border-subtle);
+  user-select: none;
+}
+
+/* Selected row */
+tr.row-selected {
+  outline: 1px solid var(--border-strong);
+}
+
+/* ===== Environment indicator pulse animation for production ===== */
 @keyframes pulse-red {
   0%,
   100% {

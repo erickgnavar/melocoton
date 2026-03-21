@@ -197,29 +197,42 @@ liveSocket.connect();
 // >> liveSocket.disableLatencySim()
 window.liveSocket = liveSocket;
 
-const themeToggle = document.getElementById("theme-toggle");
-
-// Check for saved theme preference or use system preference
-if (
-  localStorage.theme === "dark" ||
-  (!("theme" in localStorage) &&
-    window.matchMedia("(prefers-color-scheme: dark)").matches)
-) {
-  document.documentElement.classList.add("dark");
-} else {
-  document.documentElement.classList.remove("dark");
+// Theme management using data-theme attribute
+function resolveTheme(preference) {
+  if (preference === "system" || !preference) {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
+  }
+  return preference;
 }
 
-// Toggle theme
-themeToggle.addEventListener("click", () => {
-  document.documentElement.classList.toggle("dark");
+function applyTheme(preference) {
+  const resolved = resolveTheme(preference);
+  document.documentElement.setAttribute("data-theme", resolved);
+  localStorage.setItem("theme", preference);
+}
 
-  // Save preference
-  if (document.documentElement.classList.contains("dark")) {
-    localStorage.theme = "dark";
-  } else {
-    localStorage.theme = "light";
-  }
+// Apply initial theme
+const savedTheme = localStorage.getItem("theme") || "system";
+applyTheme(savedTheme);
+
+// Listen for system preference changes
+window
+  .matchMedia("(prefers-color-scheme: dark)")
+  .addEventListener("change", () => {
+    const current = localStorage.getItem("theme") || "system";
+    if (current === "system") {
+      applyTheme("system");
+    }
+  });
+
+// Toggle theme on button click
+const themeToggle = document.getElementById("theme-toggle");
+themeToggle.addEventListener("click", () => {
+  const current = document.documentElement.getAttribute("data-theme");
+  const next = current === "dark" ? "light" : "dark";
+  applyTheme(next);
 });
 
 // this only work when running through Tauri web view

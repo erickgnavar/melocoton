@@ -1,23 +1,40 @@
-<div class="h-screen w-screen flex flex-col">
-  <div class="bg-app-menubar-light dark:bg-app-menubar-dark border-b border-app-border-light dark:border-app-border-dark flex text-xs px-2 select-none h-7 items-center dark-transition">
+<div
+  class="h-screen w-screen flex flex-col"
+  style="background: var(--bg-primary); color: var(--text-primary);"
+>
+  <%!-- Menu bar --%>
+  <div
+    class="flex text-xs px-2 select-none h-7 items-center"
+    style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-medium);"
+  >
     <div
-      class="px-2 py-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer"
+      class="px-2 py-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded"
       phx-click={JS.patch(~p"/databases")}
     >
       Home
     </div>
-    <div class="px-2 py-1 hover:bg-black/10 dark:hover:bg-white/10">Help</div>
+    <div class="px-2 py-1 hover:bg-black/10 dark:hover:bg-white/10 rounded">Help</div>
 
     <div class="flex-1"></div>
-    <button id="theme-toggle" class="p-1 text-sm hover:bg-black/10 dark:hover:bg-white/10 rounded">
+    <button
+      id="theme-toggle"
+      class="p-1 text-sm hover:bg-black/10 dark:hover:bg-white/10 rounded"
+    >
       <i class="fas fa-moon dark:hidden"></i>
       <i class="fas fa-sun hidden dark:block"></i>
     </button>
   </div>
+
   <div class="flex-1 flex overflow-hidden">
-    <!-- Sidebar -->
-    <aside class="w-56 bg-app-sidebar-light dark:bg-app-sidebar-dark border-r border-app-border-light dark:border-app-border-dark flex flex-col dark-transition">
-      <div class="p-2 border-b border-app-border-light dark:border-app-border-dark flex items-center justify-between dark-transition">
+    <%!-- Sidebar --%>
+    <aside
+      class="w-56 flex flex-col"
+      style="background: var(--bg-secondary); border-right: 1px solid var(--border-medium);"
+    >
+      <div
+        class="p-2 flex items-center justify-between"
+        style="border-bottom: 1px solid var(--border-medium);"
+      >
         <div class="text-xs font-medium">Connections</div>
         <.link
           class="text-xs hover:bg-black/10 dark:hover:bg-white/10 p-1 rounded"
@@ -27,48 +44,68 @@
         </.link>
       </div>
       <div class="overflow-y-auto flex-1 p-1">
-        <!-- Connection Tree -->
+        <%!-- Sidebar group rows --%>
         <ul class="text-xs">
           <li :for={{group, databases} <- @data} class="mb-1">
-            <div class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer group">
-              <div class={["w-2 h-2 rounded-full mr-1.5", "bg-[#{group.color}]"]}></div>
-              <span class={["font-medium uppercase", "text-[#{group.color}]"]}>{group.name}</span>
-              <i class="fas fa-chevron-down ml-auto text-[10px]"></i>
+            <div class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer group rounded">
+              <%!-- Group dot --%>
+              <div
+                class="w-[7px] h-[7px] rounded-full mr-1.5 flex-shrink-0"
+                style={"background: #{group.color};"}
+              >
+              </div>
+              <span
+                class="font-medium uppercase text-[11px] tracking-wide"
+                style={"color: #{group.color};"}
+              >
+                {group.name}
+              </span>
+              <%!-- Connection count --%>
+              <span class="ml-1.5 text-[10px]" style="color: var(--text-tertiary);">
+                {length(databases)}
+              </span>
+              <i
+                class="fas fa-chevron-down ml-auto text-[10px]"
+                style="color: var(--text-tertiary);"
+              >
+              </i>
               <.link
-                class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity edit-group-btn"
+                class="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                style="color: var(--text-tertiary);"
                 patch={~p"/groups/#{group.id}/edit"}
               >
                 <i class="fas fa-pen-to-square text-[10px]"></i>
               </.link>
             </div>
-            <ul class="pl-4 mt-0.5">
+            <ul class="mt-0.5" style="padding-left: 26px;">
               <li
                 :for={database <- databases}
-                class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer"
+                class="flex items-center justify-between p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded"
               >
-                <.link patch={~p"/databases/#{database}/run"}>
-                  <i class="fas fa-database mr-1.5 text-db-postgres"></i>
+                <.link patch={~p"/databases/#{database}/run"} class="flex items-center flex-1">
+                  <i class="fas fa-database mr-1.5" style="color: var(--text-secondary);"></i>
                   <span>{database.name}</span>
-                  <span class="ml-1 text-[9px] text-gray-500 dark:text-gray-400">
-                    ({database.type})
-                  </span>
                 </.link>
+                <span class="font-mono text-[9px]" style="color: var(--text-tertiary);">
+                  {if database.type == :postgres, do: "pg", else: "sqlite"}
+                </span>
               </li>
             </ul>
           </li>
         </ul>
       </div>
 
-      <div class="p-2 border-t border-app-border-light dark:border-app-border-dark dark-transition">
-        <div class="text-xs text-gray-500 dark:text-gray-400">
-          Melocoton 🍑 v{Application.spec(:melocoton, :vsn) |> to_string()}
+      <div class="p-2" style="border-top: 1px solid var(--border-medium);">
+        <div class="text-xs" style="color: var(--text-tertiary);">
+          Melocoton v{Application.spec(:melocoton, :vsn) |> to_string()}
         </div>
       </div>
     </aside>
 
-    <main class="flex-1 flex flex-col overflow-hidden bg-app-content-light dark:bg-app-content-dark dark-transition">
-      <!-- Toolbar -->
-      <div class="border-b border-app-border-light dark:border-app-border-dark p-2 flex items-center dark-transition">
+    <%!-- Main content --%>
+    <main class="flex-1 flex flex-col overflow-hidden" style="background: var(--bg-primary);">
+      <%!-- Toolbar --%>
+      <div class="p-2 flex items-center" style="border-bottom: 1px solid var(--border-medium);">
         <.link
           class="px-2 py-1 text-xs bg-app-accent-light text-white rounded hover:bg-app-accent-light/90 flex items-center mr-2"
           patch={~p"/databases/new"}
@@ -77,15 +114,18 @@
         </.link>
         <.link
           id="new-group-btn"
-          class="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center mr-2 dark-transition"
+          class="px-2 py-1 text-xs rounded flex items-center mr-2"
+          style="background: var(--bg-tertiary); color: var(--text-secondary);"
           patch={~p"/groups/new"}
         >
           <i class="fas fa-folder-plus mr-1.5"></i> New Group
         </.link>
-        <button class="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center dark-transition">
+        <button
+          class="px-2 py-1 text-xs rounded flex items-center"
+          style="background: var(--bg-tertiary); color: var(--text-secondary);"
+        >
           <i class="fas fa-file-import mr-1.5"></i> Import
         </button>
-        <!-- Spacer -->
         <div class="flex-1"></div>
         <div class="relative">
           <.form for={@search_form} phx-change="validate-search">
@@ -96,53 +136,76 @@
               phx-debounce="200"
             />
             <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-              <i class="fas fa-search text-gray-400 text-[10px]"></i>
+              <i class="fas fa-search text-[10px]" style="color: var(--text-tertiary);"></i>
             </div>
           </.form>
         </div>
       </div>
 
+      <%!-- Card grid --%>
       <div class="flex-1 overflow-auto p-4">
-        <div :for={{group, databases} <- @data} class="mb-4">
-          <div class="flex items-center mb-2">
-            <div class={["w-2 h-2 rounded-full mr-1.5", "bg-[#{group.color}]"]}></div>
-            <h2 class={["text-sm font-medium uppercase", "text-[#{group.color}]"]}>
+        <div :for={{group, databases} <- @data} class="mb-6">
+          <%!-- Group section header with left stripe --%>
+          <div class="flex items-center mb-3 group">
+            <div
+              class="w-[3px] h-[18px] rounded-sm mr-2 flex-shrink-0"
+              style={"background: #{group.color};"}
+            >
+            </div>
+            <h2
+              class="text-[11px] font-medium uppercase tracking-wider"
+              style="color: var(--text-secondary);"
+            >
               {group.name}
             </h2>
+            <span class="ml-2 text-[11px]" style="color: var(--text-tertiary);">
+              {length(databases)} connections
+            </span>
             <.link
-              class="ml-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 edit-group-btn"
+              class="ml-2 p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"
+              style="color: var(--text-tertiary);"
               patch={~p"/groups/#{group.id}/edit"}
             >
               <i class="fas fa-pen-to-square text-[10px]"></i>
             </.link>
           </div>
+
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             <div
               :for={database <- databases}
               id={"databases-#{database.id}"}
-              class="border border-app-border-light dark:border-app-border-dark rounded bg-white dark:bg-gray-800 overflow-hidden hover:shadow-sm transition-shadow dark-transition"
+              class="card rounded overflow-hidden hover:shadow-sm transition-shadow"
+              style={"border: 1px solid var(--border-strong); background: var(--bg-secondary); border-top: 2px solid #{group.color};"}
             >
-              <div class="px-3 py-2 border-b border-app-border-light dark:border-app-border-dark flex items-center justify-between dark-transition">
+              <%!-- Card header --%>
+              <div
+                class="px-3 py-2 flex items-center justify-between"
+                style="border-bottom: 1px solid var(--border-medium);"
+              >
                 <div class="flex items-center">
-                  <i class="fas fa-database text-db-postgres mr-1.5"></i>
+                  <i class="fas fa-database mr-1.5" style="color: var(--text-secondary);"></i>
                   <span class="text-xs font-medium">{database.name}</span>
                 </div>
-                <div class="flex items-center space-x-1">
+                <%!-- Actions: hidden until hover --%>
+                <div class="card-actions flex items-center space-x-1">
                   <.link
-                    class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-1 rounded hover:bg-black/5 dark:hover:bg-white/10"
+                    class="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10"
+                    style="color: var(--text-tertiary);"
                     title="Edit"
                     patch={~p"/databases/#{database}/edit"}
                   >
                     <i class="fas fa-pen-to-square text-[10px]"></i>
                   </.link>
                   <button
-                    class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-1 rounded hover:bg-black/5 dark:hover:bg-white/10"
-                    title="Duplicate"
+                    class="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10"
+                    style="color: var(--text-tertiary);"
+                    title="Clone"
                   >
                     <i class="fas fa-copy text-[10px]"></i>
                   </button>
                   <.link
-                    class="text-gray-500 hover:text-red-500 p-1 rounded hover:bg-black/5 dark:hover:bg-white/10"
+                    class="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 hover:text-red-500"
+                    style="color: var(--text-tertiary);"
                     title="Delete"
                     phx-click={JS.push("delete", value: %{id: database.id})}
                     data-confirm="Are you sure?"
@@ -151,29 +214,48 @@
                   </.link>
                 </div>
               </div>
+
+              <%!-- Card body --%>
               <div class="p-3 text-[11px] space-y-1.5">
                 <div class="flex items-center">
-                  <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-db-postgres-light dark:bg-db-postgres/20 text-db-postgres">
-                    <i class="fas fa-database mr-1"></i> {database.type}
+                  <%!-- DB type badge pill --%>
+                  <span
+                    class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium"
+                    style={
+                      if database.type == :postgres do
+                        "background: var(--badge-postgres-bg); color: var(--badge-postgres-text);"
+                      else
+                        "background: var(--badge-sqlite-bg); color: var(--badge-sqlite-text);"
+                      end
+                    }
+                  >
+                    {database.type}
                   </span>
                 </div>
-                <div class="flex items-center">
-                  <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-db-postgres-light dark:bg-db-postgres/20 text-db-postgres">
-                    <i class="fas fa-server text-gray-400 w-4"></i>
+                <div class="flex items-center" style="color: var(--text-secondary);">
+                  <i class="fas fa-server w-4 text-[10px]"></i>
+                  <span class="truncate ml-1">
                     {Melocoton.Databases.Database.show_public_url(database)}
                   </span>
                 </div>
               </div>
-              <div class="px-3 py-2 border-t border-app-border-light dark:border-app-border-dark flex justify-end dark-transition gap-2">
+
+              <%!-- Card footer --%>
+              <div
+                class="px-3 py-2 flex justify-end gap-2"
+                style="border-top: 1px solid var(--border-medium);"
+              >
                 <.link
-                  class="px-2 py-1 bg-app-accent-light text-white text-[10px] rounded hover:bg-app-accent-light/90"
+                  class="px-2 py-1 text-[10px] rounded"
+                  style="background: var(--bg-tertiary); border: 1px solid var(--border-strong); color: var(--text-primary);"
                   phx-click="test-connection"
                   phx-value-id={database.id}
                 >
                   Test
                 </.link>
                 <.link
-                  class="px-2 py-1 bg-app-accent-light text-white text-[10px] rounded hover:bg-app-accent-light/90"
+                  class="px-2 py-1 text-[10px] rounded text-white font-medium"
+                  style={"background: #{group.color};"}
                   patch={~p"/databases/#{database}/run"}
                 >
                   Connect
