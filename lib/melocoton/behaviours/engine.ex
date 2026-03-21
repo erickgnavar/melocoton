@@ -4,7 +4,7 @@ defmodule Melocoton.Behaviours.Engine do
   """
 
   alias Melocoton.Databases.Database
-  alias Melocoton.Engines.TableStructure
+  alias Melocoton.Engines.{TableMeta, TableStructure}
 
   @typep repo :: atom
   @typep index :: %{name: String.t(), table: String.t()}
@@ -25,6 +25,11 @@ defmodule Melocoton.Behaviours.Engine do
   """
   @callback get_table_structure(repo, String.t()) ::
               {:ok, TableStructure.t()} | {:error, String.t()}
+
+  @doc """
+  Return column names and primary key columns for a table.
+  """
+  @callback get_table_meta(repo, String.t()) :: TableMeta.t()
 
   @doc """
   Validate if we can connect with the received database

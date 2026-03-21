@@ -70,6 +70,8 @@ defmodule MelocotonWeb.SQLLive.RunTest do
           "CREATE TABLE items (id INTEGER PRIMARY KEY, value TEXT)",
           "CREATE TABLE cell_types (id INTEGER PRIMARY KEY, json_col TEXT, long_col TEXT, url_col TEXT, num_col REAL, bin_col BLOB)",
           ~s[INSERT INTO cell_types (json_col, long_col, url_col, num_col, bin_col) VALUES ('{"key":"value"}', '#{String.duplicate("a", 150)}', 'https://example.com/path', 3.14, X'f3beabc69348')],
+          "CREATE TABLE no_pk (val TEXT, other TEXT)",
+          "INSERT INTO no_pk (val, other) VALUES ('test', 'data')",
           "CREATE INDEX idx_posts_title ON posts(title)",
           "CREATE UNIQUE INDEX idx_posts_user_title ON posts(user_id, title)"
         ] ++ item_inserts
@@ -465,6 +467,32 @@ defmodule MelocotonWeb.SQLLive.RunTest do
       html = open_table_explorer(live_view, "cell_types")
 
       assert html =~ "\\xf3beabc69348"
+    end
+  end
+
+  describe "table explorer primary key detection" do
+    test "enables editing controls when table has a primary key", %{
+      conn: conn,
+      database: database
+    } do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      html = open_table_explorer(live_view, "users")
+
+      # Add row button should be enabled
+      refute html =~ "cursor: not-allowed"
+      assert html =~ "Add row"
+    end
+
+    test "disables editing controls when table has no primary key", %{
+      conn: conn,
+      database: database
+    } do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      html = open_table_explorer(live_view, "no_pk")
+
+      # Add row button should be disabled with tooltip
+      assert html =~ "Editing disabled: table has no primary key"
+      assert html =~ "disabled"
     end
   end
 

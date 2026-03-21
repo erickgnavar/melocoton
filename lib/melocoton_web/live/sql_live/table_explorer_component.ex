@@ -10,13 +10,14 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
     page = 1
     pages = 1..get_num_pages(repo, table_name, database.type, @initial_limit)
 
-    columns = get_column_names(repo, table_name, database.type)
+    %{columns: columns, pk_columns: pk_columns} = DatabaseClient.get_table_meta(repo, table_name)
 
     socket
     |> assign(assigns)
     |> assign(active_tab: "data")
     |> assign(limit: @initial_limit, page: page, pages: Enum.to_list(pages))
     |> assign(sort_column: nil, sort_direction: nil, filter: "", columns: columns)
+    |> assign(pk_columns: pk_columns)
     |> assign(visible_columns: MapSet.new(columns), columns_dropdown_open: false)
     |> assign(:limit_form, to_form(%{"limit" => @initial_limit}))
     |> load_data()
@@ -243,23 +244,6 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
     |> String.replace("%", "\\%")
     |> String.replace("_", "\\_")
     |> String.replace("'", "''")
-  end
-
-  defp get_column_names(repo, table_name, :sqlite) do
-    case DatabaseClient.query(repo, "PRAGMA table_info(#{quote_identifier(table_name)})") do
-      {:ok, %{rows: rows}, _} -> Enum.map(rows, & &1["name"])
-      _ -> []
-    end
-  end
-
-  defp get_column_names(repo, table_name, :postgres) do
-    sql =
-      "SELECT column_name FROM information_schema.columns WHERE table_name = '#{String.replace(table_name, "'", "''")}' ORDER BY ordinal_position"
-
-    case DatabaseClient.query(repo, sql) do
-      {:ok, %{rows: rows}, _} -> Enum.map(rows, & &1["column_name"])
-      _ -> []
-    end
   end
 
   defp build_order_clause(nil, _), do: ""

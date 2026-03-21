@@ -2,7 +2,7 @@ defmodule Melocoton.Engines.Sqlite do
   @behaviour Melocoton.Behaviours.Engine
 
   alias Melocoton.Connection
-  alias Melocoton.Engines.TableStructure
+  alias Melocoton.Engines.{TableMeta, TableStructure}
   import Connection, only: [quote_identifier: 1]
 
   @impl true
@@ -59,6 +59,25 @@ defmodule Melocoton.Engines.Sqlite do
 
       {:error, error} ->
         {:error, error}
+    end
+  end
+
+  @impl true
+  def get_table_meta(conn, table_name) do
+    case query_and_normalize(conn, "PRAGMA table_info(#{quote_identifier(table_name)})") do
+      {:ok, %{rows: rows}} ->
+        columns = Enum.map(rows, & &1["name"])
+
+        pk_columns =
+          rows
+          |> Enum.filter(&(&1["pk"] != 0))
+          |> Enum.sort_by(& &1["pk"])
+          |> Enum.map(& &1["name"])
+
+        %TableMeta{columns: columns, pk_columns: pk_columns}
+
+      _ ->
+        %TableMeta{}
     end
   end
 

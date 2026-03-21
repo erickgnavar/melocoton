@@ -82,7 +82,16 @@
     >
       <button
         class="px-2 py-1 rounded flex items-center"
-        style="background: var(--bg-tertiary); color: var(--text-secondary);"
+        style={
+          if @pk_columns == [],
+            do:
+              "background: var(--bg-tertiary); color: var(--text-tertiary); cursor: not-allowed; opacity: 0.5;",
+            else: "background: var(--bg-tertiary); color: var(--text-secondary);"
+        }
+        disabled={@pk_columns == []}
+        title={
+          if @pk_columns == [], do: "Editing disabled: table has no primary key", else: "Add row"
+        }
       >
         <i class="fas fa-plus mr-1.5 text-[10px]"></i> Add row
       </button>

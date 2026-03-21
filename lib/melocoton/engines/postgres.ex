@@ -2,7 +2,7 @@ defmodule Melocoton.Engines.Postgres do
   @behaviour Melocoton.Behaviours.Engine
 
   alias Melocoton.{Connection, DatabaseClient, Pool}
-  alias Melocoton.Engines.TableStructure
+  alias Melocoton.Engines.{TableMeta, TableStructure}
 
   @impl true
   def get_tables(conn) do
@@ -62,6 +62,40 @@ defmodule Melocoton.Engines.Postgres do
       {:error, error} ->
         {:error, error}
     end
+  end
+
+  @impl true
+  def get_table_meta(conn, table_name) do
+    escaped = String.replace(table_name, "'", "''")
+
+    columns_sql =
+      "SELECT column_name FROM information_schema.columns WHERE table_name = '#{escaped}' AND table_schema = 'public' ORDER BY ordinal_position"
+
+    pk_sql = """
+    SELECT kcu.column_name
+    FROM information_schema.table_constraints tc
+    JOIN information_schema.key_column_usage kcu
+      ON tc.constraint_name = kcu.constraint_name
+      AND tc.table_schema = kcu.table_schema
+    WHERE tc.table_name = '#{escaped}'
+      AND tc.table_schema = 'public'
+      AND tc.constraint_type = 'PRIMARY KEY'
+    ORDER BY kcu.ordinal_position
+    """
+
+    columns =
+      case query_and_normalize(conn, columns_sql) do
+        {:ok, %{rows: rows}} -> Enum.map(rows, & &1["column_name"])
+        _ -> []
+      end
+
+    pk_columns =
+      case query_and_normalize(conn, pk_sql) do
+        {:ok, %{rows: rows}} -> Enum.map(rows, & &1["column_name"])
+        _ -> []
+      end
+
+    %TableMeta{columns: columns, pk_columns: pk_columns}
   end
 
   @impl true
