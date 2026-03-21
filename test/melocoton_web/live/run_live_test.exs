@@ -275,6 +275,113 @@ defmodule MelocotonWeb.SQLLive.RunTest do
 
       assert html =~ "item_21"
     end
+
+    test "filters rows by search term", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      render_click(live_view, "set-table-explorer", %{"table" => "users"})
+      render_async(live_view)
+
+      live_view
+      |> element("form[phx-change='filter-rows']")
+      |> render_change(%{"filter" => "alice"})
+
+      html = render_async(live_view)
+
+      assert html =~ "alice"
+      refute html =~ "bob"
+    end
+
+    test "filter is case-insensitive", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      render_click(live_view, "set-table-explorer", %{"table" => "users"})
+      render_async(live_view)
+
+      live_view
+      |> element("form[phx-change='filter-rows']")
+      |> render_change(%{"filter" => "ALICE"})
+
+      html = render_async(live_view)
+
+      # SQLite LIKE is case-insensitive for ASCII by default
+      assert html =~ "alice"
+      refute html =~ "bob"
+    end
+
+    test "clearing filter shows all rows again", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      render_click(live_view, "set-table-explorer", %{"table" => "users"})
+      render_async(live_view)
+
+      # Apply filter
+      live_view
+      |> element("form[phx-change='filter-rows']")
+      |> render_change(%{"filter" => "alice"})
+
+      render_async(live_view)
+
+      # Clear filter
+      live_view
+      |> element("form[phx-change='filter-rows']")
+      |> render_change(%{"filter" => ""})
+
+      html = render_async(live_view)
+
+      assert html =~ "alice"
+      assert html =~ "bob"
+    end
+
+    test "filter with no matches shows empty table", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      render_click(live_view, "set-table-explorer", %{"table" => "users"})
+      render_async(live_view)
+
+      live_view
+      |> element("form[phx-change='filter-rows']")
+      |> render_change(%{"filter" => "nonexistent"})
+
+      html = render_async(live_view)
+
+      refute html =~ "alice"
+      refute html =~ "bob"
+    end
+
+    test "filter searches across all columns", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      render_click(live_view, "set-table-explorer", %{"table" => "users"})
+      render_async(live_view)
+
+      # Filter by id value "1" — should match alice (id=1)
+      live_view
+      |> element("form[phx-change='filter-rows']")
+      |> render_change(%{"filter" => "alice"})
+
+      html = render_async(live_view)
+      assert html =~ "alice"
+    end
+
+    test "filter highlights matched text in cells", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      render_click(live_view, "set-table-explorer", %{"table" => "users"})
+      render_async(live_view)
+
+      live_view
+      |> element("form[phx-change='filter-rows']")
+      |> render_change(%{"filter" => "ali"})
+
+      html = render_async(live_view)
+
+      assert html =~ "<mark>ali</mark>"
+      assert html =~ "ce"
+    end
+
+    test "no highlight marks when filter is empty", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      render_click(live_view, "set-table-explorer", %{"table" => "users"})
+
+      html = render_async(live_view)
+
+      refute html =~ "<mark>"
+    end
   end
 
   describe "table explorer structure tab" do

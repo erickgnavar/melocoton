@@ -343,20 +343,4 @@ defmodule MelocotonWeb.SQLLive.Run do
       {:error, error} -> {:error, error}
     end
   end
-
-  defp put_mark(%{value: value, term: term} = assigns) do
-    str =
-      case value do
-        s when is_binary(s) -> s
-        other -> inspect(other, structs: false)
-      end
-
-    match = str |> String.replace(term, "<mark>#{term}</mark>") |> Phoenix.HTML.raw()
-
-    assigns = assign(assigns, :value, match)
-
-    ~H"""
-    {@value}
-    """
-  end
 end

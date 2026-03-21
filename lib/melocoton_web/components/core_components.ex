@@ -676,4 +676,26 @@ defmodule MelocotonWeb.CoreComponents do
   def translate_errors(errors, field) when is_list(errors) do
     for {^field, {msg, opts}} <- errors, do: translate_error({msg, opts})
   end
+
+  @doc """
+  Highlights occurrences of `term` within `value` using `<mark>` tags.
+  """
+  attr :value, :any, required: true
+  attr :term, :string, required: true
+
+  def put_mark(%{value: value, term: term} = assigns) do
+    str =
+      case value do
+        s when is_binary(s) -> s
+        other -> inspect(other, structs: false)
+      end
+
+    match = str |> String.replace(term, "<mark>#{term}</mark>") |> Phoenix.HTML.raw()
+
+    assigns = assign(assigns, :value, match)
+
+    ~H"""
+    {@value}
+    """
+  end
 end

@@ -10,11 +10,13 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
     page = 1
     pages = 1..get_num_pages(repo, table_name, database.type, @initial_limit)
 
+    columns = get_column_names(repo, table_name, database.type)
+
     socket
     |> assign(assigns)
     |> assign(active_tab: "data")
     |> assign(limit: @initial_limit, page: page, pages: Enum.to_list(pages))
-    |> assign(sort_column: nil, sort_direction: nil)
+    |> assign(sort_column: nil, sort_direction: nil, filter: "", columns: columns)
     |> assign(:limit_form, to_form(%{"limit" => @initial_limit}))
     |> load_data()
     |> ok()
@@ -106,6 +108,14 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
     |> noreply()
   end
 
+  @impl true
+  def handle_event("filter-rows", %{"filter" => filter}, socket) do
+    socket
+    |> assign(filter: filter, page: 1)
+    |> load_data()
+    |> noreply()
+  end
+
   defp load_data(socket) do
     %{
       repo: repo,
@@ -113,11 +123,13 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
       page: page,
       limit: limit,
       sort_column: sort_column,
-      sort_direction: sort_direction
+      sort_direction: sort_direction,
+      filter: filter,
+      columns: columns
     } = socket.assigns
 
     assign_async(socket, :result, fn ->
-      get_result(repo, table_name, page, limit, sort_column, sort_direction)
+      get_result(repo, table_name, page, limit, sort_column, sort_direction, filter, columns)
     end)
   end
 
@@ -155,12 +167,13 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
     end
   end
 
-  defp get_result(repo, table_name, page, limit, sort_column, sort_direction) do
+  defp get_result(repo, table_name, page, limit, sort_column, sort_direction, filter, columns) do
     offset = (page - 1) * limit
+    where_clause = build_where_clause(filter, columns, repo.type)
     order_clause = build_order_clause(sort_column, sort_direction)
 
     sql =
-      "SELECT * FROM #{quote_identifier(table_name)}#{order_clause} LIMIT #{limit} OFFSET #{offset}"
+      "SELECT * FROM #{quote_identifier(table_name)}#{where_clause}#{order_clause} LIMIT #{limit} OFFSET #{offset}"
 
     case DatabaseClient.query(repo, sql) do
       {:ok, result, _} ->
@@ -168,6 +181,48 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
 
       {:error, error} ->
         {:error, error}
+    end
+  end
+
+  defp build_where_clause("", _columns, _type), do: ""
+  defp build_where_clause(_filter, [], _type), do: ""
+
+  defp build_where_clause(filter, columns, type) do
+    escaped = escape_like(filter)
+
+    conditions =
+      Enum.map_join(columns, " OR ", fn col ->
+        case type do
+          :postgres -> "CAST(#{quote_identifier(col)} AS TEXT) ILIKE '%#{escaped}%'"
+          :sqlite -> "CAST(#{quote_identifier(col)} AS TEXT) LIKE '%#{escaped}%'"
+        end
+      end)
+
+    " WHERE #{conditions}"
+  end
+
+  defp escape_like(term) do
+    term
+    |> String.replace("\\", "\\\\")
+    |> String.replace("%", "\\%")
+    |> String.replace("_", "\\_")
+    |> String.replace("'", "''")
+  end
+
+  defp get_column_names(repo, table_name, :sqlite) do
+    case DatabaseClient.query(repo, "PRAGMA table_info(#{quote_identifier(table_name)})") do
+      {:ok, %{rows: rows}, _} -> Enum.map(rows, & &1["name"])
+      _ -> []
+    end
+  end
+
+  defp get_column_names(repo, table_name, :postgres) do
+    sql =
+      "SELECT column_name FROM information_schema.columns WHERE table_name = '#{String.replace(table_name, "'", "''")}' ORDER BY ordinal_position"
+
+    case DatabaseClient.query(repo, sql) do
+      {:ok, %{rows: rows}, _} -> Enum.map(rows, & &1["column_name"])
+      _ -> []
     end
   end
 

@@ -124,17 +124,20 @@
         <i class="fas fa-sort mr-1.5 text-[10px]"></i> Sort
       </button>
       <div class="flex-1"></div>
-      <div class="relative">
+      <form phx-change="filter-rows" phx-target={@myself} class="relative">
         <input
           type="text"
+          name="filter"
+          value={@filter}
           placeholder="Filter rows..."
+          phx-debounce="300"
           class="w-40 px-2 py-1 text-xs rounded"
           style="background: var(--bg-primary); border: 0.5px solid var(--border-medium); color: var(--text-primary);"
         />
         <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
           <i class="fas fa-search text-[10px]" style="color: var(--text-tertiary);"></i>
         </div>
-      </div>
+      </form>
     </div>
 
     <%!-- Data table --%>
@@ -215,9 +218,17 @@
                   <% Map.get(row, col) == false -> %>
                     <span class="cell-bool-false">false</span>
                   <% is_binary(Map.get(row, col)) and String.starts_with?(Map.get(row, col), "http") -> %>
-                    <span class="cell-url" title={Map.get(row, col)}>{Map.get(row, col)}</span>
+                    <span class="cell-url" title={Map.get(row, col)}>
+                      <span :if={@filter == ""}>{Map.get(row, col)}</span>
+                      <span :if={@filter != ""}>
+                        <.put_mark value={Map.get(row, col)} term={@filter} />
+                      </span>
+                    </span>
                   <% true -> %>
-                    {Map.get(row, col)}
+                    <span :if={@filter == ""}>{Map.get(row, col)}</span>
+                    <span :if={@filter != ""}>
+                      <.put_mark value={Map.get(row, col)} term={@filter} />
+                    </span>
                 <% end %>
               </td>
             </tr>
