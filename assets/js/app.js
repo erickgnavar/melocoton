@@ -151,6 +151,17 @@ const liveSocket = new LiveSocket("/live", Socket, {
         view.focus();
       },
     },
+    AiChatScroll: {
+      mounted() {
+        this.scrollToBottom();
+      },
+      updated() {
+        this.scrollToBottom();
+      },
+      scrollToBottom() {
+        this.el.scrollTop = this.el.scrollHeight;
+      },
+    },
     CellEditor: {
       mounted() {
         const input = this.el.querySelector("input[name='value']");

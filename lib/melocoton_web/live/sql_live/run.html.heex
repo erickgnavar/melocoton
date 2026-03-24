@@ -20,6 +20,26 @@
     <div class="flex-1"></div>
 
     <button
+      phx-click="open-settings"
+      class="p-1 px-2 text-xs hover:bg-black/10 dark:hover:bg-white/10 rounded"
+      style="color: var(--text-tertiary);"
+      title="Settings"
+    >
+      <i class="fas fa-cog"></i>
+    </button>
+    <button
+      phx-click="toggle-ai-panel"
+      class="p-1 px-2 text-xs hover:bg-black/10 dark:hover:bg-white/10 rounded flex items-center gap-1"
+      style={
+        if @ai_panel_open,
+          do: "color: #{@database.group.color};",
+          else: "color: var(--text-tertiary);"
+      }
+      title="AI Assistant"
+    >
+      <i class="fas fa-robot"></i>
+    </button>
+    <button
       id="theme-toggle"
       class="p-1 text-sm hover:bg-black/10 dark:hover:bg-white/10 rounded"
     >
@@ -538,5 +558,22 @@
       table_name={@table_explorer}
       database={@database}
     />
+
+    <%!-- AI Chat Panel --%>
+    <div :if={@ai_panel_open} class="w-80 flex flex-col shrink-0">
+      <.live_component
+        module={MelocotonWeb.SqlLive.AiChatComponent}
+        id="ai-chat"
+        repo={@conn}
+        database={@database}
+      />
+    </div>
   </div>
+
+  <%!-- Settings Modal --%>
+  <.live_component
+    :if={@show_settings}
+    module={MelocotonWeb.SettingsModalComponent}
+    id="settings-modal"
+  />
 </div>

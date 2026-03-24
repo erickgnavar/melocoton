@@ -6,6 +6,8 @@ defmodule MelocotonWeb.SQLLive.Run do
 
   @impl Phoenix.LiveView
   def mount(%{"database_id" => database_id}, _session, socket) do
+    Melocoton.Settings.apply_api_keys_to_runtime()
+
     database = Databases.get_database!(database_id)
     conn = Pool.get_repo(database)
     # we need to get pid here because the call to get_tables/2 will be
@@ -38,6 +40,8 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> assign(:transaction_session, nil)
     |> assign(:table_explorer, nil)
     |> assign(:query_time, 0)
+    |> assign(:ai_panel_open, false)
+    |> assign(:show_settings, false)
     |> ok()
   end
 
@@ -210,10 +214,65 @@ defmodule MelocotonWeb.SQLLive.Run do
   end
 
   @impl true
+  def handle_event("toggle-ai-panel", _params, socket) do
+    socket
+    |> assign(:ai_panel_open, !socket.assigns.ai_panel_open)
+    |> noreply()
+  end
+
+  @impl true
+  def handle_event("open-settings", _params, socket) do
+    socket
+    |> assign(:show_settings, true)
+    |> noreply()
+  end
+
+  @impl true
   def handle_info({MelocotonWeb.SqlLive.TableExplorerComponent, :reset_table_explorer}, socket) do
     socket
     |> assign(:table_explorer, nil)
     |> noreply()
+  end
+
+  @impl true
+  def handle_info({MelocotonWeb.SqlLive.AiChatComponent, {:insert_sql, sql}}, socket) do
+    socket
+    |> push_event("load-query", %{query: sql})
+    |> noreply()
+  end
+
+  @impl true
+  def handle_info({MelocotonWeb.SqlLive.AiChatComponent, {:run_sql, sql}}, socket) do
+    # Insert into editor and trigger the same flow as run-query event
+    socket = push_event(socket, "load-query", %{query: sql})
+    handle_event("run-query", %{"query" => sql}, socket)
+  end
+
+  @impl true
+  def handle_info({MelocotonWeb.SqlLive.AiChatComponent, :close_ai_panel}, socket) do
+    socket
+    |> assign(:ai_panel_open, false)
+    |> noreply()
+  end
+
+  @impl true
+  def handle_info({MelocotonWeb.SettingsModalComponent, :close_settings}, socket) do
+    socket
+    |> assign(:show_settings, false)
+    |> noreply()
+  end
+
+  @impl true
+  def handle_info(
+        {MelocotonWeb.SqlLive.AiChatComponent, {:ai_response, ref, result}},
+        socket
+      ) do
+    send_update(MelocotonWeb.SqlLive.AiChatComponent,
+      id: "ai-chat",
+      ai_response: {ref, result}
+    )
+
+    noreply(socket)
   end
 
   @impl true

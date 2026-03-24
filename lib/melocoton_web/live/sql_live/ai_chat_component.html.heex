@@ -1,0 +1,159 @@
+<div
+  class="flex flex-col h-full"
+  style="background: var(--bg-primary); border-left: 1px solid var(--border-medium);"
+>
+  <%!-- Header --%>
+  <div
+    class="px-3 py-2 flex items-center justify-between text-xs"
+    style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-medium);"
+  >
+    <div class="flex items-center gap-2">
+      <i class="fas fa-robot" style={"color: #{@database.group.color};"}></i>
+      <span class="font-medium">AI Assistant</span>
+    </div>
+    <div class="flex items-center gap-1">
+      <button
+        phx-click="clear-chat"
+        phx-target={@myself}
+        class="p-1 rounded hover:bg-black/5 dark:hover:bg-white/5"
+        style="color: var(--text-tertiary);"
+        title="Clear chat history"
+      >
+        <i class="fas fa-trash text-[10px]"></i>
+      </button>
+      <button
+        phx-click="close-panel"
+        phx-target={@myself}
+        class="p-1 rounded hover:bg-black/5 dark:hover:bg-white/5"
+        style="color: var(--text-tertiary);"
+        title="Close panel"
+      >
+        <i class="fas fa-times text-[10px]"></i>
+      </button>
+    </div>
+  </div>
+
+  <%!-- Messages --%>
+  <div
+    id="ai-chat-messages"
+    class="flex-1 overflow-y-auto p-3 space-y-3 text-xs"
+    phx-hook="AiChatScroll"
+  >
+    <%= if @messages == [] do %>
+      <div
+        class="flex flex-col items-center justify-center h-full text-center"
+        style="color: var(--text-tertiary);"
+      >
+        <i class="fas fa-comments text-2xl mb-3" style={"color: #{@database.group.color}33;"}></i>
+        <p class="text-[11px] font-medium mb-1">Ask me about your database</p>
+        <p class="text-[10px]">
+          I know the schema and can help you build queries.
+        </p>
+      </div>
+    <% else %>
+      <div :for={msg <- @messages} class="flex flex-col gap-1">
+        <%= if msg.role == "user" do %>
+          <div class="flex justify-end">
+            <div
+              class="px-2.5 py-1.5 rounded-lg max-w-[90%]"
+              style={"background: #{@database.group.color}; color: white;"}
+            >
+              {msg.content}
+            </div>
+          </div>
+        <% else %>
+          <div class="flex justify-start">
+            <div
+              class="px-2.5 py-1.5 rounded-lg max-w-[90%]"
+              style="background: var(--bg-tertiary); color: var(--text-primary);"
+            >
+              <span :for={part <- parse_message_parts(msg.content)}>
+                <%= case part do %>
+                  <% {:sql, sql} -> %>
+                    <div class="my-1.5">
+                      <pre
+                        class="p-2 rounded text-[10px] overflow-x-auto"
+                        style="background: var(--bg-primary); border: 0.5px solid var(--border-medium); color: var(--text-primary);"
+                      >{sql}</pre>
+                      <div class="flex gap-1 mt-1">
+                        <button
+                          phx-click="insert-sql"
+                          phx-value-sql={sql}
+                          phx-target={@myself}
+                          class="px-1.5 py-0.5 rounded text-[10px]"
+                          style={"background: #{@database.group.color}22; color: #{@database.group.color};"}
+                        >
+                          <i class="fas fa-file-import mr-0.5"></i> Insert
+                        </button>
+                        <button
+                          phx-click="run-sql"
+                          phx-value-sql={sql}
+                          phx-target={@myself}
+                          class="px-1.5 py-0.5 rounded text-[10px]"
+                          style="background: var(--bg-secondary); color: var(--text-secondary);"
+                        >
+                          <i class="fas fa-play mr-0.5"></i> Run
+                        </button>
+                      </div>
+                    </div>
+                  <% {:text, text} -> %>
+                    {text}
+                <% end %>
+              </span>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%= if @loading do %>
+      <div class="flex justify-start">
+        <div
+          class="px-2.5 py-1.5 rounded-lg"
+          style="background: var(--bg-tertiary); color: var(--text-tertiary);"
+        >
+          <i class="fas fa-spinner fa-spin mr-1 text-[10px]"></i> Thinking...
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <%!-- Error --%>
+  <%= if @error do %>
+    <div
+      class="px-3 py-1.5 text-[10px]"
+      style="background: rgba(239, 68, 68, 0.08); color: #ef4444; border-top: 1px solid rgba(239, 68, 68, 0.2);"
+    >
+      <i class="fas fa-exclamation-circle mr-1"></i>{@error}
+    </div>
+  <% end %>
+
+  <%!-- Input --%>
+  <form
+    phx-submit="send-message"
+    phx-target={@myself}
+    class="px-3 py-2 flex items-center gap-2"
+    style="border-top: 1px solid var(--border-medium); background: var(--bg-secondary);"
+  >
+    <input
+      type="text"
+      name="message"
+      value={@input}
+      placeholder="Ask about your database..."
+      autocomplete="off"
+      disabled={@loading}
+      class="flex-1 px-2.5 py-1.5 text-xs rounded"
+      style="background: var(--bg-primary); border: 0.5px solid var(--border-medium); color: var(--text-primary);"
+      phx-change="update-input"
+      phx-target={@myself}
+    />
+    <button
+      type="submit"
+      disabled={@loading}
+      class="px-2 py-1.5 rounded text-xs font-medium"
+      style={"background: #{@database.group.color}; color: white;"}
+    >
+      <i class="fas fa-paper-plane text-[10px]"></i>
+    </button>
+  </form>
+</div>

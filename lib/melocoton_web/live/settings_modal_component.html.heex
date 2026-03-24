@@ -1,0 +1,181 @@
+<div
+  class="fixed inset-0 z-50 flex items-center justify-center"
+  phx-window-keydown="close-settings"
+  phx-key="escape"
+  phx-target={@myself}
+>
+  <%!-- Backdrop --%>
+  <div
+    class="absolute inset-0 bg-black/40"
+    phx-click="close-settings"
+    phx-target={@myself}
+  >
+  </div>
+
+  <%!-- Modal --%>
+  <div
+    class="relative w-full max-w-lg rounded-lg shadow-xl overflow-hidden"
+    style="background: var(--bg-primary); border: 1px solid var(--border-medium);"
+  >
+    <%!-- Header --%>
+    <div
+      class="px-4 py-3 flex items-center justify-between"
+      style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-medium);"
+    >
+      <div class="flex items-center gap-2 text-sm font-medium">
+        <i class="fas fa-cog" style="color: var(--text-tertiary);"></i>
+        <span>Settings</span>
+      </div>
+      <button
+        phx-click="close-settings"
+        phx-target={@myself}
+        class="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10"
+        style="color: var(--text-tertiary);"
+      >
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <%!-- Body --%>
+    <form phx-submit="save-settings" phx-target={@myself} class="p-4 space-y-4">
+      <div
+        class="text-[10px] uppercase font-semibold tracking-wide mb-3"
+        style="color: var(--text-tertiary);"
+      >
+        LLM Provider API Keys
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-medium mb-1" style="color: var(--text-secondary);">
+            AI Model
+          </label>
+          <input
+            type="text"
+            name="ai_model"
+            value={@settings["ai_model"]}
+            placeholder="e.g. anthropic:claude-haiku-4-5"
+            class="w-full px-2.5 py-1.5 text-xs rounded"
+            style="background: var(--bg-secondary); border: 0.5px solid var(--border-medium); color: var(--text-primary);"
+          />
+          <p class="mt-0.5 text-[10px]" style="color: var(--text-tertiary);">
+            Format: provider:model-name (e.g. openrouter:minimax/minimax-01)
+          </p>
+        </div>
+
+        <div
+          class="w-full h-px"
+          style="background: var(--border-medium);"
+        >
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium mb-1" style="color: var(--text-secondary);">
+            <i class="fas fa-key mr-1 text-[10px]"></i> Anthropic API Key
+          </label>
+          <input
+            type="password"
+            name="anthropic_api_key"
+            value={@settings["anthropic_api_key"]}
+            placeholder={
+              if @settings["anthropic_api_key"] != "",
+                do: mask_key(@settings["anthropic_api_key"]),
+                else: "sk-ant-..."
+            }
+            class="w-full px-2.5 py-1.5 text-xs rounded"
+            style="background: var(--bg-secondary); border: 0.5px solid var(--border-medium); color: var(--text-primary);"
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium mb-1" style="color: var(--text-secondary);">
+            <i class="fas fa-key mr-1 text-[10px]"></i> OpenAI API Key
+          </label>
+          <input
+            type="password"
+            name="openai_api_key"
+            value={@settings["openai_api_key"]}
+            placeholder={
+              if @settings["openai_api_key"] != "",
+                do: mask_key(@settings["openai_api_key"]),
+                else: "sk-..."
+            }
+            class="w-full px-2.5 py-1.5 text-xs rounded"
+            style="background: var(--bg-secondary); border: 0.5px solid var(--border-medium); color: var(--text-primary);"
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium mb-1" style="color: var(--text-secondary);">
+            <i class="fas fa-key mr-1 text-[10px]"></i> OpenRouter API Key
+          </label>
+          <input
+            type="password"
+            name="openrouter_api_key"
+            value={@settings["openrouter_api_key"]}
+            placeholder={
+              if @settings["openrouter_api_key"] != "",
+                do: mask_key(@settings["openrouter_api_key"]),
+                else: "sk-or-..."
+            }
+            class="w-full px-2.5 py-1.5 text-xs rounded"
+            style="background: var(--bg-secondary); border: 0.5px solid var(--border-medium); color: var(--text-primary);"
+          />
+          <p class="mt-0.5 text-[10px]" style="color: var(--text-tertiary);">
+            Gives access to 200+ models including Minimax, Anthropic, OpenAI, Google, Meta
+          </p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium mb-1" style="color: var(--text-secondary);">
+            <i class="fas fa-key mr-1 text-[10px]"></i> Minimax API Key
+          </label>
+          <input
+            type="password"
+            name="minimax_api_key"
+            value={@settings["minimax_api_key"]}
+            placeholder={
+              if @settings["minimax_api_key"] != "",
+                do: mask_key(@settings["minimax_api_key"]),
+                else: "eyJ..."
+            }
+            class="w-full px-2.5 py-1.5 text-xs rounded"
+            style="background: var(--bg-secondary); border: 0.5px solid var(--border-medium); color: var(--text-primary);"
+          />
+        </div>
+      </div>
+
+      <%!-- Footer --%>
+      <div
+        class="flex items-center justify-between pt-3"
+        style="border-top: 1px solid var(--border-medium);"
+      >
+        <div>
+          <%= if @saved do %>
+            <span class="text-xs text-green-500">
+              <i class="fas fa-check mr-1"></i> Settings saved
+            </span>
+          <% end %>
+        </div>
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            phx-click="close-settings"
+            phx-target={@myself}
+            class="px-3 py-1.5 text-xs rounded"
+            style="background: var(--bg-tertiary); color: var(--text-secondary);"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="px-3 py-1.5 text-xs rounded font-medium text-white"
+            style="background: var(--focus-color);"
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

@@ -6,7 +6,7 @@ defmodule Melocoton.Databases do
   import Ecto.Query, warn: false
   alias Melocoton.Repo
 
-  alias Melocoton.Databases.{Database, Session}
+  alias Melocoton.Databases.{ChatMessage, Database, Session}
 
   @doc """
   Returns the list of databases.
@@ -258,5 +258,25 @@ defmodule Melocoton.Databases do
   """
   def change_group(%Group{} = group, attrs \\ %{}) do
     Group.changeset(group, attrs)
+  end
+
+  def list_chat_messages(database_id, limit \\ 50) do
+    ChatMessage
+    |> where(database_id: ^database_id)
+    |> order_by(asc: :inserted_at)
+    |> limit(^limit)
+    |> Repo.all()
+  end
+
+  def create_chat_message(attrs) do
+    %ChatMessage{}
+    |> ChatMessage.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def clear_chat_messages(database_id) do
+    ChatMessage
+    |> where(database_id: ^database_id)
+    |> Repo.delete_all()
   end
 end

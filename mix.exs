@@ -81,7 +81,9 @@ defmodule Melocoton.MixProject do
       {:burrito, "~> 1.5"},
       {:csv, "~> 3.2"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
-      {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false}
+      {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false},
+      {:jido_ai, "~> 2.0"},
+      {:req_llm, "~> 1.8"}
     ]
   end
 
