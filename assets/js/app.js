@@ -151,6 +151,26 @@ const liveSocket = new LiveSocket("/live", Socket, {
         view.focus();
       },
     },
+    CellEditor: {
+      mounted() {
+        const input = this.el.querySelector("input[name='value']");
+        if (input) {
+          input.focus();
+          input.select();
+          input.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
+              e.preventDefault();
+              this.pushEventTo(this.el, "cancel-edit", {});
+            } else if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+              // Ctrl+Enter sets NULL
+              e.preventDefault();
+              this.el.querySelector("input[name='set-null']").value = "true";
+              this.el.requestSubmit();
+            }
+          });
+        }
+      },
+    },
   },
   metadata: {
     keydown: (e, _el) => {

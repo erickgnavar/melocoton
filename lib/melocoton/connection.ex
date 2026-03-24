@@ -36,4 +36,26 @@ defmodule Melocoton.Connection do
         {:error, error}
     end
   end
+
+  @doc """
+  Executes a function within a database transaction.
+  The function receives a `%Connection{}` bound to the transaction connection.
+  All queries inside the function use the same connection, ensuring atomicity.
+  Returns `{:ok, result}` on commit or `{:error, reason}` on rollback.
+  """
+  def transaction(%__MODULE__{pid: pid, type: :postgres} = conn, fun) do
+    Postgrex.transaction(
+      pid,
+      fn tx_conn -> fun.(%{conn | pid: tx_conn}) end,
+      timeout: @query_timeout
+    )
+  end
+
+  def transaction(%__MODULE__{pid: pid, type: :sqlite} = conn, fun) do
+    DBConnection.transaction(
+      pid,
+      fn tx_conn -> fun.(%{conn | pid: tx_conn}) end,
+      timeout: @query_timeout
+    )
+  end
 end

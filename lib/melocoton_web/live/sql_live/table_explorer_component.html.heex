@@ -165,6 +165,33 @@
       >
         <i class="fas fa-sort mr-1.5 text-[10px]"></i> Sort
       </button>
+      <%= if map_size(@pending_changes) > 0 do %>
+        <div class="w-px h-4" style="background: var(--border-medium);"></div>
+        <button
+          class="px-2 py-1 rounded flex items-center font-medium"
+          style={"background: #{@database.group.color}; color: white;"}
+          phx-click="apply-changes"
+          phx-target={@myself}
+        >
+          <i class="fas fa-check mr-1.5 text-[10px]"></i>
+          Apply changes
+          <span
+            class="ml-1.5 px-1.5 rounded-full text-[9px] font-bold"
+            style="background: rgba(255,255,255,0.3);"
+          >
+            {map_size(@pending_changes)}
+          </span>
+        </button>
+        <button
+          class="px-2 py-1 rounded flex items-center"
+          style="color: var(--text-tertiary);"
+          phx-click="discard-changes"
+          phx-target={@myself}
+          title="Discard all pending changes"
+        >
+          <i class="fas fa-times mr-1 text-[10px]"></i> Discard
+        </button>
+      <% end %>
       <div class="flex-1"></div>
       <form phx-change="filter-rows" phx-target={@myself} class="relative">
         <input
@@ -181,6 +208,33 @@
         </div>
       </form>
     </div>
+
+    <%!-- Apply error banner --%>
+    <%= if @apply_error do %>
+      <div
+        class="px-3 py-2 text-xs flex items-start gap-2"
+        style="background: rgba(239, 68, 68, 0.08); border-bottom: 1px solid rgba(239, 68, 68, 0.2); color: #ef4444;"
+      >
+        <i class="fas fa-exclamation-triangle mt-0.5 text-[10px] shrink-0"></i>
+        <div class="flex-1">
+          <div class="font-medium mb-0.5">
+            Changes rolled back — no modifications were saved
+          </div>
+          <pre
+            class="text-[10px] whitespace-pre-wrap"
+            style="color: rgba(239, 68, 68, 0.8);"
+          >{@apply_error}</pre>
+        </div>
+        <button
+          phx-click="dismiss-error"
+          phx-target={@myself}
+          class="shrink-0 p-0.5 rounded hover:bg-red-500/10"
+          style="color: rgba(239, 68, 68, 0.5);"
+        >
+          <i class="fas fa-times text-[10px]"></i>
+        </button>
+      </div>
+    <% end %>
 
     <%!-- Data table --%>
     <div class="flex-1 overflow-auto">
@@ -237,22 +291,101 @@
           </thead>
           <tbody>
             <tr
-              :for={{row, row_idx} <- Enum.with_index(result.rows, (@page - 1) * @limit + 1)}
-              class="hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
+              :for={{row, data_idx} <- Enum.with_index(result.rows)}
+              class="hover:bg-black/5 dark:hover:bg-white/5"
             >
               <%!-- Row number gutter --%>
               <td
                 class="row-gutter p-1.5"
                 style="border-bottom: 0.5px solid var(--border-subtle);"
               >
-                {row_idx}
+                {(@page - 1) * @limit + data_idx + 1}
               </td>
+              <% is_editing =
+                @editing_cell && @editing_cell.row_idx == data_idx %>
               <td
                 :for={col <- Enum.filter(result.cols, &MapSet.member?(@visible_columns, &1))}
                 class="p-1.5"
-                style="border-bottom: 0.5px solid var(--border-subtle); border-left: 0.5px solid var(--border-subtle);"
+                style={
+                  cond do
+                    is_editing && @editing_cell.column == col ->
+                      "border-bottom: 0.5px solid var(--border-subtle); border-left: 0.5px solid var(--border-subtle); padding: 0;"
+
+                    @pk_columns != [] &&
+                        cell_pending_value(@pending_changes, row, @pk_columns, col) != :error ->
+                      "border-bottom: 0.5px solid var(--border-subtle); border-left: 3px solid #{@database.group.color}; background: #{@database.group.color}18;"
+
+                    true ->
+                      "border-bottom: 0.5px solid var(--border-subtle); border-left: 0.5px solid var(--border-subtle);"
+                  end
+                }
+                phx-click={
+                  if @pk_columns != [] and is_nil(@editing_cell),
+                    do: "edit-cell",
+                    else: nil
+                }
+                phx-value-row-idx={data_idx}
+                phx-value-column={col}
+                phx-target={@myself}
               >
-                <.data_cell value={Map.get(row, col)} filter={@filter} />
+                <%= if is_editing && @editing_cell.column == col do %>
+                  <% edit_value =
+                    case cell_pending_value(@pending_changes, row, @pk_columns, col) do
+                      {:ok, val} -> to_string(val || "")
+                      :error -> to_string(Map.get(row, col) || "")
+                    end %>
+                  <form
+                    id={"cell-editor-#{data_idx}-#{col}"}
+                    phx-hook="CellEditor"
+                    phx-submit="save-cell"
+                    phx-target={@myself}
+                    class="flex items-center gap-0.5"
+                  >
+                    <input type="hidden" name="set-null" value="false" />
+                    <input
+                      type="text"
+                      value={edit_value}
+                      class="flex-1 px-1.5 py-1 text-xs"
+                      style="background: var(--bg-primary); color: var(--text-primary); border: 2px solid var(--border-medium); outline: none; min-width: 60px;"
+                      name="value"
+                    />
+                    <button
+                      phx-click="cancel-edit"
+                      phx-target={@myself}
+                      type="button"
+                      class="px-1 text-[10px]"
+                      style="color: var(--text-tertiary);"
+                      title="Cancel (Esc)"
+                    >
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </form>
+                <% else %>
+                  <% pending =
+                    cell_pending_value(@pending_changes, row, @pk_columns, col) %>
+                  <%= case pending do %>
+                    <% {:ok, val} -> %>
+                      <div class="flex items-center gap-1">
+                        <div class="flex-1 min-w-0">
+                          <.data_cell value={val} filter={@filter} />
+                        </div>
+                        <button
+                          phx-click="undo-cell"
+                          phx-value-row-idx={data_idx}
+                          phx-value-column={col}
+                          phx-target={@myself}
+                          type="button"
+                          class="shrink-0 p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
+                          style={"color: #{@database.group.color};"}
+                          title="Undo change"
+                        >
+                          <i class="fas fa-undo text-[9px]"></i>
+                        </button>
+                      </div>
+                    <% :error -> %>
+                      <.data_cell value={Map.get(row, col)} filter={@filter} />
+                  <% end %>
+                <% end %>
               </td>
             </tr>
           </tbody>

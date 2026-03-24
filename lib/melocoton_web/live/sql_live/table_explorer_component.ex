@@ -19,6 +19,7 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
     |> assign(sort_column: nil, sort_direction: nil, filter: "", columns: columns)
     |> assign(pk_columns: pk_columns)
     |> assign(visible_columns: MapSet.new(columns), columns_dropdown_open: false)
+    |> assign(editing_cell: nil, pending_changes: %{}, apply_error: nil)
     |> assign(:limit_form, to_form(%{"limit" => @initial_limit}))
     |> load_data()
     |> ok()
@@ -141,6 +142,195 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
     |> assign(visible_columns: visible)
     |> noreply()
   end
+
+  @impl true
+  def handle_event("edit-cell", %{"row-idx" => row_idx, "column" => column}, socket) do
+    if socket.assigns.pk_columns == [] do
+      noreply(socket)
+    else
+      {row_idx, _} = Integer.parse(row_idx)
+
+      socket
+      |> assign(editing_cell: %{row_idx: row_idx, column: column})
+      |> noreply()
+    end
+  end
+
+  @impl true
+  def handle_event("cancel-edit", _params, socket) do
+    socket
+    |> assign(editing_cell: nil)
+    |> noreply()
+  end
+
+  @impl true
+  def handle_event("undo-cell", %{"row-idx" => row_idx, "column" => column}, socket) do
+    {row_idx, _} = Integer.parse(row_idx)
+    row = get_row_by_idx(socket, row_idx)
+
+    if row do
+      pk_values = pk_values_for_row(row, socket.assigns.pk_columns)
+      key = {pk_values, column}
+
+      socket
+      |> assign(
+        pending_changes: Map.delete(socket.assigns.pending_changes, key),
+        apply_error: nil
+      )
+      |> noreply()
+    else
+      noreply(socket)
+    end
+  end
+
+  @impl true
+  def handle_event("save-cell", %{"value" => _value, "set-null" => "true"}, socket) do
+    stage_pending_change(socket, nil)
+  end
+
+  @impl true
+  def handle_event("save-cell", %{"value" => value}, socket) do
+    stage_pending_change(socket, value)
+  end
+
+  @impl true
+  def handle_event("apply-changes", _params, socket) do
+    %{
+      pending_changes: pending_changes,
+      repo: repo,
+      table_name: table_name,
+      pk_columns: pk_columns
+    } =
+      socket.assigns
+
+    case apply_changes_in_transaction(repo, table_name, pending_changes, pk_columns) do
+      {:ok, :ok} ->
+        socket
+        |> assign(pending_changes: %{}, apply_error: nil)
+        |> load_data()
+        |> noreply()
+
+      {:error, errors} ->
+        socket
+        |> assign(apply_error: errors)
+        |> noreply()
+    end
+  end
+
+  @impl true
+  def handle_event("discard-changes", _params, socket) do
+    socket
+    |> assign(pending_changes: %{}, apply_error: nil)
+    |> noreply()
+  end
+
+  @impl true
+  def handle_event("dismiss-error", _params, socket) do
+    socket
+    |> assign(apply_error: nil)
+    |> noreply()
+  end
+
+  defp stage_pending_change(socket, value) do
+    case socket.assigns.editing_cell do
+      nil ->
+        noreply(socket)
+
+      %{row_idx: row_idx, column: column} ->
+        row = get_row_by_idx(socket, row_idx)
+
+        if row do
+          pk_values = pk_values_for_row(row, socket.assigns.pk_columns)
+          key = {pk_values, column}
+          original_value = Map.get(row, column)
+
+          pending =
+            if values_equal?(original_value, value) do
+              Map.delete(socket.assigns.pending_changes, key)
+            else
+              Map.put(socket.assigns.pending_changes, key, value)
+            end
+
+          socket
+          |> assign(editing_cell: nil, pending_changes: pending)
+          |> noreply()
+        else
+          socket |> assign(editing_cell: nil) |> noreply()
+        end
+    end
+  end
+
+  defp values_equal?(original, new_value) do
+    to_string(original || "") == to_string(new_value || "")
+  end
+
+  defp pk_values_for_row(row, pk_columns) do
+    Map.new(pk_columns, fn col -> {col, Map.get(row, col)} end)
+  end
+
+  defp get_row_by_idx(socket, row_idx) do
+    case socket.assigns.result do
+      %{ok?: true, result: %{rows: rows}} ->
+        Enum.at(rows, row_idx)
+
+      _ ->
+        nil
+    end
+  end
+
+  defp cell_pending_value(pending_changes, row, pk_columns, column) do
+    pk_values = pk_values_for_row(row, pk_columns)
+    key = {pk_values, column}
+    Map.fetch(pending_changes, key)
+  end
+
+  defp apply_changes_in_transaction(repo, table_name, pending_changes, pk_columns) do
+    Melocoton.Connection.transaction(repo, fn tx_repo ->
+      error =
+        Enum.reduce_while(pending_changes, nil, fn {{pk_values, column}, value}, _acc ->
+          case execute_update(tx_repo, table_name, pk_values, column, value, pk_columns) do
+            :ok ->
+              {:cont, nil}
+
+            {:error, error} ->
+              pk_desc =
+                Enum.map_join(pk_values, ", ", fn {key, value} -> "#{key}=#{value}" end)
+
+              {:halt, "#{column} (#{pk_desc}): #{error}"}
+          end
+        end)
+
+      case error do
+        nil -> :ok
+        msg -> DBConnection.rollback(tx_repo.pid, msg)
+      end
+    end)
+  end
+
+  defp execute_update(repo, table_name, pk_values, column, value, pk_columns) do
+    pk_where =
+      Enum.map_join(pk_columns, " AND ", fn pk_col ->
+        pk_val = Map.get(pk_values, pk_col)
+        "#{quote_identifier(pk_col)} = '#{escape_value(pk_val)}'"
+      end)
+
+    set_clause =
+      if is_nil(value) do
+        "#{quote_identifier(column)} = NULL"
+      else
+        "#{quote_identifier(column)} = '#{escape_value(value)}'"
+      end
+
+    sql = "UPDATE #{quote_identifier(table_name)} SET #{set_clause} WHERE #{pk_where}"
+
+    case DatabaseClient.query(repo, sql) do
+      {:ok, _result, _meta} -> :ok
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  defp escape_value(value) when is_binary(value), do: String.replace(value, "'", "''")
+  defp escape_value(value), do: value |> to_string() |> String.replace("'", "''")
 
   defp load_structure(socket) do
     %{repo: repo, table_name: table_name} = socket.assigns

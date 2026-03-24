@@ -58,6 +58,11 @@ defmodule MelocotonWeb.SQLLive.RunTest do
   end
 
   setup do
+    # Clear Pool cache to prevent stale connections from previous tests
+    # (Ecto Sandbox rolls back transactions, reusing database IDs while
+    # the Pool still holds connections to deleted DB files)
+    :sys.replace_state(Melocoton.Pool, fn _ -> %{} end)
+
     item_inserts = for i <- 1..25, do: "INSERT INTO items (value) VALUES ('item_#{i}')"
 
     db_path =
@@ -493,6 +498,189 @@ defmodule MelocotonWeb.SQLLive.RunTest do
       # Add row button should be disabled with tooltip
       assert html =~ "Editing disabled: table has no primary key"
       assert html =~ "disabled"
+    end
+  end
+
+  describe "table explorer cell editing" do
+    defp edit_cell(live_view, row_idx, column) do
+      live_view
+      |> element(
+        "[phx-click='edit-cell'][phx-value-row-idx='#{row_idx}'][phx-value-column='#{column}']"
+      )
+      |> render_click()
+    end
+
+    defp save_cell(live_view, row_idx, column, value, set_null \\ "false") do
+      live_view
+      |> form("#cell-editor-#{row_idx}-#{column}", %{"value" => value, "set-null" => set_null})
+      |> render_submit()
+    end
+
+    defp apply_changes(live_view) do
+      live_view
+      |> element("[phx-click='apply-changes']")
+      |> render_click()
+
+      flush_async(live_view)
+    end
+
+    defp discard_changes(live_view) do
+      live_view
+      |> element("[phx-click='discard-changes']")
+      |> render_click()
+    end
+
+    defp cancel_edit(live_view) do
+      live_view
+      |> element("[phx-click='cancel-edit']")
+      |> render_click()
+    end
+
+    test "clicking a cell enters edit mode", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "users")
+
+      html = edit_cell(live_view, 0, "name")
+
+      assert html =~ "cell-editor-0-name"
+      assert html =~ ~s(value="alice")
+    end
+
+    test "cancel-edit closes the editor", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "users")
+
+      edit_cell(live_view, 0, "name")
+      html = cancel_edit(live_view)
+
+      refute html =~ "cell-editor-0-name"
+      assert html =~ "alice"
+    end
+
+    test "save-cell stages a pending change without writing to database", %{
+      conn: conn,
+      database: database
+    } do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "users")
+
+      edit_cell(live_view, 0, "name")
+      html = save_cell(live_view, 0, "name", "alice_updated")
+
+      # Change is shown in the UI as pending
+      assert html =~ "alice_updated"
+      # Pending changes counter is visible
+      assert html =~ "Apply changes"
+      assert html =~ ">1</span>"
+      # Editor should be closed
+      refute html =~ "cell-editor"
+    end
+
+    test "apply-changes writes pending changes to database", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "users")
+
+      edit_cell(live_view, 0, "name")
+      save_cell(live_view, 0, "name", "alice_updated")
+
+      html = apply_changes(live_view)
+
+      assert html =~ "alice_updated"
+      # Apply button should be gone (no more pending changes)
+      refute html =~ "Apply changes"
+    end
+
+    test "discard-changes removes all pending changes", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "users")
+
+      edit_cell(live_view, 0, "name")
+      save_cell(live_view, 0, "name", "alice_updated")
+
+      html = discard_changes(live_view)
+
+      # Original value is back
+      assert html =~ "alice"
+      refute html =~ "alice_updated"
+      refute html =~ "Apply changes"
+    end
+
+    test "multiple cells can be edited before applying", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "users")
+
+      # Edit first row's name
+      edit_cell(live_view, 0, "name")
+      save_cell(live_view, 0, "name", "alice_v2")
+
+      # Edit second row's name
+      edit_cell(live_view, 1, "name")
+      html = save_cell(live_view, 1, "name", "bob_v2")
+
+      # Both pending changes visible
+      assert html =~ "alice_v2"
+      assert html =~ "bob_v2"
+      assert html =~ ">2</span>"
+
+      # Apply all at once
+      html = apply_changes(live_view)
+
+      assert html =~ "alice_v2"
+      assert html =~ "bob_v2"
+      refute html =~ "Apply changes"
+    end
+
+    test "setting same value as original removes pending change", %{
+      conn: conn,
+      database: database
+    } do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "users")
+
+      edit_cell(live_view, 0, "name")
+      save_cell(live_view, 0, "name", "changed")
+
+      # Edit the same cell back to original value
+      edit_cell(live_view, 0, "name")
+      html = save_cell(live_view, 0, "name", "alice")
+
+      # No pending changes
+      refute html =~ "Apply changes"
+    end
+
+    test "undo-cell reverts a single pending change", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "users")
+
+      # Stage two changes
+      edit_cell(live_view, 0, "name")
+      save_cell(live_view, 0, "name", "alice_changed")
+      edit_cell(live_view, 1, "name")
+      save_cell(live_view, 1, "name", "bob_changed")
+
+      # Undo only the first change
+      html =
+        live_view
+        |> element("[phx-click='undo-cell'][phx-value-row-idx='0'][phx-value-column='name']")
+        |> render_click()
+
+      # First row reverted to original, second still pending
+      assert html =~ "alice"
+      refute html =~ "alice_changed"
+      assert html =~ "bob_changed"
+      # One pending change left
+      assert html =~ ">1</span>"
+    end
+
+    test "click-to-edit is not available for tables without primary key", %{
+      conn: conn,
+      database: database
+    } do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      html = open_table_explorer(live_view, "no_pk")
+
+      # Cells should not have edit-cell click handler
+      refute html =~ "phx-click=\"edit-cell\""
     end
   end
 
