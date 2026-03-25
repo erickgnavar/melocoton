@@ -72,8 +72,6 @@ defmodule Melocoton.MixProject do
        app: false,
        compile: false,
        depth: 1},
-      {:telemetry_metrics, "~> 1.0"},
-      {:telemetry_poller, "~> 1.0"},
       {:gettext, "~> 0.20"},
       {:jason, "~> 1.2"},
       {:bandit, "~> 1.5"},
@@ -81,7 +79,6 @@ defmodule Melocoton.MixProject do
       {:csv, "~> 3.2"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false},
-      {:jido_ai, "~> 2.0"},
       {:req_llm, "~> 1.8"}
     ]
   end

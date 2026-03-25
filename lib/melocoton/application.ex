@@ -8,7 +8,6 @@ defmodule Melocoton.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      MelocotonWeb.Telemetry,
       Melocoton.Repo,
       {Ecto.Migrator,
        repos: Application.fetch_env!(:melocoton, :ecto_repos), skip: skip_migrations?()},
