@@ -39,6 +39,8 @@ defmodule MelocotonWeb.CoreComponents do
   attr :id, :string, required: true
   attr :show, :boolean, default: false
   attr :title, :string, required: true
+  attr :icon, :string, default: nil
+  attr :max_width, :string, default: "max-w-lg"
   attr :on_cancel, JS, default: %JS{}
   slot :inner_block, required: true
 
@@ -51,10 +53,10 @@ defmodule MelocotonWeb.CoreComponents do
       data-cancel={JS.exec(@on_cancel, "phx-remove")}
       class="relative z-50 hidden"
     >
-      <div class="fixed inset-0 z-50 flex items-center justify-center ">
+      <div class="fixed inset-0 z-50 flex items-center justify-center">
         <div
           id={"#{@id}-bg"}
-          class="modal-overlay absolute inset-0 bg-black/30 dark:bg-black/50"
+          class="absolute inset-0 bg-black/40"
           aria-hidden="true"
         />
         <.focus_wrap
@@ -62,17 +64,22 @@ defmodule MelocotonWeb.CoreComponents do
           phx-window-keydown={JS.exec("data-cancel", to: "##{@id}")}
           phx-key="escape"
           phx-click-away={JS.exec("data-cancel", to: "##{@id}")}
-          class="modal-container relative bg-white dark:bg-gray-800 w-full max-w-md mx-auto rounded shadow-lg overflow-hidden z-10 dark-transition"
+          class={"relative w-full #{@max_width} mx-auto rounded-lg shadow-xl overflow-hidden z-10"}
+          style="background: var(--bg-primary); border: 1px solid var(--border-medium);"
         >
-          <div class="px-4 py-3 border-b border-app-border-light dark:border-app-border-dark flex items-center justify-between dark-transition">
-            <h3 class="text-sm font-medium" id="modal-title">
-              {assigns[:title] || "No title"}
-            </h3>
+          <div
+            class="px-4 py-3 flex items-center justify-between"
+            style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-medium);"
+          >
+            <div class="flex items-center gap-2 text-sm font-medium">
+              <i :if={@icon} class={@icon} style="color: var(--text-tertiary);"></i>
+              <span>{@title}</span>
+            </div>
             <button
-              id="close-modal-btn"
               phx-click={JS.exec("data-cancel", to: "##{@id}")}
               aria-label={gettext("close")}
-              class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              class="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10"
+              style="color: var(--text-tertiary);"
             >
               <i class="fas fa-times"></i>
             </button>

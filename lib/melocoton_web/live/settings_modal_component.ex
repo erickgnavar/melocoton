@@ -30,12 +30,6 @@ defmodule MelocotonWeb.SettingsModalComponent do
     |> noreply()
   end
 
-  @impl true
-  def handle_event("close-settings", _params, socket) do
-    notify_parent(:close_settings)
-    noreply(socket)
-  end
-
   defp mask_key(nil), do: ""
   defp mask_key(""), do: ""
 
@@ -44,6 +38,4 @@ defmodule MelocotonWeb.SettingsModalComponent do
   end
 
   defp mask_key(key), do: String.duplicate("*", String.length(key))
-
-  defp notify_parent(msg), do: send(self(), {__MODULE__, msg})
 end

@@ -20,7 +20,7 @@
     <div class="flex-1"></div>
 
     <button
-      phx-click="open-settings"
+      phx-click={show_modal("settings-modal")}
       class="p-1 px-2 text-xs hover:bg-black/10 dark:hover:bg-white/10 rounded"
       style="color: var(--text-tertiary);"
       title="Settings"
@@ -571,9 +571,10 @@
   </div>
 
   <%!-- Settings Modal --%>
-  <.live_component
-    :if={@show_settings}
-    module={MelocotonWeb.SettingsModalComponent}
-    id="settings-modal"
-  />
+  <.modal id="settings-modal" title="Settings" icon="fas fa-cog">
+    <.live_component
+      module={MelocotonWeb.SettingsModalComponent}
+      id="settings-modal-content"
+    />
+  </.modal>
 </div>

@@ -41,7 +41,6 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> assign(:table_explorer, nil)
     |> assign(:query_time, 0)
     |> assign(:ai_panel_open, false)
-    |> assign(:show_settings, false)
     |> ok()
   end
 
@@ -221,13 +220,6 @@ defmodule MelocotonWeb.SQLLive.Run do
   end
 
   @impl true
-  def handle_event("open-settings", _params, socket) do
-    socket
-    |> assign(:show_settings, true)
-    |> noreply()
-  end
-
-  @impl true
   def handle_info({MelocotonWeb.SqlLive.TableExplorerComponent, :reset_table_explorer}, socket) do
     socket
     |> assign(:table_explorer, nil)
@@ -252,13 +244,6 @@ defmodule MelocotonWeb.SQLLive.Run do
   def handle_info({MelocotonWeb.SqlLive.AiChatComponent, :close_ai_panel}, socket) do
     socket
     |> assign(:ai_panel_open, false)
-    |> noreply()
-  end
-
-  @impl true
-  def handle_info({MelocotonWeb.SettingsModalComponent, :close_settings}, socket) do
-    socket
-    |> assign(:show_settings, false)
     |> noreply()
   end
 
