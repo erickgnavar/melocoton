@@ -2,29 +2,6 @@
   class="h-screen w-screen flex flex-col"
   style="background: var(--bg-primary); color: var(--text-primary);"
 >
-  <%!-- Menu bar --%>
-  <div
-    class="flex text-xs px-2 select-none h-7 items-center"
-    style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-medium);"
-  >
-    <div
-      class="px-2 py-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded"
-      phx-click={JS.patch(~p"/databases")}
-    >
-      Home
-    </div>
-    <div class="px-2 py-1 hover:bg-black/10 dark:hover:bg-white/10 rounded">Help</div>
-
-    <div class="flex-1"></div>
-    <button
-      id="theme-toggle"
-      class="p-1 text-sm hover:bg-black/10 dark:hover:bg-white/10 rounded"
-    >
-      <i class="fas fa-moon dark:hidden"></i>
-      <i class="fas fa-sun hidden dark:block"></i>
-    </button>
-  </div>
-
   <div class="flex-1 flex overflow-hidden">
     <%!-- Sidebar --%>
     <aside
@@ -32,15 +9,17 @@
       style="background: var(--bg-secondary); border-right: 1px solid var(--border-medium);"
     >
       <div
-        class="p-2 flex items-center justify-between"
+        class="px-2 py-1.5 flex items-center gap-1"
         style="border-bottom: 1px solid var(--border-medium);"
       >
-        <div class="text-xs font-medium">Connections</div>
+        <span class="text-xs font-medium flex-1">Connections</span>
         <.link
-          class="text-xs hover:bg-black/10 dark:hover:bg-white/10 p-1 rounded"
+          class="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10"
+          style="color: var(--text-tertiary);"
           patch={~p"/databases/new"}
+          title="New connection"
         >
-          <i class="fas fa-plus"></i>
+          <i class="fas fa-plus text-[10px]"></i>
         </.link>
       </div>
       <div class="overflow-y-auto flex-1 p-1">
@@ -140,6 +119,23 @@
             </div>
           </.form>
         </div>
+
+        <button
+          class="p-1.5 rounded hover:bg-black/10 dark:hover:bg-white/10 ml-2"
+          style="color: var(--text-tertiary);"
+          phx-click={show_modal("settings-modal")}
+          title="Settings"
+        >
+          <i class="fas fa-cog text-base"></i>
+        </button>
+        <button
+          id="theme-toggle"
+          class="p-1.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
+          style="color: var(--text-tertiary);"
+          title="Toggle theme"
+        >
+          <i class="fas fa-circle-half-stroke text-base"></i>
+        </button>
       </div>
 
       <%!-- Card grid --%>
@@ -301,5 +297,12 @@
     action={@live_action}
     group={@group}
     patch={~p"/databases"}
+  />
+</.modal>
+
+<.modal id="settings-modal" title="Settings" icon="fas fa-cog">
+  <.live_component
+    module={MelocotonWeb.SettingsModalComponent}
+    id="settings-modal-content"
   />
 </.modal>
