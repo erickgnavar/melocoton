@@ -1,0 +1,25 @@
+## Melocoton Desktop — optimized BEAM VM flags
+## These reduce memory footprint and CPU usage for a Tauri sidecar context.
+
+## Disable busy-wait schedulers — stops schedulers from spinning CPU when idle.
+## Essential for desktop battery life and reduced CPU usage at rest.
++sbwt none
++sbwtdcpu none
++sbwtdio none
+
+## Reduce async thread pool (default 10-20). Desktop app does occasional
+## DB queries, no heavy I/O concurrency needed.
++A 4
+
+## Lower max process limit (default 262144 is excessive for a desktop app)
++P 16384
+
+## Lower max port limit
++Q 1024
+
+## Disable super carrier — let the OS manage memory allocation.
+## Avoids large virtual memory reservation that looks alarming in task managers.
++MMscs 0
+
+## Reduce atom table size (default 1048576, saves ~1MB)
++t 100000

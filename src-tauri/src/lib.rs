@@ -125,6 +125,10 @@ async fn setup(
     env::set_var("PHX_HOST", "localhost");
     env::set_var("PORT", port.to_string());
 
+    // BEAM memory optimizations for desktop sidecar
+    env::set_var("RELEASE_DISTRIBUTION", "none"); // no clustering needed
+    env::set_var("RELEASE_MODE", "interactive"); // load modules on demand
+
     // start web server
     let _ = Command::new(webserver_path).spawn()?;
 
