@@ -69,7 +69,7 @@ defmodule Melocoton.Engines.Postgres do
     escaped = String.replace(table_name, "'", "''")
 
     columns_sql =
-      "SELECT column_name FROM information_schema.columns WHERE table_name = '#{escaped}' AND table_schema = 'public' ORDER BY ordinal_position"
+      "SELECT column_name, udt_name FROM information_schema.columns WHERE table_name = '#{escaped}' AND table_schema = 'public' ORDER BY ordinal_position"
 
     pk_sql = """
     SELECT kcu.column_name
@@ -83,10 +83,15 @@ defmodule Melocoton.Engines.Postgres do
     ORDER BY kcu.ordinal_position
     """
 
-    columns =
+    {columns, column_types} =
       case query_and_normalize(conn, columns_sql) do
-        {:ok, %{rows: rows}} -> Enum.map(rows, & &1["column_name"])
-        _ -> []
+        {:ok, %{rows: rows}} ->
+          cols = Enum.map(rows, & &1["column_name"])
+          types = Map.new(rows, fn r -> {r["column_name"], r["udt_name"]} end)
+          {cols, types}
+
+        _ ->
+          {[], %{}}
       end
 
     pk_columns =
@@ -95,7 +100,7 @@ defmodule Melocoton.Engines.Postgres do
         _ -> []
       end
 
-    %TableMeta{columns: columns, pk_columns: pk_columns}
+    %TableMeta{columns: columns, pk_columns: pk_columns, column_types: column_types}
   end
 
   @impl true

@@ -10,7 +10,8 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
     page = 1
     pages = 1..get_num_pages(repo, table_name, database.type, @initial_limit)
 
-    %{columns: columns, pk_columns: pk_columns} = DatabaseClient.get_table_meta(repo, table_name)
+    %{columns: columns, pk_columns: pk_columns, column_types: column_types} =
+      DatabaseClient.get_table_meta(repo, table_name)
 
     socket
     |> assign(assigns)
@@ -18,6 +19,7 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
     |> assign(limit: @initial_limit, page: page, pages: Enum.to_list(pages))
     |> assign(sort_column: nil, sort_direction: nil, filter: "", columns: columns)
     |> assign(pk_columns: pk_columns)
+    |> assign(column_types: column_types)
     |> assign(visible_columns: MapSet.new(columns), columns_dropdown_open: false)
     |> assign(editing_cell: nil, pending_changes: %{}, apply_error: nil)
     |> assign(:limit_form, to_form(%{"limit" => @initial_limit}))
@@ -352,11 +354,20 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
       sort_column: sort_column,
       sort_direction: sort_direction,
       filter: filter,
-      columns: columns
+      columns: columns,
+      column_types: column_types
     } = socket.assigns
 
     assign_async(socket, :result, fn ->
-      get_result(repo, table_name, page, limit, sort_column, sort_direction, filter, columns)
+      get_result(repo, table_name, %{
+        page: page,
+        limit: limit,
+        sort_column: sort_column,
+        sort_direction: sort_direction,
+        filter: filter,
+        columns: columns,
+        column_types: column_types
+      })
     end)
   end
 
@@ -394,15 +405,15 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
     end
   end
 
-  defp get_result(repo, table_name, page, limit, sort_column, sort_direction, filter, columns) do
-    offset = (page - 1) * limit
-    where_clause = build_where_clause(filter, columns, repo.type)
-    order_clause = build_order_clause(sort_column, sort_direction)
+  defp get_result(repo, table_name, opts) do
+    offset = (opts.page - 1) * opts.limit
+    where_clause = build_where_clause(opts.filter, opts.columns, repo.type)
+    order_clause = build_order_clause(opts.sort_column, opts.sort_direction)
 
     sql =
-      "SELECT * FROM #{quote_identifier(table_name)}#{where_clause}#{order_clause} LIMIT #{limit} OFFSET #{offset}"
+      "SELECT * FROM #{quote_identifier(table_name)}#{where_clause}#{order_clause} LIMIT #{opts.limit} OFFSET #{offset}"
 
-    case DatabaseClient.query(repo, sql) do
+    case DatabaseClient.query(repo, sql, opts.column_types) do
       {:ok, result, _} ->
         {:ok, %{result: result}}
 

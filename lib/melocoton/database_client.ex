@@ -5,7 +5,7 @@ defmodule Melocoton.DatabaseClient do
 
   alias Melocoton.Connection
 
-  def query(%Connection{} = conn, sql) do
+  def query(%Connection{} = conn, sql, column_types \\ %{}) do
     init_time = System.monotonic_time(:nanosecond)
     result = Connection.query(conn, sql)
     end_time = System.monotonic_time(:nanosecond)
@@ -13,7 +13,7 @@ defmodule Melocoton.DatabaseClient do
 
     case result do
       {:ok, result} ->
-        {:ok, handle_response(result), %{total_time: total_time}}
+        {:ok, handle_response(result, column_types), %{total_time: total_time}}
 
       {:error, error} ->
         {:error, translate_query_error(error)}
@@ -61,40 +61,58 @@ defmodule Melocoton.DatabaseClient do
   defp do_get_table_structure(conn, table_name, :sqlite),
     do: Melocoton.Engines.Sqlite.get_table_structure(conn, table_name)
 
-  def handle_response(%{columns: cols, rows: rows, num_rows: num_rows}) do
+  @doc """
+  Normalizes a query result into a map with `cols`, `rows`, and `num_rows`.
+
+  Accepts an optional `column_types` map (`%{"col_name" => "type_name"}`)
+  for type-aware value formatting (e.g. UUID columns decoded from raw binary).
+  """
+  def handle_response(result, column_types \\ %{})
+
+  def handle_response(%{columns: cols, rows: rows, num_rows: num_rows}, column_types) do
     cols = cols || []
 
     rows =
       rows
       |> Kernel.||([])
-      |> Enum.map(&Enum.zip(cols, normalize_value(&1)))
-      |> Enum.map(&Enum.into(&1, %{}))
+      |> Enum.map(fn row ->
+        cols
+        |> Enum.zip(row)
+        |> Enum.map(fn {col, val} ->
+          {col, normalize_value(val, Map.get(column_types, col))}
+        end)
+        |> Enum.into(%{})
+      end)
 
     %{cols: cols, rows: rows, num_rows: num_rows}
   end
 
-  defp normalize_value(values) do
-    Enum.map(values, fn
-      # handle uuid columns that are returned as raw binary data
-      <<raw_uuid::binary-size(16)>> ->
-        case Ecto.UUID.cast(raw_uuid) do
-          {:ok, casted_value} ->
-            casted_value
+  defp normalize_value(value, col_type)
 
-          :error ->
-            format_binary(raw_uuid)
-        end
-
-      value when is_map(value) ->
-        Jason.encode!(value)
-
-      value when is_binary(value) ->
-        if String.valid?(value), do: value, else: format_binary(value)
-
-      value ->
-        value
-    end)
+  # UUID columns: cast raw 16-byte binary to formatted UUID string
+  defp normalize_value(<<raw::binary-size(16)>>, type) when type in ["uuid", "UUID"] do
+    case Ecto.UUID.cast(raw) do
+      {:ok, formatted} -> formatted
+      :error -> format_binary(raw)
+    end
   end
+
+  # JSON/JSONB columns: encode maps to JSON strings
+  defp normalize_value(value, type) when is_map(value) and type in ["json", "jsonb"] do
+    Jason.encode!(value)
+  end
+
+  # Generic map (no column type info): still encode as JSON
+  defp normalize_value(value, _type) when is_map(value) do
+    Jason.encode!(value)
+  end
+
+  # Binary values: show as hex unless valid UTF-8
+  defp normalize_value(value, _type) when is_binary(value) do
+    if String.valid?(value), do: value, else: format_binary(value)
+  end
+
+  defp normalize_value(value, _type), do: value
 
   defp format_binary(bin) do
     "\\x" <> Base.encode16(bin, case: :lower)

@@ -67,6 +67,7 @@ defmodule Melocoton.Engines.Sqlite do
     case query_and_normalize(conn, "PRAGMA table_info(#{quote_identifier(table_name)})") do
       {:ok, %{rows: rows}} ->
         columns = Enum.map(rows, & &1["name"])
+        column_types = Map.new(rows, fn r -> {r["name"], String.downcase(r["type"] || "")} end)
 
         pk_columns =
           rows
@@ -74,7 +75,7 @@ defmodule Melocoton.Engines.Sqlite do
           |> Enum.sort_by(& &1["pk"])
           |> Enum.map(& &1["name"])
 
-        %TableMeta{columns: columns, pk_columns: pk_columns}
+        %TableMeta{columns: columns, pk_columns: pk_columns, column_types: column_types}
 
       _ ->
         %TableMeta{}
