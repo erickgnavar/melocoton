@@ -8,7 +8,7 @@ defmodule Melocoton.MixProject do
       elixir: "~> 1.18",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
-      test_coverage: [summary: [threshold: 35]],
+      test_coverage: [summary: [threshold: 50]],
       aliases: aliases(),
       deps: deps(),
       compilers: [:phoenix_live_view] ++ Mix.compilers(),
