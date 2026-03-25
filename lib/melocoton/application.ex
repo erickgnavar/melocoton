@@ -12,7 +12,6 @@ defmodule Melocoton.Application do
       Melocoton.Repo,
       {Ecto.Migrator,
        repos: Application.fetch_env!(:melocoton, :ecto_repos), skip: skip_migrations?()},
-      {DNSCluster, query: Application.get_env(:melocoton, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Melocoton.PubSub},
       # Start a worker by calling: Melocoton.Worker.start_link(arg)
       # {Melocoton.Worker, arg},
