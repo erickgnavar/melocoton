@@ -3,440 +3,1392 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Melocoton - Simple Database Client</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        darkMode: 'class',
-        theme: {
-          extend: {
-            colors: {
-              primary: {
-                50: '#f0f9ff',
-                100: '#e0f2fe',
-                200: '#bae6fd',
-                300: '#7dd3fc',
-                400: '#38bdf8',
-                500: '#0ea5e9',
-                600: '#0284c7',
-                700: '#0369a1',
-                800: '#075985',
-                900: '#0c4a6e',
-              }
-            }
-          }
+    <title>Melocoton — SQL Client Built for Keyboard People</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Berkeley+Mono:wght@400;700&family=Space+Mono:wght@400;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+    <script defer data-domain="melocoton.app" src="https://plausible.io/js/script.js"></script>
+    <style>
+      :root {
+        --bg: #e8e0d4;
+        --surface: #dfd6c8;
+        --surface2: #d4c9b8;
+        --border: #c4b8a8;
+        --border-accent: #c94f28;
+        --text: #1a1714;
+        --text-muted: #5c5448;
+        --text-dim: #8c8070;
+        --accent: #c94f28;
+        --accent2: #c97a20;
+        --green: #2d6e3e;
+        --blue: #1d5fa6;
+        --purple: #6d4eaa;
+        --yellow: #a06a10;
+        --font-mono: 'Space Mono', 'Berkeley Mono', monospace;
+        --font-serif: 'Instrument Serif', Georgia, serif;
+        color-scheme: light dark;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root:not(.light) {
+          --bg: #0f0e0c;
+          --surface: #161410;
+          --surface2: #1e1b16;
+          --border: #2e2920;
+          --border-accent: #e8623c;
+          --text: #ede8df;
+          --text-muted: #8a8070;
+          --text-dim: #4e4840;
+          --accent: #e8623c;
+          --accent2: #e09040;
+          --green: #4ade80;
+          --blue: #60a5fa;
+          --purple: #a78bfa;
+          --yellow: #fbbf24;
         }
       }
-    </script>
-    <style>
-      /* Carousel Styles */
-      .carousel {
+
+      html.dark {
+        --bg: #0f0e0c;
+        --surface: #161410;
+        --surface2: #1e1b16;
+        --border: #2e2920;
+        --border-accent: #e8623c;
+        --text: #ede8df;
+        --text-muted: #8a8070;
+        --text-dim: #4e4840;
+        --accent: #e8623c;
+        --accent2: #e09040;
+        --green: #4ade80;
+        --blue: #60a5fa;
+        --purple: #a78bfa;
+        --yellow: #fbbf24;
+      }
+
+      html.light {
+        --bg: #e8e0d4;
+        --surface: #dfd6c8;
+        --surface2: #d4c9b8;
+        --border: #c4b8a8;
+        --border-accent: #c94f28;
+        --text: #1a1714;
+        --text-muted: #5c5448;
+        --text-dim: #8c8070;
+        --accent: #c94f28;
+        --accent2: #c97a20;
+        --green: #2d6e3e;
+        --blue: #1d5fa6;
+        --purple: #6d4eaa;
+        --yellow: #a06a10;
+      }
+
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+      html { scroll-behavior: smooth; }
+
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font-mono);
+        font-size: 14px;
+        line-height: 1.6;
+        overflow-x: hidden;
+      }
+
+      /* ─── Grain overlay ─── */
+      body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+        pointer-events: none;
+        z-index: 9999;
+        opacity: 0.4;
+      }
+
+      /* ─── Scrollbar ─── */
+      ::-webkit-scrollbar { width: 4px; }
+      ::-webkit-scrollbar-track { background: var(--bg); }
+      ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+      /* ─── Nav ─── */
+      nav {
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 40px;
+        height: 56px;
+        border-bottom: 1px solid var(--border);
+        background: color-mix(in srgb, var(--bg) 90%, transparent);
+        backdrop-filter: blur(12px);
+      }
+
+      .nav-logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text);
+        text-decoration: none;
+        letter-spacing: -0.02em;
+      }
+
+      .nav-logo-icon {
+        width: 28px; height: 28px;
+        background: var(--accent);
+        border-radius: 6px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 16px;
+        flex-shrink: 0;
+      }
+
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 32px;
+        list-style: none;
+      }
+
+      .nav-links a {
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        transition: color 0.2s;
+      }
+
+      .nav-links a:hover { color: var(--text); }
+
+      .nav-cta {
+        background: var(--accent) !important;
+        color: white !important;
+        padding: 8px 16px;
+        border-radius: 4px;
+        text-transform: none !important;
+        letter-spacing: 0 !important;
+        font-weight: 700;
+        transition: opacity 0.2s !important;
+      }
+
+      .nav-cta:hover { opacity: 0.85; }
+
+      /* ─── Hero ─── */
+      .hero {
+        min-height: 100vh;
+        padding: 120px 40px 80px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 60px;
+        align-items: center;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .hero-eyebrow {
+        font-size: 11px;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .hero-eyebrow::before {
+        content: '';
+        display: block;
+        width: 24px;
+        height: 1px;
+        background: var(--accent);
+      }
+
+      .hero h1 {
+        font-family: var(--font-serif);
+        font-size: clamp(42px, 5vw, 68px);
+        line-height: 1.05;
+        font-weight: 400;
+        letter-spacing: -0.02em;
+        margin-bottom: 24px;
+        color: var(--text);
+      }
+
+      .hero h1 em {
+        font-style: italic;
+        color: var(--accent2);
+      }
+
+      .hero-sub {
+        color: var(--text-muted);
+        font-size: 14px;
+        line-height: 1.7;
+        margin-bottom: 36px;
+        max-width: 420px;
+      }
+
+      .hero-actions {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+
+      .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--accent);
+        color: white;
+        text-decoration: none;
+        padding: 12px 24px;
+        border-radius: 4px;
+        font-family: var(--font-mono);
+        font-size: 13px;
+        font-weight: 700;
+        transition: transform 0.15s, box-shadow 0.15s;
+        box-shadow: 0 0 0 0 rgba(201,79,40,0.3);
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 24px rgba(201,79,40,0.28);
+      }
+
+      .btn-ghost {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: 13px;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--border);
+        transition: color 0.2s, border-color 0.2s;
+      }
+
+      .btn-ghost:hover {
+        color: var(--text);
+        border-color: var(--text);
+      }
+
+      .platform-badges {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 28px;
+        flex-wrap: wrap;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 11px;
+        color: var(--text-dim);
+        border: 1px solid var(--border);
+        padding: 4px 10px;
+        border-radius: 3px;
+        letter-spacing: 0.04em;
+      }
+
+      .badge-dot {
+        width: 5px; height: 5px;
+        border-radius: 50%;
+        background: var(--green);
+        flex-shrink: 0;
+      }
+
+      /* ─── Terminal Demo ─── */
+      .terminal {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow:
+          0 0 0 1px rgba(0,0,0,0.06) inset,
+          0 40px 80px rgba(100,70,40,0.18),
+          0 0 40px rgba(201,79,40,0.07);
+        position: relative;
+      }
+
+      .terminal-bar {
+        background: var(--surface2);
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .terminal-dots {
+        display: flex;
+        gap: 6px;
+      }
+
+      .dot {
+        width: 10px; height: 10px;
+        border-radius: 50%;
+      }
+
+      .dot-r { background: #ff5f57; }
+      .dot-y { background: #febc2e; }
+      .dot-g { background: #28c840; }
+
+      .terminal-title {
+        font-size: 11px;
+        color: var(--text-dim);
+        flex: 1;
+        text-align: center;
+        letter-spacing: 0.06em;
+      }
+
+      .terminal-body {
+        padding: 20px;
+        min-height: 300px;
+        position: relative;
+      }
+
+      .mode-indicator {
+        position: absolute;
+        bottom: 16px;
+        right: 16px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        color: var(--green);
+      }
+
+      .sql-line {
+        margin-bottom: 4px;
+        opacity: 0;
+        animation: fadeIn 0.3s forwards;
+      }
+
+      .sql-keyword { color: #7c3aed; }
+      .sql-table   { color: var(--blue); }
+      .sql-string  { color: #a06a10; }
+      .sql-number  { color: var(--accent); }
+      .sql-comment { color: var(--text-dim); font-style: italic; }
+      .sql-result  { color: var(--green); }
+      .sql-prompt  { color: var(--text-dim); }
+
+      @keyframes fadeIn {
+        to { opacity: 1; }
+      }
+
+      .cursor {
+        display: inline-block;
+        width: 8px;
+        height: 14px;
+        background: var(--text);
+        vertical-align: middle;
+        animation: blink 1.2s step-end infinite;
+        margin-left: 1px;
+      }
+
+      @keyframes blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0; }
+      }
+
+      /* ─── Key hints strip ─── */
+      .keyhints {
+        border-top: 1px solid var(--border);
+        border-bottom: 1px solid var(--border);
+        background: var(--surface);
+        padding: 14px 40px;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .keyhints-inner {
+        display: flex;
+        gap: 32px;
+        animation: scroll-hints 30s linear infinite;
+        white-space: nowrap;
+      }
+
+      .keyhints:hover .keyhints-inner { animation-play-state: paused; }
+
+      @keyframes scroll-hints {
+        from { transform: translateX(0); }
+        to { transform: translateX(-50%); }
+      }
+
+      .hint {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--text-muted);
+        font-size: 12px;
+        flex-shrink: 0;
+      }
+
+      kbd {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-bottom-width: 2px;
+        padding: 2px 7px;
+        border-radius: 4px;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--accent2);
+        min-width: 24px;
+        box-shadow: 0 1px 0 var(--border);
+      }
+
+      .hint-sep {
+        color: var(--text-dim);
+        font-size: 10px;
+      }
+
+      /* ─── Features ─── */
+      .section {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 100px 40px;
+      }
+
+      .section-label {
+        font-size: 11px;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .section-label::before {
+        content: '';
+        display: block;
+        width: 24px;
+        height: 1px;
+        background: var(--accent);
+      }
+
+      .section-heading {
+        font-family: var(--font-serif);
+        font-size: clamp(32px, 4vw, 52px);
+        font-weight: 400;
+        line-height: 1.1;
+        margin-bottom: 60px;
+        max-width: 560px;
+      }
+
+      .section-heading em {
+        font-style: italic;
+        color: var(--text-muted);
+      }
+
+      .features-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1px;
+        background: var(--border);
+        border: 1px solid var(--border);
+      }
+
+      .feature-card {
+        background: var(--surface);
+        padding: 36px 32px;
         position: relative;
         overflow: hidden;
+        transition: background 0.2s;
       }
-      .carousel-inner {
+
+      .feature-card:hover { background: var(--surface2); }
+
+      .feature-card::before {
+        content: attr(data-n);
+        position: absolute;
+        top: 20px;
+        right: 24px;
+        font-size: 48px;
+        font-weight: 700;
+        color: var(--border);
+        line-height: 1;
+        font-family: var(--font-mono);
+        pointer-events: none;
+        transition: color 0.2s;
+      }
+
+      .feature-card:hover::before { color: var(--surface2); }
+      .feature-icon {
+        font-size: 20px;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .feature-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 10px;
+        line-height: 1.3;
+      }
+
+      .feature-desc {
+        color: var(--text-muted);
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      .feature-tag {
+        display: inline-block;
+        margin-top: 14px;
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        color: var(--accent);
+        text-transform: uppercase;
+        border: 1px solid rgba(232,93,58,0.25);
+        padding: 3px 8px;
+        border-radius: 2px;
+      }
+
+      /* ─── Keyboard section ─── */
+      .keyboard-section {
+        background: var(--surface);
+        border-top: 1px solid var(--border);
+        border-bottom: 1px solid var(--border);
+      }
+
+      .keyboard-inner {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 100px 40px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 80px;
+        align-items: start;
+      }
+
+      .key-groups {
         display: flex;
-        transition: transform 0.5s ease;
+        flex-direction: column;
+        gap: 32px;
       }
-      .carousel-item {
-        min-width: 100%;
+
+      .key-group-label {
+        font-size: 10px;
+        letter-spacing: 0.15em;
+        color: var(--text-dim);
+        text-transform: uppercase;
+        margin-bottom: 12px;
       }
-      .carousel-indicators {
+
+      .key-bindings {
         display: flex;
-        justify-content: center;
-        margin-top: 1rem;
+        flex-direction: column;
+        gap: 10px;
       }
-      .carousel-indicator {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        margin: 0 5px;
+
+      .key-binding {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 14px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        background: var(--bg);
+        transition: border-color 0.2s;
+        cursor: default;
+      }
+
+      .key-binding:hover { border-color: var(--border-accent); }
+
+      .key-binding-keys {
+        display: flex;
+        gap: 5px;
+        align-items: center;
+      }
+
+      .key-binding-desc {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+
+      .mode-tabs {
+        display: flex;
+        gap: 2px;
+        margin-bottom: 24px;
+      }
+
+      .mode-tab {
+        padding: 6px 16px;
+        font-size: 11px;
+        font-family: var(--font-mono);
+        border: 1px solid var(--border);
         cursor: pointer;
+        background: transparent;
+        color: var(--text-dim);
+        letter-spacing: 0.06em;
+        transition: all 0.15s;
       }
-      /* Fade In Animation */
-      @keyframes fadeIn {
+
+      .mode-tab.active {
+        background: var(--accent);
+        color: white;
+        border-color: var(--accent);
+      }
+
+      .mode-tab:first-child { border-radius: 4px 0 0 4px; }
+      .mode-tab:last-child { border-radius: 0 4px 4px 0; }
+
+      /* ─── Databases ─── */
+      .dbs-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 8px;
+      }
+
+      .db-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        font-size: 12px;
+        color: var(--text-muted);
+        background: var(--surface);
+        transition: all 0.2s;
+      }
+
+      .db-chip:hover {
+        border-color: var(--text-dim);
+        color: var(--text);
+      }
+
+      .db-chip-dot {
+        width: 6px; height: 6px;
+        border-radius: 50%;
+        background: var(--accent2);
+      }
+
+      /* ─── CTA ─── */
+      .cta-section {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 100px 40px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 80px;
+        align-items: center;
+      }
+
+      .cta-heading {
+        font-family: var(--font-serif);
+        font-size: clamp(36px, 4.5vw, 60px);
+        font-weight: 400;
+        line-height: 1.08;
+        margin-bottom: 20px;
+      }
+
+      .cta-sub {
+        color: var(--text-muted);
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      .download-box {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .download-platform {
+        padding: 0;
+      }
+
+      .platform-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border);
+        font-size: 11px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text-dim);
+        background: var(--surface2);
+      }
+
+      .platform-links {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .platform-link {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 20px;
+        text-decoration: none;
+        color: var(--text);
+        border-bottom: 1px solid var(--border);
+        font-size: 13px;
+        transition: background 0.15s;
+        gap: 12px;
+      }
+
+      .platform-link:last-child { border-bottom: none; }
+
+      .platform-link:hover { background: var(--surface2); }
+
+      .platform-link-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .platform-link-arrow {
+        color: var(--text-dim);
+        font-size: 16px;
+        transition: transform 0.15s, color 0.15s;
+      }
+
+      .platform-link:hover .platform-link-arrow {
+        transform: translateX(3px);
+        color: var(--accent);
+      }
+
+      .pl-icon {
+        font-size: 18px;
+      }
+
+      .pl-sub {
+        font-size: 11px;
+        color: var(--text-dim);
+        margin-top: 1px;
+      }
+
+      /* ─── Footer ─── */
+      footer {
+        border-top: 1px solid var(--border);
+        padding: 32px 40px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .footer-left {
+        font-size: 12px;
+        color: var(--text-dim);
+      }
+
+      .footer-links {
+        display: flex;
+        gap: 24px;
+        list-style: none;
+      }
+
+      .footer-links a {
+        color: var(--text-dim);
+        text-decoration: none;
+        font-size: 12px;
+        transition: color 0.2s;
+      }
+
+      .footer-links a:hover { color: var(--text); }
+
+      .oss-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 11px;
+        color: var(--green);
+        border: 1px solid rgba(26,122,60,0.25);
+        padding: 3px 10px;
+        border-radius: 3px;
+      }
+
+      /* ─── Divider line ─── */
+      hr.section-divider {
+        border: none;
+        border-top: 1px solid var(--border);
+      }
+
+      .theme-toggle {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        width: 44px;
+        height: 24px;
+        cursor: pointer;
+        position: relative;
+        flex-shrink: 0;
+        transition: background 0.25s, border-color 0.25s;
+      }
+
+      .theme-toggle::after {
+        content: '';
+        position: absolute;
+        top: 3px; left: 3px;
+        width: 16px; height: 16px;
+        border-radius: 50%;
+        background: var(--text-muted);
+        transition: transform 0.25s, background 0.25s;
+      }
+
+      html.dark .theme-toggle::after,
+      @media (prefers-color-scheme: dark) {
+        :root:not(.light) .theme-toggle::after { transform: translateX(20px); background: var(--accent2); }
+      }
+
+      html.dark .theme-toggle::after { transform: translateX(20px); background: var(--accent2); }
+      /* ─── AI Spotlight ─── */
+      .ai-spotlight {
+        border-top: 1px solid var(--border);
+        border-bottom: 1px solid var(--border);
+        background: var(--surface);
+        padding: 80px 40px;
+      }
+
+      .ai-spotlight-inner {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 48px;
+        align-items: start;
+      }
+
+      .ai-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 12px;
+        background: var(--accent);
+        color: white;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        border-radius: 3px;
+        margin-top: 6px;
+        white-space: nowrap;
+      }
+
+      .ai-heading {
+        font-family: var(--font-serif);
+        font-size: clamp(28px, 3.5vw, 46px);
+        font-weight: 400;
+        line-height: 1.1;
+        margin-bottom: 16px;
+      }
+
+      .ai-sub {
+        color: var(--text-muted);
+        font-size: 13px;
+        line-height: 1.8;
+        max-width: 560px;
+        margin-bottom: 28px;
+      }
+
+      .ai-examples {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .ai-bubble {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 12px 16px;
+        font-size: 13px;
+        color: var(--text-muted);
+        max-width: fit-content;
+        font-style: italic;
+        transition: border-color 0.2s, color 0.2s;
+      }
+
+      .ai-bubble:hover { border-color: var(--accent); color: var(--text); }
+
+      .ai-bubble::before {
+        content: '›';
+        color: var(--accent);
+        font-style: normal;
+        font-weight: 700;
+        font-size: 16px;
+        flex-shrink: 0;
+      }
+
+      @media (max-width: 900px) {
+        .ai-spotlight-inner { grid-template-columns: 1fr; gap: 20px; }
+        .ai-spotlight { padding: 60px 20px; }
+      }
+
+      @media (max-width: 900px) {
+        .hero, .keyboard-inner, .cta-section {
+          grid-template-columns: 1fr;
+          gap: 40px;
+        }
+        .features-grid { grid-template-columns: 1fr; }
+        nav { padding: 0 20px; }
+        .nav-links { display: none; }
+        .hero { padding: 100px 20px 60px; }
+        .section { padding: 60px 20px; }
+      }
+
+      /* ─── Animations ─── */
+      @keyframes slideUp {
         from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
+        to   { opacity: 1; transform: translateY(0); }
       }
-      .fade-in {
-        animation: fadeIn 0.6s ease-out forwards;
-      }
-      .delay-100 { animation-delay: 0.1s; }
-      .delay-200 { animation-delay: 0.2s; }
-      .delay-300 { animation-delay: 0.3s; }
+
+      .hero-eyebrow  { animation: slideUp 0.5s 0.1s both; }
+      .hero h1       { animation: slideUp 0.5s 0.2s both; }
+      .hero-sub      { animation: slideUp 0.5s 0.3s both; }
+      .hero-actions  { animation: slideUp 0.5s 0.4s both; }
+      .platform-badges { animation: slideUp 0.5s 0.5s both; }
+      .terminal      { animation: slideUp 0.6s 0.3s both; }
     </style>
-    <script defer data-domain="melocoton.app" src="https://plausible.io/js/script.js"></script>
   </head>
-  <body class="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-200">
-    <!-- Navigation -->
-    <nav class="container mx-auto px-4 py-6 flex justify-between items-center">
-      <div class="flex items-center space-x-2">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary-600 dark:text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2 1 3 3 3h10c2 0 3-1 3-3V7c0-2-1-3-3-3H7c-2 0-3 1-3 3z" />
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v4M15 3v4M9 17v4M15 17v4M3 9h18M3 15h18" />
-        </svg>
-        <span class="text-2xl font-bold">Melocoton</span>
-      </div>
-      <div class="flex items-center space-x-4">
-        <a href="#features" class="hidden md:block hover:text-primary-600 dark:hover:text-primary-400">Features</a>
-        <a href="#screenshots" class="hidden md:block hover:text-primary-600 dark:hover:text-primary-400">Screenshots</a>
-        <a href="#download" class="hidden md:block hover:text-primary-600 dark:hover:text-primary-400">Download</a>
-        <button id="darkModeToggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
-          <!-- Sun icon for dark mode -->
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-          </svg>
-          <!-- Moon icon for light mode -->
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 block dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-          </svg>
-        </button>
-      </div>
+  <body>
+
+    <!-- ─── Nav ─── -->
+    <nav>
+      <a class="nav-logo" href="#">
+        <span class="nav-logo-icon">🍑</span>
+        melocoton
+      </a>
+      <ul class="nav-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#keybindings">Key bindings</a></li>
+        <li><a href="#download">Download</a></li>
+        <li><a href="https://github.com/erickgnavar/melocoton">GitHub</a></li>
+        <li><a class="nav-cta" href="#download">↓ Download</a></li>
+        <li><button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode"></button></li>
     </nav>
 
-    <!-- Hero Section -->
-    <section class="container mx-auto px-4 py-16 md:py-24">
-      <div class="flex flex-col md:flex-row items-center">
-        <div class="md:w-1/2 mb-10 md:mb-0 fade-in">
-          <h1 class="text-4xl md:text-5xl font-bold mb-6">The Modern Database Client for Professionals</h1>
-          <p class="text-xl mb-8 text-gray-600 dark:text-gray-400">Manage your databases with ease. Connect to any SQL or NoSQL database with our powerful, intuitive interface.</p>
-          <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-            <a href="#download" class="bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-6 rounded-lg text-center transition-colors duration-200">
-              Download Now
-            </a>
-            <a href="#donate" class="bg-white dark:bg-gray-800 text-primary-600 dark:text-primary-400 border border-primary-600 dark:border-primary-400 font-bold py-3 px-6 rounded-lg text-center hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200">
-              Support Us
-            </a>
+    <!-- ─── Hero ─── -->
+    <main>
+      <section>
+        <div class="hero">
+          <div class="hero-copy">
+            <p class="hero-eyebrow">SQL Client · macOS · Linux</p>
+            <h1>The SQL client<br>that stays out of<br>your <em>way.</em></h1>
+            <p class="hero-sub">
+              Melocoton runs on macOS and Linux, speaks Vim fluently,
+              and lets you move through queries, schemas, and results
+              without touching a mouse.
+            </p>
+            <div class="hero-actions">
+              <a href="#download" class="btn-primary">↓ Download free</a>
+              <a href="https://github.com/erickgnavar/melocoton" class="btn-ghost">⭐ Star on GitHub →</a>
+            </div>
+            <div class="platform-badges">
+              <span class="badge"><span class="badge-dot"></span>macOS</span>
+              <span class="badge"><span class="badge-dot"></span>Ubuntu</span>
+              <span class="badge"><span class="badge-dot"></span>AppImage</span>
+            </div>
+          </div>
+
+          <!-- Terminal mockup -->
+          <div class="terminal">
+            <div class="terminal-bar">
+              <div class="terminal-dots">
+                <span class="dot dot-r"></span>
+                <span class="dot dot-y"></span>
+                <span class="dot dot-g"></span>
+              </div>
+              <span class="terminal-title">melocoton — production_db</span>
+            </div>
+            <div class="terminal-body" id="termBody">
+              <div class="mode-indicator" id="modeIndicator" style="color:var(--green)">-- NORMAL --</div>
+            </div>
           </div>
         </div>
-        <div class="md:w-1/2 fade-in delay-200">
-          <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80" alt="Database Technology" class="rounded-lg shadow-xl">
+      </section>
+
+      <!-- ─── Key hints marquee ─── -->
+      <div class="keyhints" id="keybindings">
+        <div class="keyhints-inner" id="keyhintScroll">
+          <!-- duplicated for infinite scroll -->
         </div>
       </div>
-    </section>
 
-    <!-- Description Section -->
-    <section id="features" class="bg-gray-100 dark:bg-gray-800 py-16">
-      <div class="container mx-auto px-4">
-        <h2 class="text-3xl font-bold mb-12 text-center fade-in">Why Choose Melocoton?</h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow-md fade-in">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-primary-600 dark:text-primary-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-            <h3 class="text-xl font-bold mb-2">Vim key bindings</h3>
-            <p class="text-gray-600 dark:text-gray-300">Write and modify your queries using vim key bindings you alread know</p>
+      <!-- ─── Features ─── -->
+      <section class="section" id="features">
+        <p class="section-label">Why Melocoton</p>
+        <h2 class="section-heading">Powerful where it<br>matters. <em>Quiet</em> everywhere else.</h2>
+
+        <div class="features-grid">
+          <div class="feature-card" data-n="01">
+            <span class="feature-icon">⌨</span>
+            <div class="feature-title">Vim key bindings, first-class</div>
+            <p class="feature-desc">Navigate tables, edit queries, and move through results using the motions you already know. Not an afterthought — core to how Melocoton works.</p>
+            <span class="feature-tag">hjkl · dd · yy · gg · G</span>
           </div>
-          <div class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow-md fade-in delay-100">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-primary-600 dark:text-primary-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-            <h3 class="text-xl font-bold mb-2">Secure Connections</h3>
-            <p class="text-gray-600 dark:text-gray-300">Enterprise-grade security for all your database connections.</p>
+          <div class="feature-card" data-n="02">
+            <span class="feature-icon">⚡</span>
+            <div class="feature-title">Multi-platform, one experience</div>
+            <p class="feature-desc">Built natively for macOS and Linux. No Electron. The same keyboard-first interface whether you're on an M-chip Mac or an Ubuntu workstation.</p>
+            <span class="feature-tag">macOS · Linux</span>
           </div>
-          <div class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow-md fade-in delay-200">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-primary-600 dark:text-primary-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <h3 class="text-xl font-bold mb-2">Intuitive Interface</h3>
-            <p class="text-gray-600 dark:text-gray-300">Designed for both beginners and experts. Powerful yet easy to use.</p>
+          <div class="feature-card" data-n="03">
+            <span class="feature-icon">🔗</span>
+            <div class="feature-title">Multiple connections, live</div>
+            <p class="feature-desc">Manage connections to production, staging, and local databases simultaneously. Switch contexts without losing your query history.</p>
+            <span class="feature-tag">PostgreSQL · SQLite</span>
+          </div>
+          <div class="feature-card" data-n="04">
+            <span class="feature-icon">🗂</span>
+            <div class="feature-title">Schema browser</div>
+            <p class="feature-desc">Inspect tables, columns, indexes, and foreign keys without writing a single INFORMATION_SCHEMA query. Navigate with keyboard shortcuts.</p>
+            <span class="feature-tag">\dt · \d tablename</span>
+          </div>
+          <div class="feature-card" data-n="05">
+            <span class="feature-icon">📊</span>
+            <div class="feature-title">Results as data, not just rows</div>
+            <p class="feature-desc">Sort, filter, and page through query results. Export to CSV. Visualize numeric data inline. Designed to handle real result sets.</p>
+            <span class="feature-tag">CSV export · inline charts</span>
+          </div>
+          <div class="feature-card" data-n="06">
+            <span class="feature-icon">🤖</span>
+            <div class="feature-title">AI agent chat</div>
+            <p class="feature-desc">Ask questions about your data in plain language. The AI agent understands your schema, writes queries on your behalf, and explains results — without leaving the app.</p>
+            <span class="feature-tag">Schema-aware · Local or cloud models</span>
           </div>
         </div>
-      </div>
-    </section>
 
-    <!-- Screenshots Section with Carousel -->
-    <section id="screenshots" class="py-16">
-      <div class="container mx-auto px-4">
-        <h2 class="text-3xl font-bold mb-12 text-center fade-in">See Melocoton in Action</h2>
-
-        <!-- Carousel -->
-        <div class="carousel max-w-4xl mx-auto rounded-lg shadow-lg overflow-hidden fade-in delay-100">
-          <div class="carousel-inner">
-            <div class="carousel-item">
-              <img src="https://images.unsplash.com/photo-1607706189992-eae578626c86?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80" alt="Database Dashboard" class="w-full h-auto">
-              <div class="p-4 bg-white dark:bg-gray-700">
-                <h3 class="font-bold">Powerful Dashboard</h3>
-                <p class="text-gray-600 dark:text-gray-300">Monitor all your database connections in one place.</p>
-              </div>
-            </div>
-            <div class="carousel-item">
-              <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80" alt="Query Editor" class="w-full h-auto">
-              <div class="p-4 bg-white dark:bg-gray-700">
-                <h3 class="font-bold">VIM key bindings</h3>
-                <p class="text-gray-600 dark:text-gray-300">Write and modify your queries using vim key bindings you alread know</p>
-              </div>
-            </div>
-            <div class="carousel-item">
-              <img src="https://images.unsplash.com/photo-1551434678-e076c223a692?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80" alt="Data Visualization" class="w-full h-auto">
-              <div class="p-4 bg-white dark:bg-gray-700">
-                <h3 class="font-bold">Data Visualization</h3>
-                <p class="text-gray-600 dark:text-gray-300">Transform your query results into insightful charts and graphs.</p>
-              </div>
-            </div>
-            <div class="carousel-item">
-              <img src="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80" alt="Schema Browser" class="w-full h-auto">
-              <div class="p-4 bg-white dark:bg-gray-700">
-                <h3 class="font-bold">Schema Browser</h3>
-                <p class="text-gray-600 dark:text-gray-300">Easily navigate and modify your database structure.</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Carousel Controls -->
-          <button class="absolute top-1/2 left-4 transform -translate-y-1/2 bg-white dark:bg-gray-800 rounded-full p-2 shadow-md hover:bg-gray-100 dark:hover:bg-gray-700" id="prevBtn">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-800 dark:text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <button class="absolute top-1/2 right-4 transform -translate-y-1/2 bg-white dark:bg-gray-800 rounded-full p-2 shadow-md hover:bg-gray-100 dark:hover:bg-gray-700" id="nextBtn">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-800 dark:text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-        </div>
-
-        <!-- Carousel Indicators -->
-        <div class="carousel-indicators mt-4">
-          <button class="carousel-indicator bg-primary-600 dark:bg-primary-400" data-slide="0"></button>
-          <button class="carousel-indicator bg-gray-300 dark:bg-gray-600" data-slide="1"></button>
-          <button class="carousel-indicator bg-gray-300 dark:bg-gray-600" data-slide="2"></button>
-          <button class="carousel-indicator bg-gray-300 dark:bg-gray-600" data-slide="3"></button>
-        </div>
-      </div>
-    </section>
-
-    <!-- Download Section -->
-    <section id="download" class="bg-primary-600 dark:bg-primary-700 text-white py-16">
-      <div class="container mx-auto px-4 text-center">
-        <h2 class="text-3xl font-bold mb-6 fade-in">Ready to Get Started?</h2>
-        <p class="text-xl mb-8 max-w-2xl mx-auto fade-in delay-100">Download Melocoton now and transform how you work with databases.</p>
-        <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4 fade-in delay-200">
-          <a href="https://github.com/erickgnavar/melocoton/releases/latest/download/melocoton.dmg" class="bg-white text-primary-600 font-bold py-3 px-6 rounded-lg hover:bg-gray-100 transition-colors duration-200">
-            <span class="flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-              </svg>
-              macOS
-            </span>
-          </a>
-          <div class="relative inline-block">
-            <button id="linuxDropdown" class="bg-white text-primary-600 font-bold py-3 px-6 rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-              </svg>
-              Linux
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            <div id="linuxDropdownMenu" class="absolute bottom-full left-0 mb-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 hidden z-10">
-              <div class="py-2">
-                <a href="https://github.com/erickgnavar/melocoton/releases/latest/download/melocoton.deb" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center">
-                  <span class="w-6 h-6 mr-3 bg-orange-500 rounded-sm flex items-center justify-center text-white text-xs font-bold">U</span>
-                  Ubuntu (.deb)
-                </a>
-                <a href="https://github.com/erickgnavar/melocoton/releases/latest/download/melocoton.rpm" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center">
-                  <span class="w-6 h-6 mr-3 bg-blue-600 rounded-sm flex items-center justify-center text-white text-xs font-bold">F</span>
-                  Fedora (.rpm)
-                </a>
-                <a href="https://github.com/erickgnavar/melocoton/releases/latest/download/melocoton.rpm" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center">
-                  <span class="w-6 h-6 mr-3 bg-green-600 rounded-sm flex items-center justify-center text-white text-xs font-bold">S</span>
-                  openSUSE (.rpm)
-                </a>
-                <a href="https://github.com/erickgnavar/melocoton/releases/latest/download/melocoton.rpm" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center">
-                  <span class="w-6 h-6 mr-3 bg-red-600 rounded-sm flex items-center justify-center text-white text-xs font-bold">R</span>
-                  Red Hat (.rpm)
-                </a>
-                <a href="https://github.com/erickgnavar/melocoton/releases/latest/download/melocoton.AppImage" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center">
-                  <span class="w-6 h-6 mr-3 bg-gray-800 rounded-sm flex items-center justify-center text-white text-xs font-bold">T</span>
-                  AppImage (Universal)
-                </a>
+        <!-- AI spotlight -->
+        <div class="ai-spotlight">
+          <div class="ai-spotlight-inner">
+            <div class="ai-badge">New</div>
+            <div class="ai-content">
+              <h3 class="ai-heading">Talk to your database.<br>In plain English.</h3>
+              <p class="ai-sub">Melocoton's built-in AI agent knows your schema. Ask it anything — it'll write the query, run it, and explain what it found. No tab-switching, no copy-pasting into ChatGPT.</p>
+              <div class="ai-examples">
+                <div class="ai-bubble">"Which users signed up this week but haven't activated yet?"</div>
+                <div class="ai-bubble">"Show me the top 5 tables by row count"</div>
+                <div class="ai-bubble">"Why is this query slow? Add an index if needed."</div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- Donation Section -->
-    <section id="donate" class="py-16">
-      <div class="container mx-auto px-4 text-center">
-        <h2 class="text-3xl font-bold mb-6 fade-in">Support the Development</h2>
-        <p class="text-xl mb-8 max-w-2xl mx-auto text-gray-600 dark:text-gray-400 fade-in delay-100">Melocoton is an open-source project. Your donations help us continue improving the software.</p>
-        <a href="https://buymeacoffee.com/erickgnavar" class="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200">
-          Donate Now
-        </a>
-      </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="bg-gray-100 dark:bg-gray-800 py-12">
-      <div class="container mx-auto px-4">
-        <div class="flex flex-col md:flex-row justify-between items-center">
-          <div class="mb-6 md:mb-0">
-            <div class="flex items-center space-x-2">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-primary-600 dark:text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2 1 3 3 3h10c2 0 3-1 3-3V7c0-2-1-3-3-3H7c-2 0-3 1-3 3z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v4M15 3v4M9 17v4M15 17v4M3 9h18M3 15h18" />
-              </svg>
-              <span class="text-xl font-bold">Melocoton</span>
+      <!-- ─── Keyboard section ─── -->
+      <div class="keyboard-section">
+        <div class="keyboard-inner">
+          <div>
+            <p class="section-label">Key bindings</p>
+            <h2 class="section-heading">Your muscle memory<br>is a <em>feature.</em></h2>
+            <p style="color:var(--text-muted);font-size:13px;line-height:1.8;max-width:420px;margin-bottom:28px;">
+              Melocoton's modal editing follows Vim conventions. Switch modes, navigate results,
+              and edit queries without lifting your hands from the home row.
+            </p>
+            <div class="dbs-grid">
+              <span class="db-chip"><span class="db-chip-dot"></span>PostgreSQL</span>
+              <span class="db-chip"><span class="db-chip-dot"></span>SQLite</span>
+              <span class="db-chip"><span class="db-chip-dot" style="background:var(--blue)"></span>More coming</span>
             </div>
-            <p class="mt-2 text-gray-600 dark:text-gray-400">The modern database client for professionals.</p>
           </div>
-          <div class="flex space-x-6">
-            <a href="https://github.com/erickgnavar/melocoton" class="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400">
-              <span class="sr-only">GitHub</span>
-              <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-                <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"></path>
-              </svg>
-            </a>
-            <a href="https://twitter.com/erickgnavar" class="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400">
-              <span class="sr-only">Twitter</span>
-              <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84"></path>
-              </svg>
-            </a>
+
+          <div>
+            <div class="mode-tabs">
+              <button class="mode-tab active" onclick="showTab(this,'normal')">NORMAL</button>
+              <button class="mode-tab" onclick="showTab(this,'insert')">INSERT</button>
+              <button class="mode-tab" onclick="showTab(this,'nav')">NAVIGATE</button>
+            </div>
+
+            <div class="key-groups" id="tab-normal">
+              <div>
+                <div class="key-group-label">Query editor</div>
+                <div class="key-bindings">
+                  <div class="key-binding">
+                    <div class="key-binding-keys"><kbd>i</kbd></div>
+                    <span class="key-binding-desc">Enter INSERT mode</span>
+                  </div>
+                  <div class="key-binding">
+                    <div class="key-binding-keys"><kbd>dd</kbd></div>
+                    <span class="key-binding-desc">Delete current line</span>
+                  </div>
+                  <div class="key-binding">
+                    <div class="key-binding-keys"><kbd>yy</kbd></div>
+                    <span class="key-binding-desc">Yank (copy) current line</span>
+                  </div>
+                  <div class="key-binding">
+                    <div class="key-binding-keys"><kbd>p</kbd></div>
+                    <span class="key-binding-desc">Paste below cursor</span>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div class="key-group-label">Execution</div>
+                <div class="key-bindings">
+                  <div class="key-binding">
+                    <div class="key-binding-keys"><kbd>Ctrl</kbd>+<kbd>Enter</kbd></div>
+                    <span class="key-binding-desc">Run query</span>
+                  </div>
+                  <div class="key-binding">
+                    <div class="key-binding-keys"><kbd>Ctrl</kbd>+<kbd>r</kbd></div>
+                    <span class="key-binding-desc">Query history</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="key-groups" id="tab-insert" style="display:none">
+              <div>
+                <div class="key-group-label">INSERT mode</div>
+                <div class="key-bindings">
+                  <div class="key-binding">
+                    <div class="key-binding-keys"><kbd>Esc</kbd></div>
+                    <span class="key-binding-desc">Return to NORMAL mode</span>
+                  </div>
+                  <div class="key-binding">
+                    <div class="key-binding-keys"><kbd>Ctrl</kbd>+<kbd>n</kbd></div>
+                    <span class="key-binding-desc">Autocomplete next</span>
+                  </div>
+                  <div class="key-binding">
+                    <div class="key-binding-keys"><kbd>Ctrl</kbd>+<kbd>p</kbd></div>
+                    <span class="key-binding-desc">Autocomplete previous</span>
+                  </div>
+                  <div class="key-binding">
+                    <div class="key-binding-keys"><kbd>Tab</kbd></div>
+                    <span class="key-binding-desc">Accept completion</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="key-groups" id="tab-nav" style="display:none">
+              <div>
+                <div class="key-group-label">Result navigation</div>
+                <div class="key-bindings">
+                  <div class="key-binding">
+                    <div class="key-binding-keys"><kbd>j</kbd><kbd>k</kbd></div>
+                    <span class="key-binding-desc">Move row up / down</span>
+                  </div>
+                  <div class="key-binding">
+                    <div class="key-binding-keys"><kbd>h</kbd><kbd>l</kbd></div>
+                    <span class="key-binding-desc">Move column left / right</span>
+                  </div>
+                  <div class="key-binding">
+                    <div class="key-binding-keys"><kbd>gg</kbd></div>
+                    <span class="key-binding-desc">Jump to first row</span>
+                  </div>
+                  <div class="key-binding">
+                    <div class="key-binding-keys"><kbd>G</kbd></div>
+                    <span class="key-binding-desc">Jump to last row</span>
+                  </div>
+                  <div class="key-binding">
+                    <div class="key-binding-keys"><kbd>Ctrl</kbd>+<kbd>f</kbd></div>
+                    <span class="key-binding-desc">Page down</span>
+                  </div>
+                  <div class="key-binding">
+                    <div class="key-binding-keys"><kbd>Ctrl</kbd>+<kbd>b</kbd></div>
+                    <span class="key-binding-desc">Page up</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-        <div class="mt-8 border-t border-gray-300 dark:border-gray-700 pt-8 text-center text-gray-600 dark:text-gray-400">
-          <p>&copy; 2025 Melocoton. All rights reserved.</p>
         </div>
       </div>
-    </footer>
 
-    <!-- Scripts -->
+      <!-- ─── CTA / Download ─── -->
+      <section class="cta-section" id="download">
+        <div>
+          <p class="section-label">Download</p>
+          <h2 class="cta-heading">Free and<br>open source.</h2>
+          <p class="cta-sub">
+            Melocoton is free to use and openly developed. If it saves you time,
+            consider supporting the project.
+          </p>
+          <br>
+          <div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap;">
+            <a href="https://github.com/erickgnavar/melocoton" class="btn-ghost">View source on GitHub →</a>
+            <a href="https://buymeacoffee.com/erickgnavar" class="btn-ghost">☕ Buy me a coffee →</a>
+          </div>
+        </div>
+
+        <div class="download-box">
+          <div class="download-platform">
+            <div class="platform-header">macOS</div>
+            <div class="platform-links">
+              <a href="https://github.com/erickgnavar/melocoton/releases/latest/download/melocoton.dmg" class="platform-link">
+                <div class="platform-link-left">
+                  <span class="pl-icon"></span>
+                  <div>
+                    <div>macOS Universal</div>
+                    <div class="pl-sub">.dmg · Apple Silicon + Intel</div>
+                  </div>
+                </div>
+                <span class="platform-link-arrow">→</span>
+              </a>
+            </div>
+          </div>
+          <div class="download-platform">
+            <div class="platform-header">Linux</div>
+            <div class="platform-links">
+              <a href="https://github.com/erickgnavar/melocoton/releases/latest/download/melocoton.deb" class="platform-link">
+                <div class="platform-link-left">
+                  <span class="pl-icon">🐧</span>
+                  <div>
+                    <div>Ubuntu / Debian</div>
+                    <div class="pl-sub">.deb package</div>
+                  </div>
+                </div>
+                <span class="platform-link-arrow">→</span>
+              </a>
+              <a href="https://github.com/erickgnavar/melocoton/releases/latest/download/melocoton.AppImage" class="platform-link">
+                <div class="platform-link-left">
+                  <span class="pl-icon">📦</span>
+                  <div>
+                    <div>AppImage</div>
+                    <div class="pl-sub">Universal Linux · no install needed</div>
+                  </div>
+                </div>
+                <span class="platform-link-arrow">→</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── Footer ─── -->
+      <hr class="section-divider">
+      <footer>
+        <div class="footer-left">
+          <span class="oss-badge">⬡ Open Source</span>
+          <span style="margin-left:16px">© 2025 Melocoton</span>
+        </div>
+        <ul class="footer-links">
+          <li><a href="https://github.com/erickgnavar/melocoton">GitHub</a></li>
+          <li><a href="https://buymeacoffee.com/erickgnavar">Donate</a></li>
+        </ul>
+      </footer>
+    </main>
+
     <script>
-      // Dark Mode Toggle
-      (function() {
-        // Check for saved theme preference or use the system preference
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
-        }
+      /* ── Terminal animation ── */
+      const lines = [
+        { t: 300,  html: '<span class="sql-comment">-- exploring users table</span>' },
+        { t: 700,  html: '<span class="sql-keyword">SELECT</span> id, email, created_at,' },
+        { t: 1000, html: '       plan, mrr_cents' },
+        { t: 1300, html: '<span class="sql-keyword">FROM</span>   <span class="sql-table">users</span>' },
+        { t: 1600, html: '<span class="sql-keyword">WHERE</span>  created_at &gt; <span class="sql-string">\'2025-01-01\'</span>' },
+        { t: 1900, html: '  <span class="sql-keyword">AND</span>  plan = <span class="sql-string">\'pro\'</span>' },
+        { t: 2100, html: '<span class="sql-keyword">ORDER BY</span> mrr_cents <span class="sql-keyword">DESC</span>' },
+        { t: 2300, html: '<span class="sql-keyword">LIMIT</span>  <span class="sql-number">20</span>;' },
+        { t: 2700, html: '<br><span class="sql-result">✓ 20 rows · 12ms</span>' },
+        { t: 3100, html: '' },
+        { t: 3400, html: '<span class="sql-comment">-- checking index usage</span>' },
+        { t: 3800, html: '<span class="sql-keyword">EXPLAIN ANALYZE</span>' },
+        { t: 4100, html: '  <span class="sql-keyword">SELECT</span> * <span class="sql-keyword">FROM</span> <span class="sql-table">users</span> <span class="sql-keyword">WHERE</span> plan=<span class="sql-string">\'pro\'</span>;' },
+      ];
 
-        // Toggle dark/light mode
-        document.getElementById('darkModeToggle').addEventListener('click', function() {
-          if (document.documentElement.classList.contains('dark')) {
-            document.documentElement.classList.remove('dark');
-            localStorage.theme = 'light';
-          } else {
-            document.documentElement.classList.add('dark');
-            localStorage.theme = 'dark';
-          }
+      const body = document.getElementById('termBody');
+      const indicator = document.getElementById('modeIndicator');
+
+      function addLine(html) {
+        const div = document.createElement('div');
+        div.className = 'sql-line';
+        div.innerHTML = html;
+        body.insertBefore(div, indicator);
+        void div.offsetWidth;
+        div.style.animationDelay = '0ms';
+        div.style.opacity = '';
+      }
+
+      lines.forEach(({ t, html }) => {
+        setTimeout(() => addLine(html), t);
+      });
+
+      // add cursor after last line
+      setTimeout(() => {
+        const cursor = document.createElement('div');
+        cursor.className = 'sql-line';
+        cursor.style.opacity = '1';
+        cursor.innerHTML = '<span class="cursor"></span>';
+        body.insertBefore(cursor, indicator);
+      }, 4400);
+
+      // cycle mode indicator
+      const modes = [
+        { text: '-- NORMAL --', varName: '--green' },
+        { text: '-- INSERT --', varName: '--blue' },
+        { text: '-- VISUAL --', varName: '--purple' },
+        { text: '-- NORMAL --', varName: '--green' },
+      ];
+      let mi = 0;
+      setInterval(() => {
+        mi = (mi + 1) % modes.length;
+        indicator.textContent = modes[mi].text;
+        indicator.style.color = getComputedStyle(document.documentElement).getPropertyValue(modes[mi].varName).trim();
+      }, 3500);
+
+      /* ── Theme toggle ── */
+      const toggle = document.getElementById('themeToggle');
+      const html = document.documentElement;
+
+      // Respect saved preference, else system
+      const saved = localStorage.getItem('theme');
+      if (saved) html.classList.add(saved);
+
+      toggle.addEventListener('click', () => {
+        const isDark = html.classList.contains('dark') ||
+                       (!html.classList.contains('light') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        html.classList.remove('dark', 'light');
+        html.classList.add(isDark ? 'light' : 'dark');
+        localStorage.setItem('theme', isDark ? 'light' : 'dark');
+      });
+      const hints = [
+        ['gg', 'first row'],
+        ['G', 'last row'],
+        ['dd', 'delete line'],
+        ['yy', 'copy line'],
+        ['p', 'paste'],
+        ['i', 'insert mode'],
+        ['Esc', 'normal mode'],
+        ['hjkl', 'navigate'],
+        ['Ctrl+Enter', 'run query'],
+        ['Ctrl+r', 'history'],
+        ['/', 'search'],
+        ['n', 'next match'],
+        ['u', 'undo'],
+        ['Ctrl+f', 'page down'],
+        ['Ctrl+b', 'page up'],
+        [':w', 'save query'],
+        ['gd', 'go to definition'],
+        ['*', 'find word'],
+      ];
+
+      const scroll = document.getElementById('keyhintScroll');
+      const makeHints = () => hints.map(([k, desc]) => {
+        const parts = k.split('+');
+        const kbds = parts.map(p => `<kbd>${p}</kbd>`).join(' + ');
+        return `<span class="hint">${kbds} <span class="hint-sep">–</span> ${desc}</span>`;
+      }).join('');
+
+      // duplicate for infinite scroll
+      scroll.innerHTML = makeHints() + makeHints();
+
+      /* ── Tab switcher ── */
+      function showTab(btn, tab) {
+        document.querySelectorAll('.mode-tab').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        ['normal','insert','nav'].forEach(t => {
+          const el = document.getElementById('tab-' + t);
+          if (el) el.style.display = t === tab ? '' : 'none';
         });
-      })();
-
-      // Carousel Functionality
-      (function() {
-        const carousel = document.querySelector('.carousel-inner');
-        const items = document.querySelectorAll('.carousel-item');
-        const indicators = document.querySelectorAll('.carousel-indicator');
-        const prevBtn = document.getElementById('prevBtn');
-        const nextBtn = document.getElementById('nextBtn');
-        let currentIndex = 0;
-        const totalItems = items.length;
-
-        // Initialize
-        updateCarousel();
-
-        // Event Listeners
-        prevBtn.addEventListener('click', () => {
-          currentIndex = (currentIndex - 1 + totalItems) % totalItems;
-          updateCarousel();
-        });
-
-        nextBtn.addEventListener('click', () => {
-          currentIndex = (currentIndex + 1) % totalItems;
-          updateCarousel();
-        });
-
-        // Add click event to indicators
-        indicators.forEach((indicator, index) => {
-          indicator.addEventListener('click', () => {
-            currentIndex = index;
-            updateCarousel();
-          });
-        });
-
-        // Auto slide every 5 seconds
-        let interval = setInterval(() => {
-          currentIndex = (currentIndex + 1) % totalItems;
-          updateCarousel();
-        }, 5000);
-
-        // Pause auto slide on hover
-        carousel.addEventListener('mouseenter', () => {
-          clearInterval(interval);
-        });
-
-        carousel.addEventListener('mouseleave', () => {
-          interval = setInterval(() => {
-            currentIndex = (currentIndex + 1) % totalItems;
-            updateCarousel();
-          }, 5000);
-        });
-
-        // Update carousel position and indicators
-        function updateCarousel() {
-          carousel.style.transform = `translateX(-${currentIndex * 100}%)`;
-
-          // Update indicators
-          indicators.forEach((indicator, index) => {
-            if (index === currentIndex) {
-              indicator.classList.add('bg-primary-600', 'dark:bg-primary-400');
-              indicator.classList.remove('bg-gray-300', 'dark:bg-gray-600');
-            } else {
-              indicator.classList.remove('bg-primary-600', 'dark:bg-primary-400');
-              indicator.classList.add('bg-gray-300', 'dark:bg-gray-600');
-            }
-          });
-        }
-
-        // Intersection Observer for animations
-        const fadeElements = document.querySelectorAll('.fade-in');
-        const observer = new IntersectionObserver((entries) => {
-          entries.forEach(entry => {
-            if (entry.isIntersecting) {
-              entry.target.style.opacity = 1;
-              observer.unobserve(entry.target);
-            }
-          });
-        }, {
-          threshold: 0.1
-        });
-
-        fadeElements.forEach(element => {
-          element.style.opacity = 0;
-          observer.observe(element);
-        });
-      })();
-
-      // Linux Dropdown Functionality
-      (function() {
-        const linuxDropdown = document.getElementById('linuxDropdown');
-        const linuxDropdownMenu = document.getElementById('linuxDropdownMenu');
-
-        linuxDropdown.addEventListener('click', function(e) {
-          e.preventDefault();
-          linuxDropdownMenu.classList.toggle('hidden');
-        });
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(e) {
-          if (!linuxDropdown.contains(e.target) && !linuxDropdownMenu.contains(e.target)) {
-            linuxDropdownMenu.classList.add('hidden');
-          }
-        });
-
-        // Close dropdown when pressing Escape
-        document.addEventListener('keydown', function(e) {
-          if (e.key === 'Escape') {
-            linuxDropdownMenu.classList.add('hidden');
-          }
-        });
-      })();
+      }
     </script>
     <script data-name="BMC-Widget" data-cfasync="false" src="https://cdnjs.buymeacoffee.com/1.0.0/widget.prod.min.js" data-id="erickgnavar" data-description="Support me on Buy me a coffee!" data-message="" data-color="#FF813F" data-position="Right" data-x_margin="18" data-y_margin="18"></script>
   </body>
