@@ -7,8 +7,8 @@ defmodule MelocotonWeb.DatabaseLiveTest do
   @create_attrs %{name: "some name", type: "sqlite", url: "/tmp/data.db"}
   @update_attrs %{
     name: "some updated name",
-    type: "postgres",
-    url: "postgres://user:pass@localhost:5432/hellodb"
+    type: "sqlite",
+    url: "/tmp/updated.db"
   }
   @invalid_attrs %{name: nil, type: :sqlite, url: nil}
 
@@ -81,6 +81,100 @@ defmodule MelocotonWeb.DatabaseLiveTest do
              |> render_click()
 
       refute has_element?(index_live, "#databases-#{database.id}")
+    end
+  end
+
+  describe "Database form postgres fields" do
+    setup [:create_database]
+
+    test "shows postgres fields when type is postgres", %{conn: conn} do
+      {:ok, index_live, _html} = live(conn, ~p"/databases")
+
+      index_live |> element("a", "New Connection") |> render_click()
+
+      html =
+        index_live
+        |> form("#database-form", database: %{type: "postgres"})
+        |> render_change()
+
+      assert html =~ "PostgreSQL Connection"
+      assert html =~ "Host"
+      assert html =~ "Port"
+      assert html =~ "User"
+      assert html =~ "Password"
+      assert html =~ "Database"
+      refute html =~ "File path"
+    end
+
+    test "shows sqlite file path when type is sqlite", %{conn: conn} do
+      {:ok, index_live, _html} = live(conn, ~p"/databases")
+
+      index_live |> element("a", "New Connection") |> render_click()
+
+      html =
+        index_live
+        |> form("#database-form", database: %{type: "sqlite"})
+        |> render_change()
+
+      assert html =~ "SQLite Connection"
+      assert html =~ "File path"
+      refute html =~ "PostgreSQL Connection"
+    end
+
+    test "builds postgres url from individual fields", %{conn: conn} do
+      {:ok, index_live, _html} = live(conn, ~p"/databases")
+
+      index_live |> element("a", "New Connection") |> render_click()
+
+      # First switch type to postgres so the form shows pg fields
+      index_live
+      |> form("#database-form", database: %{type: "postgres"})
+      |> render_change()
+
+      # Now submit with postgres fields
+      index_live
+      |> form("#database-form",
+        database: %{
+          name: "my pg db",
+          type: "postgres",
+          pg_host: "db.example.com",
+          pg_port: "5432",
+          pg_user: "admin",
+          pg_password: "secret",
+          pg_database: "myapp",
+          group_id: hd(Melocoton.Databases.list_groups()).id
+        }
+      )
+      |> render_submit()
+
+      assert_patch(index_live, ~p"/databases")
+
+      html = render(index_live)
+      assert html =~ "my pg db"
+      assert html =~ "Database created successfully"
+    end
+
+    test "parses existing postgres url into fields on edit", %{conn: conn} do
+      pg_db =
+        database_fixture(%{
+          name: "pg test",
+          type: :postgres,
+          url: "postgres://myuser:mypass@dbhost:5433/testdb"
+        })
+
+      {:ok, index_live, _html} = live(conn, ~p"/databases")
+
+      index_live
+      |> element("#databases-#{pg_db.id} a[title='Edit']")
+      |> render_click()
+
+      html = render(index_live)
+
+      assert html =~ "PostgreSQL Connection"
+      assert html =~ "dbhost"
+      assert html =~ "5433"
+      assert html =~ "myuser"
+      assert html =~ "testdb"
     end
   end
 end
