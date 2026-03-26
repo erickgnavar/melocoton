@@ -11,17 +11,25 @@ defmodule Melocoton.Pool do
   def handle_call({:get_conn, database}, _from, state) do
     case Map.get(state, database.id) do
       nil ->
-        case start_connection(database) do
-          {:ok, pid} ->
-            conn = %Connection{pid: pid, type: database.type}
-            {:reply, conn, Map.put(state, database.id, conn)}
+        connect(database, state)
 
-          {:error, _} = err ->
-            {:reply, err, state}
+      %Connection{pid: pid} = conn ->
+        if Process.alive?(pid) do
+          {:reply, conn, state}
+        else
+          connect(database, Map.delete(state, database.id))
         end
+    end
+  end
 
-      conn ->
-        {:reply, conn, state}
+  defp connect(database, state) do
+    case start_connection(database) do
+      {:ok, pid} ->
+        conn = %Connection{pid: pid, type: database.type}
+        {:reply, conn, Map.put(state, database.id, conn)}
+
+      {:error, _} = err ->
+        {:reply, err, state}
     end
   end
 
