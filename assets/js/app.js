@@ -151,6 +151,42 @@ const liveSocket = new LiveSocket("/live", Socket, {
         view.focus();
       },
     },
+    CommandPalette: {
+      mounted() {
+        this.setupInput();
+      },
+      updated() {
+        this.setupInput();
+
+        // Scroll selected item into view
+        const selected = this.el.querySelector(
+          '[style*="background:"][style*="15"]',
+        );
+        if (selected) selected.scrollIntoView({ block: "nearest" });
+      },
+      setupInput() {
+        const input = this.el.querySelector("#command-palette-input");
+        if (!input) return;
+
+        if (document.activeElement !== input) {
+          input.focus();
+        }
+
+        // Only attach listener once
+        if (!input._paletteKeydown) {
+          input._paletteKeydown = true;
+          input.addEventListener("keydown", (e) => {
+            if (
+              e.key === "ArrowUp" ||
+              e.key === "ArrowDown" ||
+              (e.ctrlKey && (e.key === "n" || e.key === "p"))
+            ) {
+              e.preventDefault();
+            }
+          });
+        }
+      },
+    },
     AiChatScroll: {
       mounted() {
         this.scrollToBottom();
@@ -188,6 +224,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
       return {
         key: e.key,
         metaKey: e.metaKey,
+        ctrlKey: e.ctrlKey,
       };
     },
   },
@@ -227,6 +264,24 @@ liveSocket.connect();
 // >> liveSocket.enableLatencySim(1000)  // enabled for duration of browser session
 // >> liveSocket.disableLatencySim()
 window.liveSocket = liveSocket;
+
+// Command palette (CMD+K / Ctrl+K)
+// Use capture phase so it fires before CodeMirror's Vim mode consumes Ctrl+K
+document.addEventListener(
+  "keydown",
+  (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+      e.preventDefault();
+      e.stopPropagation();
+      // Dispatch a custom event that any LiveView element can pick up
+      const trigger = document.getElementById("command-palette-trigger");
+      if (trigger) {
+        trigger.click();
+      }
+    }
+  },
+  true,
+);
 
 // Theme management using data-theme attribute
 function resolveTheme(preference) {

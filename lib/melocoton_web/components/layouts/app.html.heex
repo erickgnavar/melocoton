@@ -1,2 +1,7 @@
 <.flash_group flash={@flash} />
 {@inner_content}
+
+<div id="command-palette-wrapper">
+  <button id="command-palette-trigger" phx-click="open-command-palette" class="hidden"></button>
+  <.live_component module={MelocotonWeb.CommandPalette} id="command-palette" />
+</div>

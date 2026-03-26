@@ -19,14 +19,17 @@ defmodule MelocotonWeb.Router do
 
     get "/", PageController, :home
     get "/export-csv/:pid", PageController, :export_csv
-    live "/databases", DatabaseLive.Index, :index
-    live "/databases/new", DatabaseLive.Index, :new
-    live "/databases/:id/edit", DatabaseLive.Index, :edit
 
-    live "/groups/new", DatabaseLive.Index, :new_group
-    live "/groups/:id/edit", DatabaseLive.Index, :edit_group
+    live_session :default, on_mount: [MelocotonWeb.CommandPaletteHook] do
+      live "/databases", DatabaseLive.Index, :index
+      live "/databases/new", DatabaseLive.Index, :new
+      live "/databases/:id/edit", DatabaseLive.Index, :edit
 
-    live "/databases/:database_id/run", SQLLive.Run
+      live "/groups/new", DatabaseLive.Index, :new_group
+      live "/groups/:id/edit", DatabaseLive.Index, :edit_group
+
+      live "/databases/:database_id/run", SQLLive.Run
+    end
   end
 
   # Other scopes may use custom stacks.
