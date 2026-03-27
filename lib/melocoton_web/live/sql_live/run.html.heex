@@ -239,16 +239,41 @@
           >
             <i class="fas fa-save text-sm"></i>
           </button>
-          <a
-            :if={@result.rows != []}
-            class="p-1.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
-            style="color: var(--text-tertiary);"
-            href={~p"/export-csv/#{inspect(@pid)}"}
-            target="blank"
-            title="Export CSV"
-          >
-            <i class="fas fa-file-export text-sm"></i>
-          </a>
+          <div :if={@result.rows != []} class="relative" id="export-dropdown">
+            <button
+              class="p-1.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
+              style="color: var(--text-tertiary);"
+              title="Export"
+              phx-click={JS.toggle(to: "#export-menu")}
+            >
+              <i class="fas fa-file-export text-sm"></i>
+            </button>
+            <div
+              id="export-menu"
+              class="hidden absolute top-full left-0 mt-1 rounded shadow-lg py-1 z-50 min-w-[120px]"
+              style="background: var(--bg-secondary); border: 1px solid var(--border-medium);"
+              phx-click-away={JS.hide(to: "#export-menu")}
+            >
+              <a
+                class="flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/5"
+                style="color: var(--text-primary);"
+                href={~p"/export/csv/#{inspect(@pid)}"}
+                target="blank"
+              >
+                <i class="fas fa-file-csv text-[10px]" style="color: var(--text-tertiary);"></i>
+                CSV
+              </a>
+              <a
+                class="flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/5"
+                style="color: var(--text-primary);"
+                href={~p"/export/xlsx/#{inspect(@pid)}"}
+                target="blank"
+              >
+                <i class="fas fa-file-excel text-[10px]" style="color: var(--text-tertiary);"></i>
+                Excel
+              </a>
+            </div>
+          </div>
           <button
             class="p-1.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
             style="color: var(--text-tertiary);"
