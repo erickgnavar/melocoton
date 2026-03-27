@@ -3,32 +3,36 @@ defmodule MelocotonWeb.CommandPalette do
 
   alias Melocoton.Databases
 
+  @actions [
+    %{id: :settings, name: "Settings", icon: "fa-cog", action: "open-settings"}
+  ]
+
   @impl true
   def update(%{action: :open}, socket) do
-    databases = Databases.list_databases()
+    items = build_items()
 
     socket
-    |> assign(open: true, query: "", filtered: databases, selected_index: 0, databases: databases)
+    |> assign(open: true, query: "", filtered: items, selected_index: 0, items: items)
     |> ok()
   end
 
   def update(assigns, socket) do
-    if socket.assigns[:databases] do
+    if socket.assigns[:items] do
       socket |> assign(assigns) |> ok()
     else
-      databases = Databases.list_databases()
+      items = build_items()
 
       socket
       |> assign(assigns)
-      |> assign(
-        databases: databases,
-        filtered: databases,
-        query: "",
-        selected_index: 0,
-        open: false
-      )
+      |> assign(items: items, filtered: items, query: "", selected_index: 0, open: false)
       |> ok()
     end
+  end
+
+  defp build_items do
+    databases = Databases.list_databases() |> Enum.map(&Map.put(&1, :kind, :database))
+    actions = Enum.map(@actions, &Map.put(&1, :kind, :action))
+    databases ++ actions
   end
 
   @impl true
@@ -40,7 +44,7 @@ defmodule MelocotonWeb.CommandPalette do
 
   @impl true
   def handle_event("search", %{"query" => query}, socket) do
-    filtered = fuzzy_filter(socket.assigns.databases, query)
+    filtered = fuzzy_filter(socket.assigns.items, query)
 
     socket
     |> assign(query: query, filtered: filtered, selected_index: 0)
@@ -96,38 +100,53 @@ defmodule MelocotonWeb.CommandPalette do
   end
 
   @impl true
-  def handle_event("select", %{"id" => id}, socket) do
+  def handle_event("select", %{"type" => "database", "id" => id}, socket) do
+    navigate_to_database(socket, id)
+  end
+
+  def handle_event("select", %{"type" => "action", "action" => action}, socket) do
+    execute_action(socket, action)
+  end
+
+  defp select_current(socket) do
+    case Enum.at(socket.assigns.filtered, socket.assigns.selected_index) do
+      nil -> noreply(socket)
+      %{kind: :database} = db -> navigate_to_database(socket, db.id)
+      %{kind: :action} = action -> execute_action(socket, action.action)
+    end
+  end
+
+  defp navigate_to_database(socket, id) do
     socket
     |> assign(open: false)
     |> push_navigate(to: ~p"/databases/#{id}/run")
     |> noreply()
   end
 
-  defp select_current(socket) do
-    case Enum.at(socket.assigns.filtered, socket.assigns.selected_index) do
-      nil ->
-        noreply(socket)
+  defp execute_action(socket, action) do
+    notify_parent({:palette_action, action})
 
-      db ->
-        socket
-        |> assign(open: false)
-        |> push_navigate(to: ~p"/databases/#{db.id}/run")
-        |> noreply()
-    end
+    socket
+    |> assign(open: false)
+    |> noreply()
   end
 
-  defp fuzzy_filter(databases, "") do
-    databases
+  defp notify_parent(msg), do: send(self(), {__MODULE__, msg})
+
+  defp fuzzy_filter(items, "") do
+    items
   end
 
-  defp fuzzy_filter(databases, query) do
+  defp fuzzy_filter(items, query) do
     query_down = String.downcase(query)
 
-    databases
-    |> Enum.filter(fn db ->
-      name_down = String.downcase(db.name)
-      group_down = String.downcase(db.group.name)
-      fuzzy_match?(name_down, query_down) or fuzzy_match?(group_down, query_down)
+    Enum.filter(items, fn
+      %{kind: :database} = db ->
+        fuzzy_match?(String.downcase(db.name), query_down) or
+          fuzzy_match?(String.downcase(db.group.name), query_down)
+
+      %{kind: :action} = action ->
+        fuzzy_match?(String.downcase(action.name), query_down)
     end)
   end
 

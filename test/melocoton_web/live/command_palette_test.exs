@@ -98,7 +98,7 @@ defmodule MelocotonWeb.CommandPaletteTest do
 
       send_search(view, "zzzznonexistent")
 
-      assert render(view) =~ "No databases found"
+      assert render(view) =~ "No results found"
     end
 
     test "search is case insensitive", %{conn: conn, databases: [db1, _db2, _db3]} do

@@ -8,7 +8,11 @@ defmodule MelocotonWeb.CommandPaletteHook do
   import Phoenix.LiveView
 
   def on_mount(:default, _params, _session, socket) do
-    socket = attach_hook(socket, :command_palette_event, :handle_event, &handle_event/3)
+    socket =
+      socket
+      |> attach_hook(:command_palette_event, :handle_event, &handle_event/3)
+      |> attach_hook(:command_palette_info, :handle_info, &handle_info/2)
+
     {:cont, socket}
   end
 
@@ -18,6 +22,14 @@ defmodule MelocotonWeb.CommandPaletteHook do
   end
 
   defp handle_event(_event, _params, socket) do
+    {:cont, socket}
+  end
+
+  defp handle_info({MelocotonWeb.CommandPalette, {:palette_action, "open-settings"}}, socket) do
+    {:halt, Phoenix.LiveView.push_event(socket, "open-settings-modal", %{})}
+  end
+
+  defp handle_info(_msg, socket) do
     {:cont, socket}
   end
 end

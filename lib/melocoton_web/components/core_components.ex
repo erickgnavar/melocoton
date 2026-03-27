@@ -51,6 +51,7 @@ defmodule MelocotonWeb.CoreComponents do
       phx-mounted={@show && show_modal(@id)}
       phx-remove={hide_modal(@id)}
       data-cancel={JS.exec(@on_cancel, "phx-remove")}
+      data-show-modal={show_modal(@id)}
       class="relative z-50 hidden"
     >
       <div class="fixed inset-0 z-50 flex items-center justify-center">

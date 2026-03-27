@@ -258,6 +258,14 @@ window.addEventListener("phx:copy", (event) => {
   }
 });
 
+// Open settings modal from command palette
+window.addEventListener("phx:open-settings-modal", () => {
+  const modal = document.getElementById("settings-modal");
+  if (modal) {
+    liveSocket.execJS(modal, modal.getAttribute("data-show-modal"));
+  }
+});
+
 // Show progress bar on live navigation and form submits
 topbar.config({ barColors: { 0: "#29d" }, shadowColor: "rgba(0, 0, 0, .3)" });
 window.addEventListener("phx:page-loading-start", (_info) => topbar.show(300));

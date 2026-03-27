@@ -46,47 +46,73 @@
         <div class="max-h-[300px] overflow-y-auto py-1" id="command-palette-results">
           <%= if @filtered == [] do %>
             <div class="px-3 py-4 text-center text-xs" style="color: var(--text-tertiary);">
-              No databases found
+              No results found
             </div>
           <% else %>
-            <div
-              :for={{db, idx} <- Enum.with_index(@filtered)}
-              id={"command-palette-item-#{db.id}"}
-              class="flex items-center gap-2 px-3 py-2 cursor-pointer text-xs mx-1 rounded"
-              style={
-                if idx == @selected_index,
-                  do: "background: #{db.group.color}15; color: var(--text-primary);",
-                  else: "color: var(--text-primary);"
-              }
-              phx-click="select"
-              phx-value-id={db.id}
-              phx-target={@myself}
-            >
-              <%!-- Group color dot --%>
-              <div
-                class="w-2.5 h-2.5 rounded-full shrink-0"
-                style={"background: #{db.group.color};"}
-              >
-              </div>
-              <%!-- Database info --%>
-              <div class="flex-1 min-w-0">
-                <div class="font-medium truncate">{db.name}</div>
-              </div>
-              <%!-- Group name --%>
-              <span
-                class="text-[10px] px-1.5 py-0.5 rounded shrink-0"
-                style={"background: #{db.group.color}18; color: #{db.group.color};"}
-              >
-                {db.group.name}
-              </span>
-              <%!-- Type badge --%>
-              <span
-                class="text-[10px] font-mono shrink-0"
-                style="color: var(--text-tertiary);"
-              >
-                {if db.type == :postgres, do: "pg", else: "sqlite"}
-              </span>
-            </div>
+            <%= for {item, idx} <- Enum.with_index(@filtered) do %>
+              <%= if item.kind == :database do %>
+                <div
+                  id={"command-palette-item-#{item.id}"}
+                  class="flex items-center gap-2 px-3 py-2 cursor-pointer text-xs mx-1 rounded"
+                  style={
+                    if idx == @selected_index,
+                      do: "background: #{item.group.color}15; color: var(--text-primary);",
+                      else: "color: var(--text-primary);"
+                  }
+                  phx-click="select"
+                  phx-value-type="database"
+                  phx-value-id={item.id}
+                  phx-target={@myself}
+                >
+                  <div
+                    class="w-2.5 h-2.5 rounded-full shrink-0"
+                    style={"background: #{item.group.color};"}
+                  >
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="font-medium truncate">{item.name}</div>
+                  </div>
+                  <span
+                    class="text-[10px] px-1.5 py-0.5 rounded shrink-0"
+                    style={"background: #{item.group.color}18; color: #{item.group.color};"}
+                  >
+                    {item.group.name}
+                  </span>
+                  <span
+                    class="text-[10px] font-mono shrink-0"
+                    style="color: var(--text-tertiary);"
+                  >
+                    {if item.type == :postgres, do: "pg", else: "sqlite"}
+                  </span>
+                </div>
+              <% else %>
+                <div
+                  id={"command-palette-item-#{item.id}"}
+                  class="flex items-center gap-2 px-3 py-2 cursor-pointer text-xs mx-1 rounded"
+                  style={
+                    if idx == @selected_index,
+                      do: "background: var(--bg-tertiary); color: var(--text-primary);",
+                      else: "color: var(--text-primary);"
+                  }
+                  phx-click="select"
+                  phx-value-type="action"
+                  phx-value-action={item.action}
+                  phx-target={@myself}
+                >
+                  <i
+                    class={"fas #{item.icon} text-sm shrink-0"}
+                    style="color: var(--text-tertiary);"
+                  >
+                  </i>
+                  <div class="flex-1 min-w-0">
+                    <div class="font-medium truncate">{item.name}</div>
+                  </div>
+                  <span class="text-[10px] shrink-0" style="color: var(--text-tertiary);">
+                    action
+                  </span>
+                </div>
+              <% end %>
+            <% end %>
           <% end %>
         </div>
       </div>
