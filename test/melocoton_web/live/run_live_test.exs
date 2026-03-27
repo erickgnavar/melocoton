@@ -849,4 +849,68 @@ defmodule MelocotonWeb.SQLLive.RunTest do
       assert html =~ "phx-value-table=\"users\""
     end
   end
+
+  describe "read-only mode" do
+    setup %{db_path: db_path} do
+      group = group_fixture(%{name: "Production", color: "#ff0000", read_only: true})
+      database = database_fixture(%{url: db_path, type: :sqlite, group_id: group.id})
+
+      %{ro_database: database}
+    end
+
+    test "blocks INSERT queries", %{conn: conn, ro_database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+
+      html =
+        render_click(live_view, "run-query", %{
+          "query" => "INSERT INTO users (name) VALUES ('eve')"
+        })
+
+      assert html =~ "Read-only mode"
+    end
+
+    test "blocks UPDATE queries", %{conn: conn, ro_database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+
+      html =
+        render_click(live_view, "run-query", %{
+          "query" => "UPDATE users SET name = 'changed' WHERE id = 1"
+        })
+
+      assert html =~ "Read-only mode"
+    end
+
+    test "blocks DELETE queries", %{conn: conn, ro_database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+
+      html =
+        render_click(live_view, "run-query", %{"query" => "DELETE FROM users WHERE id = 1"})
+
+      assert html =~ "Read-only mode"
+    end
+
+    test "blocks DROP queries", %{conn: conn, ro_database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+
+      html = render_click(live_view, "run-query", %{"query" => "DROP TABLE users"})
+
+      assert html =~ "Read-only mode"
+    end
+
+    test "allows SELECT queries", %{conn: conn, ro_database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+
+      html = render_click(live_view, "run-query", %{"query" => "SELECT * FROM users"})
+
+      refute html =~ "Read-only mode"
+      assert html =~ "alice"
+    end
+
+    test "shows read-only badge in toolbar", %{conn: conn, ro_database: database} do
+      {:ok, _live_view, html} = live(conn, ~p"/databases/#{database.id}/run")
+
+      assert html =~ "read-only"
+      assert html =~ "fa-lock"
+    end
+  end
 end

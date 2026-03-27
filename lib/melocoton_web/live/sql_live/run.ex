@@ -178,23 +178,13 @@ defmodule MelocotonWeb.SQLLive.Run do
   @impl Phoenix.LiveView
   def handle_event("run-query", %{"query" => query}, socket) do
     Logger.info("Running query #{query}")
-    normalized = query |> String.trim() |> String.downcase()
 
-    cond do
-      normalized =~ ~r/^begin\b/ ->
-        handle_begin(socket)
-
-      normalized =~ ~r/^commit\b/ and socket.assigns.running_transaction? ->
-        handle_commit(socket)
-
-      normalized =~ ~r/^rollback\b/ and socket.assigns.running_transaction? ->
-        handle_rollback(socket)
-
-      socket.assigns.running_transaction? ->
-        handle_transaction_query(socket, query)
-
-      true ->
-        handle_regular_query(socket, query)
+    if socket.assigns.database.group.read_only and write_query?(query) do
+      socket
+      |> assign(:error_message, "Read-only mode: write operations are blocked for this group.")
+      |> noreply()
+    else
+      dispatch_query(socket, query)
     end
   end
 
@@ -286,6 +276,27 @@ defmodule MelocotonWeb.SQLLive.Run do
     socket
     |> push_event("load-schema", %{schema: schema_for_editor, type: socket.assigns.database.type})
     |> noreply()
+  end
+
+  defp dispatch_query(socket, query) do
+    normalized = query |> String.trim() |> String.downcase()
+
+    cond do
+      normalized =~ ~r/^begin\b/ ->
+        handle_begin(socket)
+
+      normalized =~ ~r/^commit\b/ and socket.assigns.running_transaction? ->
+        handle_commit(socket)
+
+      normalized =~ ~r/^rollback\b/ and socket.assigns.running_transaction? ->
+        handle_rollback(socket)
+
+      socket.assigns.running_transaction? ->
+        handle_transaction_query(socket, query)
+
+      true ->
+        handle_regular_query(socket, query)
+    end
   end
 
   defp handle_begin(socket) do
@@ -386,5 +397,10 @@ defmodule MelocotonWeb.SQLLive.Run do
       {:ok, indexes} -> {:ok, %{indexes: indexes}}
       {:error, error} -> {:error, error}
     end
+  end
+
+  defp write_query?(query) do
+    normalized = query |> String.trim() |> String.downcase()
+    Regex.match?(~r/^(insert|update|delete|drop|alter|create|truncate|replace)\b/, normalized)
   end
 end

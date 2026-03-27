@@ -16,6 +16,7 @@ defmodule MelocotonWeb.GroupLive.FormComponent do
       >
         <.input field={@form[:name]} type="text" label="Name" />
         <.input field={@form[:color]} type="color" label="Color" style="height: 100px" />
+        <.input field={@form[:read_only]} type="checkbox" label="Read-only" />
 
         <div class="mt-4 p-3 border border-app-border-light dark:border-app-border-dark rounded bg-app-sidebar-light dark:bg-app-sidebar-dark dark-transition">
           <div class="text-xs font-medium mb-1">Preview:</div>

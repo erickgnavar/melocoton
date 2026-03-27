@@ -222,6 +222,14 @@
           </div>
         </div>
 
+        <span
+          :if={@database.group.read_only}
+          class="px-1.5 py-0.5 text-[10px] rounded font-medium mr-2 flex items-center"
+          style="background: var(--bg-tertiary); color: var(--text-tertiary);"
+        >
+          <i class="fas fa-lock mr-1 text-[8px]"></i> read-only
+        </span>
+
         <%!-- File actions group --%>
         <div class="flex items-center gap-0.5 mr-2">
           <button
