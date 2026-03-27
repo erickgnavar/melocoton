@@ -22,7 +22,7 @@
           phx-click={JS.patch(~p"/databases")}
           title="Back to connections"
         >
-          <i class="fas fa-house text-base"></i>
+          <i class="fas fa-house text-sm"></i>
         </button>
         <div
           class="w-2 h-2 rounded-full flex-shrink-0"
@@ -36,7 +36,7 @@
           phx-click="reload-objects"
           title="Reload"
         >
-          <i class="fas fa-sync-alt text-base"></i>
+          <i class="fas fa-sync-alt text-sm"></i>
         </button>
       </div>
 
@@ -178,18 +178,21 @@
         class="p-2 text-[10px]"
         style="border-top: 1px solid var(--border-medium); color: var(--text-tertiary);"
       >
-        <div class="flex items-center">
-          <div
-            class="w-1.5 h-1.5 rounded-full mr-1.5"
-            style={"background: #{@database.group.color};"}
-          >
-          </div>
-          <span>
-            Connected to
-            <span class="uppercase font-medium" style={"color: #{@database.group.color};"}>
-              {@database.group.name}
+        <div class="flex items-center justify-between">
+          <div class="flex items-center">
+            <div
+              class="w-1.5 h-1.5 rounded-full mr-1.5"
+              style={"background: #{@database.group.color};"}
+            >
+            </div>
+            <span>
+              Connected to
+              <span class="uppercase font-medium" style={"color: #{@database.group.color};"}>
+                {@database.group.name}
+              </span>
             </span>
-          </span>
+          </div>
+          <span class="kbd-chip">&#8984;K</span>
         </div>
       </div>
     </aside>
@@ -219,29 +222,33 @@
           </div>
         </div>
 
-        <div class="flex-1"></div>
-
-        <button
-          class="px-2 py-1 text-xs rounded flex items-center mr-2"
-          style="background: var(--bg-tertiary); color: var(--text-secondary);"
-        >
-          <i class="fas fa-save mr-1.5"></i> Save
-        </button>
-        <a
-          :if={@result.rows != []}
-          class="px-2 py-1 text-xs rounded flex items-center mr-2"
-          style="background: var(--bg-tertiary); color: var(--text-secondary);"
-          href={~p"/export-csv/#{inspect(@pid)}"}
-          target="blank"
-        >
-          <i class="fas fa-file-export mr-1.5"></i> Export
-        </a>
-        <button
-          class="px-2 py-1 text-xs rounded flex items-center mr-2"
-          style="background: var(--bg-tertiary); color: var(--text-secondary);"
-        >
-          <i class="fas fa-history mr-1.5"></i> History
-        </button>
+        <%!-- File actions group --%>
+        <div class="flex items-center gap-0.5 mr-2">
+          <button
+            class="p-1.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
+            style="color: var(--text-tertiary);"
+            title="Save"
+          >
+            <i class="fas fa-save text-sm"></i>
+          </button>
+          <a
+            :if={@result.rows != []}
+            class="p-1.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
+            style="color: var(--text-tertiary);"
+            href={~p"/export-csv/#{inspect(@pid)}"}
+            target="blank"
+            title="Export CSV"
+          >
+            <i class="fas fa-file-export text-sm"></i>
+          </a>
+          <button
+            class="p-1.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
+            style="color: var(--text-tertiary);"
+            title="History"
+          >
+            <i class="fas fa-history text-sm"></i>
+          </button>
+        </div>
 
         <button
           :if={@running_transaction?}
@@ -249,6 +256,8 @@
         >
           <i class="fas fa-exchange-alt mr-1.5"></i> Transaction Active
         </button>
+
+        <div class="flex-1"></div>
 
         <%!-- Run button with inline shortcut --%>
         <button
@@ -269,34 +278,37 @@
 
         <div class="w-px h-5 mx-2" style="background: var(--border-medium);"></div>
 
-        <button
-          class="p-1.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
-          style="color: var(--text-tertiary);"
-          phx-click={show_modal("settings-modal")}
-          title="Settings"
-        >
-          <i class="fas fa-cog text-base"></i>
-        </button>
-        <button
-          class="p-1.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
-          style={
-            if @ai_panel_open,
-              do: "color: #{@database.group.color};",
-              else: "color: var(--text-tertiary);"
-          }
-          phx-click="toggle-ai-panel"
-          title="AI Assistant"
-        >
-          <i class="fas fa-robot text-base"></i>
-        </button>
-        <button
-          id="theme-toggle"
-          class="p-1.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
-          style="color: var(--text-tertiary);"
-          title="Toggle theme"
-        >
-          <i class="fas fa-circle-half-stroke text-base"></i>
-        </button>
+        <%!-- Utility toggles group --%>
+        <div class="flex items-center gap-0.5">
+          <button
+            class="p-1.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
+            style="color: var(--text-tertiary);"
+            phx-click={show_modal("settings-modal")}
+            title="Settings"
+          >
+            <i class="fas fa-cog text-sm"></i>
+          </button>
+          <button
+            class="p-1.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
+            style={
+              if @ai_panel_open,
+                do: "color: #{@database.group.color};",
+                else: "color: var(--text-tertiary);"
+            }
+            phx-click="toggle-ai-panel"
+            title="AI Assistant"
+          >
+            <i class="fas fa-robot text-sm"></i>
+          </button>
+          <button
+            id="theme-toggle"
+            class="p-1.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
+            style="color: var(--text-tertiary);"
+            title="Toggle theme"
+          >
+            <i class="fas fa-circle-half-stroke text-sm"></i>
+          </button>
+        </div>
       </div>
 
       <%!-- Tab bar with env dots --%>
@@ -491,11 +503,13 @@
             class="flex-1 flex items-center justify-center"
             style="color: var(--text-tertiary);"
           >
-            <div class="text-center text-xs">
-              <p>Run a query to see results</p>
-              <p class="mt-1">
-                <span class="kbd-chip">&#8984;&#8629;</span>
-              </p>
+            <div class="text-center text-xs space-y-2">
+              <i class="fas fa-terminal text-lg" style="opacity: 0.3;"></i>
+              <p>Write a query above or select a table from the sidebar</p>
+              <div class="flex items-center justify-center gap-4 text-[10px]">
+                <span><span class="kbd-chip">&#8984;&#8629;</span> run query</span>
+                <span><span class="kbd-chip">&#8984;K</span> jump to database</span>
+              </div>
             </div>
           </div>
 

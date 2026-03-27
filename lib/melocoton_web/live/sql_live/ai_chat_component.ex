@@ -88,6 +88,11 @@ defmodule MelocotonWeb.SqlLive.AiChatComponent do
   end
 
   @impl true
+  def handle_event("send-suggestion", %{"message" => message}, socket) do
+    handle_event("send-message", %{"message" => message}, socket)
+  end
+
+  @impl true
   def handle_event("close-panel", _params, socket) do
     notify_parent(:close_ai_panel)
     noreply(socket)

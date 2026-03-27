@@ -19,7 +19,7 @@
         style="color: var(--text-tertiary);"
         title="Clear chat history"
       >
-        <i class="fas fa-trash text-base"></i>
+        <i class="fas fa-trash text-sm"></i>
       </button>
       <button
         phx-click="close-panel"
@@ -28,7 +28,7 @@
         style="color: var(--text-tertiary);"
         title="Close panel"
       >
-        <i class="fas fa-times text-base"></i>
+        <i class="fas fa-times text-sm"></i>
       </button>
     </div>
   </div>
@@ -46,9 +46,28 @@
       >
         <i class="fas fa-comments text-2xl mb-3" style={"color: #{@database.group.color}33;"}></i>
         <p class="text-[11px] font-medium mb-1">Ask me about your database</p>
-        <p class="text-[10px]">
+        <p class="text-[10px] mb-3">
           I know the schema and can help you build queries.
         </p>
+        <div class="flex flex-col gap-1.5 w-full px-2">
+          <button
+            :for={
+              prompt <- [
+                "Show all tables and their row counts",
+                "Find duplicate rows",
+                "Show the largest tables by size"
+              ]
+            }
+            class="text-[10px] text-left px-2.5 py-1.5 rounded cursor-pointer"
+            style="background: var(--bg-tertiary); color: var(--text-secondary); border: 0.5px solid var(--border-subtle);"
+            phx-click="send-suggestion"
+            phx-value-message={prompt}
+            phx-target={@myself}
+          >
+            <i class="fas fa-arrow-right mr-1" style={"color: #{@database.group.color};"}></i>
+            {prompt}
+          </button>
+        </div>
       </div>
     <% else %>
       <div :for={msg <- @messages} class="flex flex-col gap-1">
@@ -93,6 +112,19 @@
                           style="background: var(--bg-secondary); color: var(--text-secondary);"
                         >
                           <i class="fas fa-play mr-0.5"></i> Run
+                        </button>
+                        <button
+                          phx-click={
+                            JS.dispatch("phx:copy",
+                              detail: %{text: sql},
+                              to: "#ai-chat-messages"
+                            )
+                          }
+                          class="px-1.5 py-0.5 rounded text-[10px]"
+                          style="background: var(--bg-secondary); color: var(--text-secondary);"
+                          title="Copy to clipboard"
+                        >
+                          <i class="fas fa-copy mr-0.5"></i> Copy
                         </button>
                       </div>
                     </div>
@@ -153,7 +185,7 @@
       class="px-2 py-1.5 rounded text-xs font-medium"
       style={"background: #{@database.group.color}; color: white;"}
     >
-      <i class="fas fa-paper-plane text-base"></i>
+      <i class="fas fa-paper-plane text-sm"></i>
     </button>
   </form>
 </div>

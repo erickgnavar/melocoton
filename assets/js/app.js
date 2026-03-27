@@ -251,6 +251,13 @@ window.addEventListener("phx:load-schema", ({ detail: { schema, type } }) => {
   });
 });
 
+// Copy to clipboard handler
+window.addEventListener("phx:copy", (event) => {
+  if (event.detail?.text) {
+    navigator.clipboard.writeText(event.detail.text);
+  }
+});
+
 // Show progress bar on live navigation and form submits
 topbar.config({ barColors: { 0: "#29d" }, shadowColor: "rgba(0, 0, 0, .3)" });
 window.addEventListener("phx:page-loading-start", (_info) => topbar.show(300));
