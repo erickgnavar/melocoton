@@ -40,7 +40,7 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> assign(:transaction_session, nil)
     |> assign(:table_explorer, nil)
     |> assign(:query_time, 0)
-    |> assign(:ai_panel_open, false)
+    |> assign(:ai_panel_open, project_setting(database.id, "ai_panel_open") == "true")
     |> ok()
   end
 
@@ -156,8 +156,11 @@ defmodule MelocotonWeb.SQLLive.Run do
 
   @impl true
   def handle_event("toggle-ai-panel", _params, socket) do
+    open = !socket.assigns.ai_panel_open
+    save_project_setting(socket.assigns.database.id, "ai_panel_open", to_string(open))
+
     socket
-    |> assign(:ai_panel_open, !socket.assigns.ai_panel_open)
+    |> assign(:ai_panel_open, open)
     |> noreply()
   end
 
@@ -184,6 +187,8 @@ defmodule MelocotonWeb.SQLLive.Run do
 
   @impl true
   def handle_info({MelocotonWeb.SqlLive.AiChatComponent, :close_ai_panel}, socket) do
+    save_project_setting(socket.assigns.database.id, "ai_panel_open", "false")
+
     socket
     |> assign(:ai_panel_open, false)
     |> noreply()
@@ -364,5 +369,13 @@ defmodule MelocotonWeb.SQLLive.Run do
     session = Enum.at(sessions, new_index)
 
     socket |> load_session(session) |> noreply()
+  end
+
+  defp project_setting(database_id, key) do
+    Melocoton.Settings.get("project:#{database_id}:#{key}")
+  end
+
+  defp save_project_setting(database_id, key, value) do
+    Melocoton.Settings.set("project:#{database_id}:#{key}", value)
   end
 end
