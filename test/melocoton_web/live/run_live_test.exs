@@ -913,4 +913,115 @@ defmodule MelocotonWeb.SQLLive.RunTest do
       assert html =~ "fa-lock"
     end
   end
+
+  describe "add row" do
+    test "shows modal when add row is clicked", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "users")
+
+      html =
+        live_view
+        |> element("[phx-click='add-row']")
+        |> render_click()
+
+      assert html =~ "Insert Row"
+      assert html =~ "Add row to users"
+    end
+
+    test "shows all columns as form fields", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "users")
+
+      html =
+        live_view
+        |> element("[phx-click='add-row']")
+        |> render_click()
+
+      assert html =~ "name"
+      assert html =~ "id"
+    end
+
+    test "marks primary key columns", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "users")
+
+      html =
+        live_view
+        |> element("[phx-click='add-row']")
+        |> render_click()
+
+      assert html =~ "PK"
+    end
+
+    test "cancels add row via button", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "users")
+
+      live_view |> element("[phx-click='add-row']") |> render_click()
+
+      html =
+        live_view
+        |> element("button[phx-click='cancel-add-row']")
+        |> render_click()
+
+      refute html =~ "Insert Row"
+    end
+
+    test "inserts a new row with values", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "users")
+
+      live_view |> element("[phx-click='add-row']") |> render_click()
+
+      live_view
+      |> element("form[phx-submit='save-new-row']")
+      |> render_submit(%{"name" => "charlie"})
+
+      html = flush_async(live_view)
+      refute html =~ "Insert Row"
+      assert html =~ "charlie"
+    end
+
+    test "inserts a row with defaults", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "with_defaults")
+
+      live_view |> element("[phx-click='add-row']") |> render_click()
+
+      live_view
+      |> element("form[phx-submit='save-new-row']")
+      |> render_submit(%{})
+
+      html = flush_async(live_view)
+      refute html =~ "Insert Row"
+      assert html =~ "active"
+    end
+
+    test "shows error and preserves values on failure", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "strict_table")
+
+      live_view |> element("[phx-click='add-row']") |> render_click()
+
+      # Submit without required_field (NOT NULL constraint)
+      live_view
+      |> element("form[phx-submit='save-new-row']")
+      |> render_submit(%{"optional_field" => "test_value"})
+
+      html = render(live_view)
+      # Modal should stay open with error
+      assert html =~ "Insert Row"
+      assert html =~ "NOT NULL"
+      # Entered value should be preserved
+      assert html =~ "test_value"
+    end
+
+    test "add row button is disabled when table has no PK", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "no_pk")
+
+      html = render(live_view)
+      assert html =~ "Editing disabled"
+    end
+  end
 end

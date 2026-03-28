@@ -172,6 +172,13 @@ defmodule MelocotonWeb.SQLLive.Run do
   end
 
   @impl true
+  def handle_info({MelocotonWeb.SqlLive.TableExplorerComponent, {:flash, kind, msg}}, socket) do
+    socket
+    |> put_flash(kind, msg)
+    |> noreply()
+  end
+
+  @impl true
   def handle_info({MelocotonWeb.SqlLive.AiChatComponent, {:insert_sql, sql}}, socket) do
     socket
     |> push_event("load-query", %{query: sql})

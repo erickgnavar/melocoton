@@ -21,7 +21,13 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
     |> assign(pk_columns: pk_columns)
     |> assign(column_types: column_types)
     |> assign(visible_columns: MapSet.new(columns), columns_dropdown_open: false)
-    |> assign(editing_cell: nil, pending_changes: %{}, apply_error: nil)
+    |> assign(
+      editing_cell: nil,
+      pending_changes: %{},
+      apply_error: nil,
+      adding_row: nil,
+      add_row_error: nil
+    )
     |> assign(:limit_form, to_form(%{"limit" => @initial_limit}))
     |> load_data()
     |> ok()
@@ -143,6 +149,47 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
     socket
     |> assign(visible_columns: visible)
     |> noreply()
+  end
+
+  @impl true
+  def handle_event("add-row", _params, socket) do
+    socket
+    |> assign(adding_row: %{}, editing_cell: nil)
+    |> noreply()
+  end
+
+  @impl true
+  def handle_event("cancel-add-row", _params, socket) do
+    socket
+    |> assign(adding_row: nil, add_row_error: nil)
+    |> noreply()
+  end
+
+  @impl true
+  def handle_event("save-new-row", params, socket) do
+    %{repo: repo, table_name: table_name, columns: columns} = socket.assigns
+
+    values = Map.take(params, columns)
+
+    {insert_cols, insert_vals} =
+      values
+      |> Enum.filter(fn {_col, val} -> val != "" end)
+      |> Enum.unzip()
+
+    case execute_insert(repo, table_name, insert_cols, insert_vals) do
+      :ok ->
+        notify_parent({:flash, :info, "Row inserted successfully"})
+
+        socket
+        |> assign(adding_row: nil, add_row_error: nil)
+        |> load_data()
+        |> noreply()
+
+      {:error, error} ->
+        socket
+        |> assign(adding_row: values, add_row_error: error)
+        |> noreply()
+    end
   end
 
   @impl true
@@ -324,6 +371,26 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
       end
 
     sql = "UPDATE #{quote_identifier(table_name)} SET #{set_clause} WHERE #{pk_where}"
+
+    case DatabaseClient.query(repo, sql) do
+      {:ok, _result, _meta} -> :ok
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  defp execute_insert(repo, table_name, [], []) do
+    sql = "INSERT INTO #{quote_identifier(table_name)} DEFAULT VALUES"
+
+    case DatabaseClient.query(repo, sql) do
+      {:ok, _result, _meta} -> :ok
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  defp execute_insert(repo, table_name, columns, values) do
+    cols_sql = Enum.map_join(columns, ", ", &quote_identifier/1)
+    vals_sql = Enum.map_join(values, ", ", fn val -> "'#{escape_value(val)}'" end)
+    sql = "INSERT INTO #{quote_identifier(table_name)} (#{cols_sql}) VALUES (#{vals_sql})"
 
     case DatabaseClient.query(repo, sql) do
       {:ok, _result, _meta} -> :ok
