@@ -26,7 +26,8 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
       pending_changes: %{},
       apply_error: nil,
       adding_row: nil,
-      add_row_error: nil
+      add_row_error: nil,
+      add_row_sql_fields: MapSet.new()
     )
     |> assign(:limit_form, to_form(%{"limit" => @initial_limit}))
     |> load_data()
@@ -154,34 +155,58 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
   @impl true
   def handle_event("add-row", _params, socket) do
     socket
-    |> assign(adding_row: %{}, editing_cell: nil)
+    |> assign(adding_row: %{}, editing_cell: nil, add_row_sql_fields: MapSet.new())
     |> noreply()
   end
 
   @impl true
   def handle_event("cancel-add-row", _params, socket) do
     socket
-    |> assign(adding_row: nil, add_row_error: nil)
+    |> assign(adding_row: nil, add_row_error: nil, add_row_sql_fields: MapSet.new())
+    |> noreply()
+  end
+
+  @impl true
+  def handle_event("update-new-row", params, socket) do
+    values = Map.take(params, socket.assigns.columns)
+
+    socket
+    |> assign(adding_row: values)
+    |> noreply()
+  end
+
+  @impl true
+  def handle_event("toggle-sql-field", %{"column" => col}, socket) do
+    sql_fields = socket.assigns.add_row_sql_fields
+
+    sql_fields =
+      if MapSet.member?(sql_fields, col),
+        do: MapSet.delete(sql_fields, col),
+        else: MapSet.put(sql_fields, col)
+
+    socket
+    |> assign(add_row_sql_fields: sql_fields)
     |> noreply()
   end
 
   @impl true
   def handle_event("save-new-row", params, socket) do
-    %{repo: repo, table_name: table_name, columns: columns} = socket.assigns
+    %{repo: repo, table_name: table_name, columns: columns, add_row_sql_fields: sql_fields} =
+      socket.assigns
 
     values = Map.take(params, columns)
 
-    {insert_cols, insert_vals} =
+    fields =
       values
       |> Enum.filter(fn {_col, val} -> val != "" end)
-      |> Enum.unzip()
+      |> Enum.map(fn {col, val} -> {col, val, MapSet.member?(sql_fields, col)} end)
 
-    case execute_insert(repo, table_name, insert_cols, insert_vals) do
+    case execute_insert(repo, table_name, fields) do
       :ok ->
         notify_parent({:flash, :info, "Row inserted successfully"})
 
         socket
-        |> assign(adding_row: nil, add_row_error: nil)
+        |> assign(adding_row: nil, add_row_error: nil, add_row_sql_fields: MapSet.new())
         |> load_data()
         |> noreply()
 
@@ -378,7 +403,7 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
     end
   end
 
-  defp execute_insert(repo, table_name, [], []) do
+  defp execute_insert(repo, table_name, []) do
     sql = "INSERT INTO #{quote_identifier(table_name)} DEFAULT VALUES"
 
     case DatabaseClient.query(repo, sql) do
@@ -387,9 +412,15 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
     end
   end
 
-  defp execute_insert(repo, table_name, columns, values) do
-    cols_sql = Enum.map_join(columns, ", ", &quote_identifier/1)
-    vals_sql = Enum.map_join(values, ", ", fn val -> "'#{escape_value(val)}'" end)
+  defp execute_insert(repo, table_name, fields) do
+    cols_sql = Enum.map_join(fields, ", ", fn {col, _, _} -> quote_identifier(col) end)
+
+    vals_sql =
+      Enum.map_join(fields, ", ", fn
+        {_, val, true} -> val
+        {_, val, false} -> "'#{escape_value(val)}'"
+      end)
+
     sql = "INSERT INTO #{quote_identifier(table_name)} (#{cols_sql}) VALUES (#{vals_sql})"
 
     case DatabaseClient.query(repo, sql) do

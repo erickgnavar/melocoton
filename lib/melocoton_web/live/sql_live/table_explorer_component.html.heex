@@ -1153,10 +1153,15 @@
     max_width="max-w-md"
     on_cancel={JS.push("cancel-add-row", target: @myself)}
   >
-    <form phx-submit="save-new-row" phx-target={@myself} class="p-4 space-y-3">
-      <div :for={col <- @columns} class="flex items-center gap-3">
+    <form
+      phx-submit="save-new-row"
+      phx-change="update-new-row"
+      phx-target={@myself}
+      class="p-4 space-y-3"
+    >
+      <div :for={col <- @columns} class="flex items-center gap-2">
         <label
-          class="w-1/3 text-xs font-medium text-right truncate"
+          class="w-1/3 text-xs font-medium text-right truncate shrink-0"
           style="color: var(--text-secondary);"
         >
           {col}
@@ -1172,10 +1177,33 @@
           type="text"
           name={col}
           value={Map.get(@adding_row, col, "")}
-          placeholder="NULL"
+          placeholder={
+            if MapSet.member?(@add_row_sql_fields, col), do: "e.g. now()", else: "NULL"
+          }
           class="flex-1 px-2.5 py-1.5 text-xs rounded"
-          style="background: var(--bg-secondary); border: 0.5px solid var(--border-medium); color: var(--text-primary);"
+          style={
+            if MapSet.member?(@add_row_sql_fields, col),
+              do:
+                "background: var(--bg-secondary); border: 0.5px solid #{@database.group.color}; color: var(--syntax-keyword); font-family: var(--font-mono, monospace);",
+              else:
+                "background: var(--bg-secondary); border: 0.5px solid var(--border-medium); color: var(--text-primary);"
+          }
         />
+        <button
+          type="button"
+          phx-click="toggle-sql-field"
+          phx-value-column={col}
+          phx-target={@myself}
+          class="shrink-0 px-1 py-1 rounded text-[10px]"
+          style={
+            if MapSet.member?(@add_row_sql_fields, col),
+              do: "color: #{@database.group.color};",
+              else: "color: var(--text-tertiary);"
+          }
+          title="Toggle SQL expression mode"
+        >
+          <i class="fas fa-code"></i>
+        </button>
       </div>
 
       <%= if @add_row_error do %>
