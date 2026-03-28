@@ -17,6 +17,7 @@ defmodule Melocoton.Application do
       # Start to serve requests, typically the last entry
       MelocotonWeb.Endpoint,
       Melocoton.Pool,
+      Melocoton.ExportStore,
       {Task.Supervisor, name: Melocoton.TransactionSession.Supervisor}
     ]
 

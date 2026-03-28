@@ -253,6 +253,16 @@ window.addEventListener("phx:load-schema", ({ detail: { schema, type } }) => {
   });
 });
 
+// Download file without navigating away
+window.addEventListener("phx:open-url", (event) => {
+  const a = document.createElement("a");
+  a.href = event.detail.url;
+  a.download = "";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+});
+
 // Copy to clipboard handler
 window.addEventListener("phx:copy", (event) => {
   if (event.detail?.text) {

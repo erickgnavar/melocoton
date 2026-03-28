@@ -300,24 +300,24 @@
               style="background: var(--bg-secondary); border: 1px solid var(--border-medium);"
               phx-click-away={JS.hide(to: "#export-menu")}
             >
-              <a
-                class="flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/5"
+              <button
+                class="flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/5 w-full"
                 style="color: var(--text-primary);"
-                href={~p"/export/csv/#{inspect(@pid)}"}
-                target="blank"
+                phx-click="export"
+                phx-value-format="csv"
               >
                 <i class="fas fa-file-csv text-[10px]" style="color: var(--text-tertiary);"></i>
                 CSV
-              </a>
-              <a
-                class="flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/5"
+              </button>
+              <button
+                class="flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/5 w-full"
                 style="color: var(--text-primary);"
-                href={~p"/export/xlsx/#{inspect(@pid)}"}
-                target="blank"
+                phx-click="export"
+                phx-value-format="xlsx"
               >
                 <i class="fas fa-file-excel text-[10px]" style="color: var(--text-tertiary);"></i>
                 Excel
-              </a>
+              </button>
             </div>
           </div>
           <button class="icon-btn" title="History" aria-label="History">

@@ -35,7 +35,6 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> assign(:result, empty_result())
     |> assign(:error_message, nil)
     |> assign(:page_title, database.name)
-    |> assign(:pid, self())
     |> assign(:running_transaction?, false)
     |> assign(:transaction_session, nil)
     |> assign(:table_explorer, nil)
@@ -152,6 +151,14 @@ defmodule MelocotonWeb.SQLLive.Run do
 
   def handle_event("do-nothing", _params, socket) do
     {:noreply, socket}
+  end
+
+  def handle_event("export", %{"format" => format}, socket) do
+    token = Melocoton.ExportStore.put(socket.assigns.result)
+
+    socket
+    |> push_event("open-url", %{url: ~p"/export/#{format}/#{token}"})
+    |> noreply()
   end
 
   @impl true

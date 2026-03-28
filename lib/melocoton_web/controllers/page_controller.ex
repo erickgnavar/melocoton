@@ -7,9 +7,19 @@ defmodule MelocotonWeb.PageController do
     redirect(conn, to: ~p"/databases")
   end
 
-  def export(conn, %{"pid" => pid_str, "format" => "csv"}) do
-    %{rows: rows, cols: cols} = get_result(pid_str)
+  def export(conn, %{"token" => token, "format" => format}) when format in ["csv", "xlsx"] do
+    case Melocoton.ExportStore.pop(token) do
+      nil ->
+        conn
+        |> put_status(:not_found)
+        |> text("Export not found")
 
+      result ->
+        do_export(conn, format, result)
+    end
+  end
+
+  defp do_export(conn, "csv", %{rows: rows, cols: cols}) do
     csv_content =
       rows
       |> CSV.encode(headers: cols)
@@ -19,9 +29,7 @@ defmodule MelocotonWeb.PageController do
     send_download(conn, {:binary, csv_content}, filename: "result.csv")
   end
 
-  def export(conn, %{"pid" => pid_str, "format" => "xlsx"}) do
-    %{rows: rows, cols: cols} = get_result(pid_str)
-
+  defp do_export(conn, "xlsx", %{rows: rows, cols: cols}) do
     data_rows =
       Enum.map(rows, fn row ->
         Enum.map(cols, fn col -> format_cell(Map.get(row, col)) end)
@@ -33,17 +41,6 @@ defmodule MelocotonWeb.PageController do
       Workbook.append_sheet(%Workbook{}, sheet) |> Elixlsx.write_to_memory("result.xlsx")
 
     send_download(conn, {:binary, binary}, filename: "result.xlsx")
-  end
-
-  defp get_result(pid_str) do
-    pid_str
-    |> String.replace("#PID<", "")
-    |> String.replace(">", "")
-    |> IEx.Helpers.pid()
-    |> :sys.get_state()
-    |> Map.get(:socket)
-    |> Map.get(:assigns)
-    |> Map.get(:result)
   end
 
   defp format_cell(nil), do: ""
