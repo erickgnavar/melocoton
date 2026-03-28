@@ -40,7 +40,21 @@ defmodule MelocotonWeb.SettingsModalComponent do
     end
   end
 
+  @impl true
   def handle_event("set-font-size-px", _params, socket), do: noreply(socket)
+
+  @impl true
+  def handle_event("save-settings", params, socket) do
+    Settings.save_api_key_settings(params)
+
+    socket
+    |> assign(
+      saved: true,
+      settings: Settings.get_api_key_settings(),
+      current_model: Application.get_env(:melocoton, :ai)[:model] || ""
+    )
+    |> noreply()
+  end
 
   defp apply_font_size(socket, size) do
     Settings.set("font_size", size)
@@ -60,19 +74,6 @@ defmodule MelocotonWeb.SettingsModalComponent do
       {px, _} -> px
       :error -> 14
     end
-  end
-
-  @impl true
-  def handle_event("save-settings", params, socket) do
-    Settings.save_api_key_settings(params)
-
-    socket
-    |> assign(
-      saved: true,
-      settings: Settings.get_api_key_settings(),
-      current_model: Application.get_env(:melocoton, :ai)[:model] || ""
-    )
-    |> noreply()
   end
 
   defp mask_key(nil), do: ""
