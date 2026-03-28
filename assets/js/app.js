@@ -333,6 +333,28 @@ themeToggle.addEventListener("click", () => {
   applyTheme(next);
 });
 
+// Font size management
+window.addEventListener("phx:set-font-size", (event) => {
+  const size = event.detail.size;
+  const presets = {
+    xs: "11px",
+    sm: "12px",
+    md: "14px",
+    lg: "16px",
+    xl: "18px",
+  };
+
+  if (presets[size]) {
+    document.documentElement.setAttribute("data-font-size", size);
+    document.documentElement.style.removeProperty("--font-size-base");
+  } else {
+    // Custom numeric value
+    document.documentElement.removeAttribute("data-font-size");
+    document.documentElement.style.setProperty("--font-size-base", `${size}px`);
+  }
+  localStorage.setItem("font-size", size);
+});
+
 // this only work when running through Tauri web view
 if (window.__TAURI__) {
   const { invoke } = window.__TAURI__.core;

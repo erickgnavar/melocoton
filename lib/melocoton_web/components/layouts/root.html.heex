@@ -96,7 +96,7 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
     <script>
-      // Apply theme before first paint to avoid flash
+      // Apply theme and font size before first paint to avoid flash
       (function() {
         var theme = localStorage.getItem('theme') || 'system';
         var resolved = theme;
@@ -104,6 +104,14 @@
           resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         }
         document.documentElement.setAttribute('data-theme', resolved);
+
+        var fontSize = localStorage.getItem('font-size') || 'md';
+        var presets = ['xs', 'sm', 'md', 'lg', 'xl'];
+        if (presets.indexOf(fontSize) !== -1) {
+          document.documentElement.setAttribute('data-font-size', fontSize);
+        } else {
+          document.documentElement.style.setProperty('--font-size-base', fontSize + 'px');
+        }
       })();
     </script>
   </head>

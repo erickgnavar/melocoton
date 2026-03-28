@@ -100,7 +100,15 @@
   --env-dev:        #0ea5e9;
   --env-prod:       #7c3aed;
   --env-staging:    #f59e0b;
+  --font-size-base: 14px;
 }
+
+/* ===== Font size presets ===== */
+[data-font-size="xs"]    { --font-size-base: 11px; }
+[data-font-size="sm"]    { --font-size-base: 12px; }
+[data-font-size="md"]    { --font-size-base: 14px; }
+[data-font-size="lg"]    { --font-size-base: 16px; }
+[data-font-size="xl"]    { --font-size-base: 18px; }
 
 /* ===== Base Styles ===== */
 
@@ -157,6 +165,7 @@ body {
   overflow: hidden;
   height: 100%;
   width: 100%;
+  font-size: var(--font-size-base, 14px);
 }
 
 /* Theme transitions */
