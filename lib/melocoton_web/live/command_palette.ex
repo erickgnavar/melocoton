@@ -99,6 +99,9 @@ defmodule MelocotonWeb.CommandPalette do
 
   def handle_event("navigate", _params, socket), do: noreply(socket)
 
+  # Prevent form submission (Enter is handled by navigate keydown)
+  def handle_event("do-nothing", _params, socket), do: noreply(socket)
+
   @impl true
   def handle_event("select-current", _params, socket) do
     select_current(socket)
