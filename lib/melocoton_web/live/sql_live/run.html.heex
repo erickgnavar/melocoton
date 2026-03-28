@@ -7,7 +7,7 @@
 
   <div class="flex-1 flex overflow-hidden">
     <%!-- Sidebar --%>
-    <aside class="w-56 flex flex-col app-sidebar">
+    <aside class="w-64 flex flex-col app-sidebar">
       <%!-- Database name header --%>
       <div class="px-2 py-1.5 flex items-center gap-1 app-section-border">
         <button
@@ -48,99 +48,160 @@
 
       <%!-- Collapsible tree: Tables with inline columns and index counts --%>
       <div class="overflow-y-auto overscroll-none flex-1 p-1">
-        <div class="p-2" style="border-bottom: 1px solid var(--border-medium);">
-          <div class="flex items-center justify-between cursor-pointer" data-toggle="tables">
+        <div class="p-2 app-section-border">
+          <div
+            class="flex items-center justify-between cursor-pointer"
+            phx-click={
+              JS.toggle(to: "#tables-content")
+              |> JS.toggle(to: "#tables-chevron-open")
+              |> JS.toggle(to: "#tables-chevron-closed")
+            }
+          >
             <div
               class="text-[11px] font-medium uppercase tracking-wide"
               style="color: var(--text-secondary);"
             >
               Tables
             </div>
-            <.async_result :let={tables} assign={@tables}>
-              <:loading>
-                <span class="text-[10px]" style="color: var(--text-tertiary);">...</span>
-              </:loading>
-              <:failed :let={_failure}><span class="text-[10px] text-red-500">err</span></:failed>
-              <span class="text-[10px]" style="color: var(--text-tertiary);">
-                {length(tables)}
-              </span>
-            </.async_result>
+            <div class="flex items-center gap-1.5">
+              <.async_result :let={tables} assign={@tables}>
+                <:loading>
+                  <span class="text-[10px]" style="color: var(--text-tertiary);">...</span>
+                </:loading>
+                <:failed :let={_failure}>
+                  <span class="text-[10px] text-red-500">err</span>
+                </:failed>
+                <span class="text-[10px]" style="color: var(--text-tertiary);">
+                  {length(tables)}
+                </span>
+              </.async_result>
+              <i
+                id="tables-chevron-open"
+                class="fas fa-chevron-down text-[8px]"
+                style="color: var(--text-tertiary);"
+              >
+              </i>
+              <i
+                id="tables-chevron-closed"
+                class="fas fa-chevron-right text-[8px] hidden"
+                style="color: var(--text-tertiary);"
+              >
+              </i>
+            </div>
           </div>
 
-          <.async_result :let={tables} assign={@tables}>
-            <:loading></:loading>
-            <:failed :let={failure}>{"#{inspect(failure)}"}</:failed>
-            <div
-              :for={table <- tables}
-              :if={
-                @search_term &&
-                  (String.contains?(table.name, @search_term) ||
-                     Enum.any?(table.cols, &String.contains?(&1.name, @search_term)))
-              }
-              class="mt-1 text-xs"
-            >
-              <div class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded">
-                <i
-                  id={"table-toggle-icon-#{table.name}-closed"}
-                  class="fas fa-chevron-right mr-1 text-[8px]"
-                  style="color: var(--text-tertiary);"
-                  phx-click={
-                    JS.toggle(to: "#table-#{table.name}-columns")
-                    |> JS.toggle(to: "#table-toggle-icon-#{table.name}-open")
-                    |> JS.toggle(to: "#table-toggle-icon-#{table.name}-closed")
-                  }
-                >
-                </i>
-                <i
-                  id={"table-toggle-icon-#{table.name}-open"}
-                  class="fas fa-chevron-down mr-1 text-[8px] hidden"
-                  style="color: var(--text-tertiary);"
-                  phx-click={
-                    JS.toggle(to: "#table-#{table.name}-columns")
-                    |> JS.toggle(to: "#table-toggle-icon-#{table.name}-closed")
-                    |> JS.toggle(to: "#table-toggle-icon-#{table.name}-open")
-                  }
-                >
-                </i>
-                <span
-                  class="flex-1 cursor-pointer"
-                  phx-click="set-table-explorer"
-                  phx-value-table={table.name}
-                >
-                  {table.name}
-                </span>
-              </div>
-
-              <ul
-                class="mt-0.5 hidden"
-                id={"table-#{table.name}-columns"}
-                style="padding-left: 26px;"
+          <div id="tables-content">
+            <.async_result :let={tables} assign={@tables}>
+              <:loading></:loading>
+              <:failed :let={failure}>{"#{inspect(failure)}"}</:failed>
+              <div
+                :for={table <- tables}
+                :if={
+                  @search_term == "" ||
+                    String.contains?(table.name, @search_term) ||
+                    Enum.any?(table.cols, &String.contains?(&1.name, @search_term))
+                }
+                class="mt-1 text-xs"
               >
-                <li
-                  :for={col <- table.cols}
-                  :if={@search_term && String.contains?(col.name, @search_term)}
-                  class="flex items-center justify-between p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded"
-                >
-                  <span>{col.name}</span>
-                  <span class="font-mono text-[9px]" style="color: var(--text-tertiary);">
-                    {col.type}
+                <div class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded group">
+                  <i
+                    id={"table-toggle-icon-#{table.name}-closed"}
+                    class="fas fa-chevron-right mr-1 text-[8px]"
+                    style="color: var(--text-tertiary);"
+                    phx-click={
+                      JS.toggle(to: "#table-#{table.name}-columns")
+                      |> JS.toggle(to: "#table-toggle-icon-#{table.name}-open")
+                      |> JS.toggle(to: "#table-toggle-icon-#{table.name}-closed")
+                    }
+                  >
+                  </i>
+                  <i
+                    id={"table-toggle-icon-#{table.name}-open"}
+                    class="fas fa-chevron-down mr-1 text-[8px] hidden"
+                    style="color: var(--text-tertiary);"
+                    phx-click={
+                      JS.toggle(to: "#table-#{table.name}-columns")
+                      |> JS.toggle(to: "#table-toggle-icon-#{table.name}-closed")
+                      |> JS.toggle(to: "#table-toggle-icon-#{table.name}-open")
+                    }
+                  >
+                  </i>
+                  <i class="fas fa-table mr-1.5 text-[10px]" style="color: var(--text-tertiary);">
+                  </i>
+                  <span
+                    class="flex-1 cursor-pointer"
+                    phx-click="set-table-explorer"
+                    phx-value-table={table.name}
+                  >
+                    {table.name}
                   </span>
-                </li>
-              </ul>
-            </div>
-          </.async_result>
+                  <span class="text-[9px] mr-0.5" style="color: var(--text-tertiary);">
+                    {length(table.cols)}
+                  </span>
+                </div>
+
+                <ul
+                  class="mt-0.5 hidden"
+                  id={"table-#{table.name}-columns"}
+                  style="padding-left: 30px;"
+                >
+                  <li
+                    :for={col <- table.cols}
+                    :if={@search_term == "" || String.contains?(col.name, @search_term)}
+                    class="flex items-center justify-between p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded"
+                  >
+                    <span>{col.name}</span>
+                    <span class="font-mono text-[9px]" style="color: var(--text-tertiary);">
+                      {col.type}
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </.async_result>
+          </div>
         </div>
 
         <%!-- Indexes section --%>
-        <div class="p-2" style="border-bottom: 1px solid var(--border-medium);">
-          <div class="flex items-center justify-between cursor-pointer" data-toggle="indexes">
+        <div class="p-2 app-section-border">
+          <div
+            class="flex items-center justify-between cursor-pointer"
+            phx-click={
+              JS.toggle(to: "#indexes-content")
+              |> JS.toggle(to: "#indexes-chevron-open")
+              |> JS.toggle(to: "#indexes-chevron-closed")
+            }
+          >
             <div
               class="text-[11px] font-medium uppercase tracking-wide"
               style="color: var(--text-secondary);"
             >
               Indexes
             </div>
-            <i class="fas fa-chevron-down text-[8px]" style="color: var(--text-tertiary);"></i>
+            <div class="flex items-center gap-1.5">
+              <.async_result :let={indexes} assign={@indexes}>
+                <:loading>
+                  <span class="text-[10px]" style="color: var(--text-tertiary);">...</span>
+                </:loading>
+                <:failed :let={_failure}>
+                  <span class="text-[10px] text-red-500">err</span>
+                </:failed>
+                <span class="text-[10px]" style="color: var(--text-tertiary);">
+                  {length(indexes)}
+                </span>
+              </.async_result>
+              <i
+                id="indexes-chevron-open"
+                class="fas fa-chevron-down text-[8px]"
+                style="color: var(--text-tertiary);"
+              >
+              </i>
+              <i
+                id="indexes-chevron-closed"
+                class="fas fa-chevron-right text-[8px] hidden"
+                style="color: var(--text-tertiary);"
+              >
+              </i>
+            </div>
           </div>
           <div id="indexes-content" class="mt-1 text-xs">
             <.async_result :let={indexes} assign={@indexes}>
@@ -148,7 +209,7 @@
               <:failed :let={failure}>{"#{inspect(failure)}"}</:failed>
               <div
                 :for={index <- indexes}
-                :if={@search_term && String.contains?(index.name, @search_term)}
+                :if={@search_term == "" || String.contains?(index.name, @search_term)}
                 class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded"
               >
                 <i class="fas fa-key mr-1.5 text-amber-500 text-[10px]"></i>
