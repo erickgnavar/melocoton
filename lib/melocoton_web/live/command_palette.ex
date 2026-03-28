@@ -4,6 +4,7 @@ defmodule MelocotonWeb.CommandPalette do
   alias Melocoton.Databases
 
   @actions [
+    %{id: :home, name: "Home", icon: "fa-house", action: "navigate-home"},
     %{id: :settings, name: "Settings", icon: "fa-cog", action: "open-settings"}
   ]
 
@@ -120,6 +121,13 @@ defmodule MelocotonWeb.CommandPalette do
     socket
     |> assign(open: false)
     |> push_navigate(to: ~p"/databases/#{id}/run")
+    |> noreply()
+  end
+
+  defp execute_action(socket, "navigate-home") do
+    socket
+    |> assign(open: false)
+    |> push_navigate(to: ~p"/databases")
     |> noreply()
   end
 
