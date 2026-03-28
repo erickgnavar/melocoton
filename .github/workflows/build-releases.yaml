@@ -83,6 +83,11 @@ jobs:
     runs-on: ubuntu-24.04
     needs: [build-macos, build-linux]
     steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
       - name: Download macos artifact
         uses: actions/download-artifact@v8
         with:
@@ -95,11 +100,30 @@ jobs:
           name: linux-installers
           path: linux/
 
+      - name: Generate release body
+        id: changelog
+        run: |
+          PREVIOUS_TAG=$(git tag --sort=-creatordate | sed -n '2p')
+          if [ -z "$PREVIOUS_TAG" ]; then
+            COMMITS=$(git log --pretty=format:"- %s (%h)" HEAD)
+          else
+            COMMITS=$(git log --pretty=format:"- %s (%h)" "$PREVIOUS_TAG"..HEAD)
+          fi
+          {
+            echo "body<<EOF"
+            echo "## What's Changed"
+            echo ""
+            echo "$COMMITS"
+            echo ""
+            echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/$PREVIOUS_TAG...${{ github.ref_name }}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Publish artifacts as release assets
         uses: softprops/action-gh-release@v2
         with:
-          body: ""
-          tag_name: ${{ env.GITHUB_REF_NAME }}
+          body: ${{ steps.changelog.outputs.body }}
+          tag_name: ${{ github.ref_name }}
           files: |
             macos/melocoton.dmg
             linux/melocoton.deb
