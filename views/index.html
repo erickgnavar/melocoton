@@ -38,6 +38,12 @@
       </div>
     </div>
 
-    <div class="footer">v0.5.0</div>
+    <div class="footer" id="version"></div>
+    <script type="module">
+      if (window.__TAURI__) {
+        const { getVersion } = window.__TAURI__.app;
+        getVersion().then(v => { document.getElementById('version').textContent = 'v' + v; });
+      }
+    </script>
   </body>
 </html>
