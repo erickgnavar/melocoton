@@ -35,7 +35,14 @@ defmodule MelocotonWeb.CommandPaletteHook do
     result = socket.assigns[:result]
 
     if result && result.rows != [] do
-      token = Melocoton.ExportStore.put(result)
+      database_name = (socket.assigns[:database] && socket.assigns.database.name) || "export"
+
+      token =
+        Melocoton.ExportStore.put(%{
+          result: result,
+          database_name: database_name
+        })
+
       {:halt, push_event(socket, "open-url", %{url: ~p"/export/#{format}/#{token}"})}
     else
       {:halt, put_flash(socket, :error, "No results to export. Run a query first.")}

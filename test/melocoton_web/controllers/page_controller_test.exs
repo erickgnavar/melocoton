@@ -3,13 +3,16 @@ defmodule MelocotonWeb.PageControllerTest do
 
   alias Melocoton.ExportStore
 
-  @result %{
-    cols: ["id", "name"],
-    rows: [
-      %{"id" => 1, "name" => "alice"},
-      %{"id" => 2, "name" => "bob"}
-    ],
-    num_rows: 2
+  @export_data %{
+    result: %{
+      cols: ["id", "name"],
+      rows: [
+        %{"id" => 1, "name" => "alice"},
+        %{"id" => 2, "name" => "bob"}
+      ],
+      num_rows: 2
+    },
+    database_name: "my_database"
   }
 
   test "GET /", %{conn: conn} do
@@ -19,7 +22,7 @@ defmodule MelocotonWeb.PageControllerTest do
 
   describe "export CSV" do
     test "downloads CSV file", %{conn: conn} do
-      token = ExportStore.put(@result)
+      token = ExportStore.put(@export_data)
       conn = get(conn, ~p"/export/csv/#{token}")
 
       assert response_content_type(conn, :csv) =~ "text/csv"
@@ -30,7 +33,7 @@ defmodule MelocotonWeb.PageControllerTest do
     end
 
     test "token is single-use", %{conn: conn} do
-      token = ExportStore.put(@result)
+      token = ExportStore.put(@export_data)
 
       conn1 = get(conn, ~p"/export/csv/#{token}")
       assert response(conn1, 200) =~ "alice"
@@ -42,11 +45,12 @@ defmodule MelocotonWeb.PageControllerTest do
 
   describe "export Excel" do
     test "downloads XLSX file", %{conn: conn} do
-      token = ExportStore.put(@result)
+      token = ExportStore.put(@export_data)
       conn = get(conn, ~p"/export/xlsx/#{token}")
 
       assert response(conn, 200)
-      assert get_resp_header(conn, "content-disposition") |> hd() =~ "result.xlsx"
+      assert get_resp_header(conn, "content-disposition") |> hd() =~ "my_database_"
+      assert get_resp_header(conn, "content-disposition") |> hd() =~ ".xlsx"
     end
   end
 

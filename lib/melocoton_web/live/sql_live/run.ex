@@ -154,7 +154,11 @@ defmodule MelocotonWeb.SQLLive.Run do
   end
 
   def handle_event("export", %{"format" => format}, socket) do
-    token = Melocoton.ExportStore.put(socket.assigns.result)
+    token =
+      Melocoton.ExportStore.put(%{
+        result: socket.assigns.result,
+        database_name: socket.assigns.database.name
+      })
 
     socket
     |> push_event("open-url", %{url: ~p"/export/#{format}/#{token}"})
