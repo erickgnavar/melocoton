@@ -450,3 +450,75 @@ tr.row-selected {
 .transaction-pulse {
   animation: pulse-transaction 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
+
+/* ===== AI Chat — Markdown rendering ===== */
+.ai-markdown {
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.ai-markdown p {
+  margin: 0.25rem 0;
+}
+
+.ai-markdown p:first-child {
+  margin-top: 0;
+}
+
+.ai-markdown p:last-child {
+  margin-bottom: 0;
+}
+
+.ai-markdown strong {
+  font-weight: 600;
+}
+
+.ai-markdown em {
+  font-style: italic;
+}
+
+.ai-markdown code {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.65rem;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: var(--bg-primary);
+  border: 0.5px solid var(--border-subtle);
+}
+
+.ai-markdown ul, .ai-markdown ol {
+  padding-left: 1.25rem;
+  margin: 0.25rem 0;
+}
+
+.ai-markdown li {
+  margin: 0.125rem 0;
+}
+
+.ai-markdown li::marker {
+  color: var(--text-tertiary);
+}
+
+.ai-markdown h1, .ai-markdown h2, .ai-markdown h3 {
+  font-weight: 600;
+  margin: 0.5rem 0 0.25rem;
+}
+
+.ai-markdown h1 { font-size: 0.875rem; }
+.ai-markdown h2 { font-size: 0.8125rem; }
+.ai-markdown h3 { font-size: 0.75rem; }
+
+.ai-markdown blockquote {
+  border-left: 2px solid var(--border-medium);
+  padding-left: 0.5rem;
+  margin: 0.25rem 0;
+  color: var(--text-secondary);
+}
+
+.ai-markdown a {
+  color: var(--focus-color);
+  text-decoration: underline;
+}
+
+/* Reset browser default pre margin inside AI chat SQL blocks */
+.ai-sql-block pre { margin: 0; }

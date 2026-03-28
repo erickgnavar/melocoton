@@ -128,9 +128,22 @@ defmodule MelocotonWeb.SqlLive.AiChatComponent do
     Enum.map(parts, fn part ->
       case Regex.run(~r/```sql\n?(.*?)```/s, part) do
         [_, sql] -> {:sql, String.trim(sql)}
-        nil -> {:text, part}
+        nil -> {:markdown, render_markdown(part)}
       end
     end)
+  end
+
+  defp render_markdown(text) do
+    text
+    |> String.trim()
+    |> MDEx.to_html!()
+    |> Phoenix.HTML.raw()
+  end
+
+  defp render_sql_highlighted(sql) do
+    "```sql\n#{sql}\n```"
+    |> MDEx.to_html!()
+    |> Phoenix.HTML.raw()
   end
 
   defp notify_parent(msg), do: send(self(), {__MODULE__, msg})

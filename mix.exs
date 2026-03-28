@@ -80,7 +80,8 @@ defmodule Melocoton.MixProject do
       {:elixlsx, "~> 0.6"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false},
-      {:req_llm, "~> 1.8"}
+      {:req_llm, "~> 1.8"},
+      {:mdex, "~> 0.2"}
     ]
   end
 

@@ -90,10 +90,9 @@
                 <%= case part do %>
                   <% {:sql, sql} -> %>
                     <div class="my-1.5">
-                      <pre
-                        class="p-2 rounded text-[10px] overflow-x-auto"
-                        style="background: var(--bg-primary); border: 0.5px solid var(--border-medium); color: var(--text-primary);"
-                      >{sql}</pre>
+                      <div class="ai-sql-block rounded text-[10px] overflow-hidden">
+                        {render_sql_highlighted(sql)}
+                      </div>
                       <div class="flex gap-1 mt-1">
                         <button
                           phx-click="insert-sql"
@@ -128,8 +127,8 @@
                         </button>
                       </div>
                     </div>
-                  <% {:text, text} -> %>
-                    {text}
+                  <% {:markdown, html} -> %>
+                    <div class="ai-markdown">{html}</div>
                 <% end %>
               </span>
             </div>
