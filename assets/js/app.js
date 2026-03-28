@@ -236,6 +236,11 @@ window.addEventListener("phx:load-query", ({ detail }) => {
   view.dispatch(newState);
 });
 
+// Refocus the SQL editor (e.g. after closing command palette)
+window.addEventListener("phx:refocus-editor", () => {
+  if (typeof view !== "undefined") view.focus();
+});
+
 window.addEventListener("phx:load-schema", ({ detail: { schema, type } }) => {
   let dialect = StandardSQL;
   if (type === "postgres") dialect = PostgreSQL;

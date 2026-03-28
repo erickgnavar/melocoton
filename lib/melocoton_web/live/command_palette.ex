@@ -40,6 +40,7 @@ defmodule MelocotonWeb.CommandPalette do
   def handle_event("close", _params, socket) do
     socket
     |> assign(open: false)
+    |> push_event("refocus-editor", %{})
     |> noreply()
   end
 
@@ -85,6 +86,7 @@ defmodule MelocotonWeb.CommandPalette do
   def handle_event("navigate", %{"key" => "Escape"}, socket) do
     socket
     |> assign(open: false)
+    |> push_event("refocus-editor", %{})
     |> noreply()
   end
 
