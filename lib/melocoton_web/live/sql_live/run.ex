@@ -92,51 +92,8 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> noreply()
   end
 
-  def handle_event("next-session", _params, socket) do
-    sessions = socket.assigns.database.sessions
-
-    session_index =
-      Enum.find_index(sessions, fn session ->
-        session.id == socket.assigns.current_session.id
-      end)
-
-    new_session_index =
-      if session_index + 1 == length(sessions) do
-        0
-      else
-        session_index + 1
-      end
-
-    new_session = Enum.at(sessions, new_session_index)
-
-    socket
-    |> assign(:current_session, new_session)
-    |> push_event("load-query", %{"query" => new_session.query})
-    |> noreply()
-  end
-
-  def handle_event("prev-session", _params, socket) do
-    sessions = socket.assigns.database.sessions
-
-    session_index =
-      Enum.find_index(sessions, fn session ->
-        session.id == socket.assigns.current_session.id
-      end)
-
-    new_session_index =
-      if session_index - 1 == -1 do
-        length(sessions) - 1
-      else
-        session_index - 1
-      end
-
-    new_session = Enum.at(sessions, new_session_index)
-
-    socket
-    |> assign(:current_session, new_session)
-    |> push_event("load-query", %{"query" => new_session.query})
-    |> noreply()
-  end
+  def handle_event("next-session", _params, socket), do: cycle_session(socket, 1)
+  def handle_event("prev-session", _params, socket), do: cycle_session(socket, -1)
 
   def handle_event("set-table-explorer", %{"table" => table_name}, socket) do
     # we translate empty value at HTML level to nil value inside the
@@ -155,9 +112,7 @@ defmodule MelocotonWeb.SQLLive.Run do
 
     socket
     |> assign(:database, updated_database)
-    |> assign(:current_session, session)
-    # load query into SQL editor
-    |> push_event("load-query", %{"query" => session.query})
+    |> load_session(session)
     |> noreply()
   end
 
@@ -168,23 +123,20 @@ defmodule MelocotonWeb.SQLLive.Run do
         to_string(session.id) == session_id
       end)
 
-    socket
-    |> assign(:current_session, session)
-    # load query into SQL editor
-    |> push_event("load-query", %{"query" => session.query})
-    |> noreply()
+    socket |> load_session(session) |> noreply()
   end
 
   @impl Phoenix.LiveView
   def handle_event("run-query", %{"query" => query}, socket) do
     Logger.info("Running query #{query}")
+    normalized = query |> String.trim() |> String.downcase()
 
-    if socket.assigns.database.group.read_only and write_query?(query) do
+    if socket.assigns.database.group.read_only and write_query?(normalized) do
       socket
       |> assign(:error_message, "Read-only mode: write operations are blocked for this group.")
       |> noreply()
     else
-      dispatch_query(socket, query)
+      dispatch_query(socket, query, normalized)
     end
   end
 
@@ -253,10 +205,7 @@ defmodule MelocotonWeb.SQLLive.Run do
   @impl true
   def handle_info({:DOWN, _ref, :process, pid, _reason}, socket)
       when pid == socket.assigns.transaction_session and not is_nil(pid) do
-    socket
-    |> assign(:running_transaction?, false)
-    |> assign(:transaction_session, nil)
-    |> noreply()
+    socket |> clear_transaction() |> noreply()
   end
 
   def handle_info({:DOWN, _ref, :process, _pid, _reason}, socket) do
@@ -278,9 +227,7 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> noreply()
   end
 
-  defp dispatch_query(socket, query) do
-    normalized = query |> String.trim() |> String.downcase()
-
+  defp dispatch_query(socket, query, normalized) do
     cond do
       normalized =~ ~r/^begin\b/ ->
         handle_begin(socket)
@@ -319,22 +266,12 @@ defmodule MelocotonWeb.SQLLive.Run do
 
   defp handle_commit(socket) do
     TransactionSession.commit(socket.assigns.transaction_session)
-
-    socket
-    |> assign(:running_transaction?, false)
-    |> assign(:transaction_session, nil)
-    |> assign(:error_message, nil)
-    |> noreply()
+    socket |> clear_transaction() |> noreply()
   end
 
   defp handle_rollback(socket) do
     TransactionSession.rollback(socket.assigns.transaction_session)
-
-    socket
-    |> assign(:running_transaction?, false)
-    |> assign(:transaction_session, nil)
-    |> assign(:error_message, nil)
-    |> noreply()
+    socket |> clear_transaction() |> noreply()
   end
 
   defp handle_transaction_query(socket, query) do
@@ -399,8 +336,33 @@ defmodule MelocotonWeb.SQLLive.Run do
     end
   end
 
-  defp write_query?(query) do
-    normalized = query |> String.trim() |> String.downcase()
+  defp write_query?(normalized) do
     Regex.match?(~r/^(insert|update|delete|drop|alter|create|truncate|replace)\b/, normalized)
+  end
+
+  defp load_session(socket, session) do
+    socket
+    |> assign(:current_session, session)
+    |> push_event("load-query", %{"query" => session.query})
+  end
+
+  defp clear_transaction(socket) do
+    socket
+    |> assign(:running_transaction?, false)
+    |> assign(:transaction_session, nil)
+    |> assign(:error_message, nil)
+  end
+
+  defp cycle_session(socket, direction) do
+    sessions = socket.assigns.database.sessions
+    count = length(sessions)
+
+    current_index =
+      Enum.find_index(sessions, &(&1.id == socket.assigns.current_session.id))
+
+    new_index = rem(current_index + direction + count, count)
+    session = Enum.at(sessions, new_index)
+
+    socket |> load_session(session) |> noreply()
   end
 end

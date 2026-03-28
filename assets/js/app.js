@@ -130,11 +130,8 @@ const liveSocket = new LiveSocket("/live", Socket, {
             basicSetup,
             sqlExtensionCompartment.of(sql({})),
             EditorView.updateListener.of((updateView) => {
-              // update text area
+              if (!updateView.docChanged) return;
               that.el.value = updateView.state.doc.toString();
-              // we trigger this event to be able to update the session
-              // query value, this simulate a manual edit inside the
-              // textarea element
               that.pushEvent("validate", {
                 _target: ["session", "query"],
                 session: { query: updateView.state.doc.toString() },

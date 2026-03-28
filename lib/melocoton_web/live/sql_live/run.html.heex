@@ -515,7 +515,7 @@
                 </thead>
                 <tbody>
                   <tr :for={
-                    row <- (@filter_result.rows != [] && @filter_result.rows) || @result.rows
+                    row <- if(@filter_term != "", do: @filter_result.rows, else: @result.rows)
                   }>
                     <td
                       :for={col <- @result.cols}
