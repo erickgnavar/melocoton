@@ -5,6 +5,8 @@ defmodule MelocotonWeb.CommandPalette do
 
   @actions [
     %{id: :home, name: "Home", icon: "fa-house", action: "navigate-home"},
+    %{id: :export_csv, name: "Export to CSV", icon: "fa-file-csv", action: "export-csv"},
+    %{id: :export_xlsx, name: "Export to Excel", icon: "fa-file-excel", action: "export-xlsx"},
     %{id: :settings, name: "Settings", icon: "fa-cog", action: "open-settings"}
   ]
 

@@ -6,6 +6,8 @@ defmodule MelocotonWeb.CommandPaletteHook do
   """
 
   import Phoenix.LiveView
+  # this is required to use verified routes
+  use Phoenix.VerifiedRoutes, endpoint: MelocotonWeb.Endpoint, router: MelocotonWeb.Router
 
   def on_mount(:default, _params, _session, socket) do
     socket =
@@ -26,7 +28,18 @@ defmodule MelocotonWeb.CommandPaletteHook do
   end
 
   defp handle_info({MelocotonWeb.CommandPalette, {:palette_action, "open-settings"}}, socket) do
-    {:halt, Phoenix.LiveView.push_event(socket, "open-settings-modal", %{})}
+    {:halt, push_event(socket, "open-settings-modal", %{})}
+  end
+
+  defp handle_info({MelocotonWeb.CommandPalette, {:palette_action, "export-" <> format}}, socket) do
+    result = socket.assigns[:result]
+
+    if result && result.rows != [] do
+      token = Melocoton.ExportStore.put(result)
+      {:halt, push_event(socket, "open-url", %{url: ~p"/export/#{format}/#{token}"})}
+    else
+      {:halt, put_flash(socket, :error, "No results to export. Run a query first.")}
+    end
   end
 
   defp handle_info(_msg, socket) do
