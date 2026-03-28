@@ -7,20 +7,14 @@
 
   <div class="flex-1 flex overflow-hidden">
     <%!-- Sidebar --%>
-    <aside
-      class="w-56 flex flex-col"
-      style="background: var(--bg-secondary); border-right: 1px solid var(--border-medium);"
-    >
+    <aside class="w-56 flex flex-col app-sidebar">
       <%!-- Database name header --%>
-      <div
-        class="px-2 py-1.5 flex items-center gap-1"
-        style="border-bottom: 1px solid var(--border-medium);"
-      >
+      <div class="px-2 py-1.5 flex items-center gap-1 app-section-border">
         <button
-          class="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10"
-          style="color: var(--text-tertiary);"
+          class="icon-btn"
           phx-click={JS.patch(~p"/databases")}
           title="Back to connections"
+          aria-label="Back to connections"
         >
           <i class="fas fa-house text-sm"></i>
         </button>
@@ -30,18 +24,13 @@
         >
         </div>
         <span class="text-xs font-medium truncate flex-1">{@database.name}</span>
-        <button
-          class="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10"
-          style="color: var(--text-tertiary);"
-          phx-click="reload-objects"
-          title="Reload"
-        >
+        <button class="icon-btn" phx-click="reload-objects" title="Reload" aria-label="Reload">
           <i class="fas fa-sync-alt text-sm"></i>
         </button>
       </div>
 
       <%!-- Search --%>
-      <div class="p-2" style="border-bottom: 1px solid var(--border-medium);">
+      <div class="p-2 app-section-border">
         <div class="relative">
           <.form for={@search_form} phx-change="validate-search">
             <.input
@@ -204,7 +193,7 @@
       style="background: var(--bg-primary);"
     >
       <%!-- Toolbar with connection pill and actions --%>
-      <div class="p-2 flex items-center" style="border-bottom: 1px solid var(--border-medium);">
+      <div class="flex items-center app-toolbar">
         <%!-- Connection pill (two-part) --%>
         <div class="flex items-center mr-3 rounded overflow-hidden text-xs">
           <div
@@ -232,18 +221,14 @@
 
         <%!-- File actions group --%>
         <div class="flex items-center gap-0.5 mr-2">
-          <button
-            class="p-1.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
-            style="color: var(--text-tertiary);"
-            title="Save"
-          >
+          <button class="icon-btn" title="Save" aria-label="Save">
             <i class="fas fa-save text-sm"></i>
           </button>
           <div :if={@result.rows != []} class="relative" id="export-dropdown">
             <button
-              class="p-1.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
-              style="color: var(--text-tertiary);"
+              class="icon-btn"
               title="Export"
+              aria-label="Export"
               phx-click={JS.toggle(to: "#export-menu")}
             >
               <i class="fas fa-file-export text-sm"></i>
@@ -274,11 +259,7 @@
               </a>
             </div>
           </div>
-          <button
-            class="p-1.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
-            style="color: var(--text-tertiary);"
-            title="History"
-          >
+          <button class="icon-btn" title="History" aria-label="History">
             <i class="fas fa-history text-sm"></i>
           </button>
         </div>
@@ -314,30 +295,27 @@
         <%!-- Utility toggles group --%>
         <div class="flex items-center gap-0.5">
           <button
-            class="p-1.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
-            style="color: var(--text-tertiary);"
+            class="icon-btn"
             phx-click={show_modal("settings-modal")}
             title="Settings"
+            aria-label="Settings"
           >
             <i class="fas fa-cog text-sm"></i>
           </button>
           <button
-            class="p-1.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
-            style={
-              if @ai_panel_open,
-                do: "color: #{@database.group.color};",
-                else: "color: var(--text-tertiary);"
-            }
+            class="icon-btn"
+            style={if @ai_panel_open, do: "color: #{@database.group.color};", else: ""}
             phx-click="toggle-ai-panel"
             title="AI Assistant"
+            aria-label="AI Assistant"
           >
             <i class="fas fa-robot text-sm"></i>
           </button>
           <button
             id="theme-toggle"
-            class="p-1.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
-            style="color: var(--text-tertiary);"
+            class="icon-btn"
             title="Toggle theme"
+            aria-label="Toggle theme"
           >
             <i class="fas fa-circle-half-stroke text-sm"></i>
           </button>
@@ -501,27 +479,17 @@
             class="overflow-auto overscroll-none flex-1 p-0"
           >
             <div class="overflow-x-auto">
-              <table class="w-full border-collapse text-xs">
+              <table class="w-full border-collapse text-xs result-table">
                 <thead>
-                  <tr style="background: var(--bg-secondary);">
-                    <th
-                      :for={col <- @result.cols}
-                      class="px-2 py-1 text-left font-medium"
-                      style="border: 1px solid var(--border-subtle);"
-                    >
-                      {col}
-                    </th>
+                  <tr>
+                    <th :for={col <- @result.cols}>{col}</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr :for={
                     row <- if(@filter_term != "", do: @filter_result.rows, else: @result.rows)
                   }>
-                    <td
-                      :for={col <- @result.cols}
-                      class="px-2 py-1 whitespace-nowrap"
-                      style="border: 1px solid var(--border-subtle);"
-                    >
+                    <td :for={col <- @result.cols}>
                       <.data_cell value={Map.get(row, col)} filter={@filter_term} />
                     </td>
                   </tr>
@@ -547,27 +515,15 @@
           </div>
 
           <%!-- Error message --%>
-          <div
-            :if={!is_nil(@error_message)}
-            class="border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-2 m-2 text-xs rounded"
-          >
-            <div class="flex">
-              <div class="flex-shrink-0 text-red-500">
-                <i class="fas fa-exclamation-circle"></i>
-              </div>
-              <div class="ml-2">
-                <p class="text-red-700 dark:text-red-400 font-medium">
-                  {@error_message}
-                </p>
-              </div>
+          <div :if={!is_nil(@error_message)} class="error-banner">
+            <div class="flex items-center gap-2">
+              <i class="fas fa-exclamation-circle flex-shrink-0"></i>
+              <span class="font-medium">{@error_message}</span>
             </div>
           </div>
 
           <%!-- Status bar --%>
-          <div
-            class="flex items-center justify-between px-3 h-6 text-[10px]"
-            style="background: var(--bg-secondary); border-top: 1px solid var(--border-medium);"
-          >
+          <div class="flex items-center justify-between px-3 h-6 text-[10px] app-status-bar">
             <div class="flex items-center gap-3">
               <%!-- Env chip --%>
               <span
@@ -582,7 +538,7 @@
             </div>
             <div class="flex items-center">
               <span style="color: var(--text-tertiary);" class="mr-1.5">connected</span>
-              <div class="w-[6px] h-[6px] rounded-full bg-green-500"></div>
+              <div class="indicator-connected"></div>
             </div>
           </div>
         </div>

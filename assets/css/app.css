@@ -170,6 +170,111 @@ input:focus, button:active, textarea:focus, select:focus,
   transition: none;
 }
 
+/* ===== Layout utility classes ===== */
+
+.app-sidebar {
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border-medium);
+}
+
+.app-toolbar {
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--border-medium);
+}
+
+.app-section-border {
+  border-bottom: 1px solid var(--border-medium);
+}
+
+.app-status-bar {
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-medium);
+}
+
+/* ===== Interactive element utilities ===== */
+
+.icon-btn {
+  padding: 0.375rem;
+  border-radius: 0.25rem;
+  color: var(--text-tertiary);
+}
+
+.icon-btn:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="dark"] .icon-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.icon-btn.active {
+  color: inherit;
+}
+
+/* Secondary buttons (ghost style) */
+.btn-ghost {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.btn-ghost:hover {
+  filter: brightness(0.95);
+}
+
+[data-theme="dark"] .btn-ghost:hover {
+  filter: brightness(1.1);
+}
+
+/* ===== Status indicators ===== */
+
+.indicator-connected {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+}
+
+[data-theme="light"] .indicator-connected {
+  background: #16a34a;
+}
+
+/* ===== Result table ===== */
+
+.result-table th,
+.result-table td {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--border-subtle);
+  white-space: nowrap;
+}
+
+.result-table th {
+  background: var(--bg-secondary);
+  font-weight: 500;
+  text-align: left;
+}
+
+.result-table tr:hover td {
+  background: var(--bg-secondary);
+}
+
+/* ===== Error message ===== */
+
+.error-banner {
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.05);
+  color: #ef4444;
+  padding: 0.5rem;
+  margin: 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+}
+
+[data-theme="light"] .error-banner {
+  border-color: rgba(239, 68, 68, 0.25);
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
 /* ===== Card hover actions ===== */
 .card-actions {
   opacity: 0;

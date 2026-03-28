@@ -4,8 +4,8 @@
 >
   <%!-- Header --%>
   <div
-    class="px-3 py-2 flex items-center justify-between text-xs"
-    style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-medium);"
+    class="px-3 py-2 flex items-center justify-between text-xs app-section-border"
+    style="background: var(--bg-secondary);"
   >
     <div class="flex items-center gap-2">
       <i class="fas fa-robot" style={"color: #{@database.group.color};"}></i>
@@ -15,18 +15,18 @@
       <button
         phx-click="clear-chat"
         phx-target={@myself}
-        class="p-1 rounded hover:bg-black/5 dark:hover:bg-white/5"
-        style="color: var(--text-tertiary);"
+        class="icon-btn"
         title="Clear chat history"
+        aria-label="Clear chat history"
       >
         <i class="fas fa-trash text-sm"></i>
       </button>
       <button
         phx-click="close-panel"
         phx-target={@myself}
-        class="p-1 rounded hover:bg-black/5 dark:hover:bg-white/5"
-        style="color: var(--text-tertiary);"
+        class="icon-btn"
         title="Close panel"
+        aria-label="Close panel"
       >
         <i class="fas fa-times text-sm"></i>
       </button>
@@ -152,10 +152,7 @@
 
   <%!-- Error --%>
   <%= if @error do %>
-    <div
-      class="px-3 py-1.5 text-[10px]"
-      style="background: rgba(239, 68, 68, 0.08); color: #ef4444; border-top: 1px solid rgba(239, 68, 68, 0.2);"
-    >
+    <div class="error-banner m-0 rounded-none">
       <i class="fas fa-exclamation-circle mr-1"></i>{@error}
     </div>
   <% end %>
@@ -164,8 +161,7 @@
   <form
     phx-submit="send-message"
     phx-target={@myself}
-    class="px-3 py-2 flex items-center gap-2"
-    style="border-top: 1px solid var(--border-medium); background: var(--bg-secondary);"
+    class="px-3 py-2 flex items-center gap-2 app-status-bar"
   >
     <input
       type="text"
