@@ -55,8 +55,9 @@ version:
 bump-version version:
     sed -i'' -e 's/"version": "[0-9.]*"/"version": "{{ version }}"/' src-tauri/tauri.conf.json
     sed -i'' -e 's/"version": "[0-9.]*"/"version": "{{ version }}"/' package.json
+    sed -i'' -e '3s/"version": "[0-9.]*"/"version": "{{ version }}"/' package-lock.json
     sed -i'' -e 's/^version = "[0-9.]*"/version = "{{ version }}"/' src-tauri/Cargo.toml
     sed -i'' -e 's/version: "[0-9.]*"/version: "{{ version }}"/' mix.exs
-    git add src-tauri/tauri.conf.json src-tauri/Cargo.toml package.json mix.exs
+    git add src-tauri/tauri.conf.json src-tauri/Cargo.toml package.json package-lock.json mix.exs
     git commit -m "chore: bump v{{ version }}"
     git tag -a "v{{ version }}" -m "v{{ version }}"
