@@ -191,19 +191,19 @@
               </.async_result>
               <i
                 id="indexes-chevron-open"
-                class="fas fa-chevron-down text-[8px]"
+                class="fas fa-chevron-down text-[8px] hidden"
                 style="color: var(--text-tertiary);"
               >
               </i>
               <i
                 id="indexes-chevron-closed"
-                class="fas fa-chevron-right text-[8px] hidden"
+                class="fas fa-chevron-right text-[8px]"
                 style="color: var(--text-tertiary);"
               >
               </i>
             </div>
           </div>
-          <div id="indexes-content" class="mt-1 text-xs">
+          <div id="indexes-content" class="mt-1 text-xs hidden">
             <.async_result :let={indexes} assign={@indexes}>
               <:loading></:loading>
               <:failed :let={failure}>{"#{inspect(failure)}"}</:failed>
