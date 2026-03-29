@@ -77,6 +77,20 @@ defmodule Melocoton.TransactionSession do
     end
   end
 
+  # Uses TextQuery + DBConnection.execute instead of MyXQL.query because the latter
+  # goes through prepare_execute which can bypass the transaction-bound connection.
+  defp execute(conn, :mysql, sql) do
+    query = %MyXQL.TextQuery{statement: sql}
+
+    case DBConnection.execute(conn, query, [], timeout: @query_timeout) do
+      {:ok, _query, %MyXQL.Result{columns: cols, rows: rows, num_rows: num_rows}} ->
+        {:ok, %{columns: cols, rows: rows, num_rows: num_rows}}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
   defp execute(conn, :sqlite, sql) do
     stmt = %Exqlite.Query{name: sql, statement: sql}
 

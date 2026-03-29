@@ -488,6 +488,21 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
     end
   end
 
+  defp get_estimated_count(repo, table_name, :mysql) do
+    escaped = String.replace(table_name, "'", "''")
+
+    sql =
+      "SELECT TABLE_ROWS AS count FROM information_schema.TABLES WHERE TABLE_NAME = '#{escaped}' AND TABLE_SCHEMA = DATABASE()"
+
+    case DatabaseClient.query(repo, sql) do
+      {:ok, %{rows: [%{"count" => count}]}, _} when not is_nil(count) and count >= 0 ->
+        count
+
+      _ ->
+        get_exact_count(repo, table_name)
+    end
+  end
+
   defp get_estimated_count(repo, table_name, :sqlite) do
     # sqlite_stat1 may not exist if ANALYZE has never been run, fall back to exact count
     get_exact_count(repo, table_name)
@@ -530,6 +545,7 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
       Enum.map_join(columns, " OR ", fn col ->
         case type do
           :postgres -> "CAST(#{quote_identifier(col)} AS TEXT) ILIKE '%#{escaped}%'"
+          :mysql -> "CAST(#{quote_identifier(col)} AS CHAR) LIKE '%#{escaped}%'"
           :sqlite -> "CAST(#{quote_identifier(col)} AS TEXT) LIKE '%#{escaped}%'"
         end
       end)

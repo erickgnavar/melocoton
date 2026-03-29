@@ -45,6 +45,7 @@ defmodule MelocotonWeb.DatabaseLive.Index do
       case database.type do
         :sqlite -> Melocoton.Engines.Sqlite
         :postgres -> Melocoton.Engines.Postgres
+        :mysql -> Melocoton.Engines.Mysql
       end
 
     case engine.test_connection(database) do

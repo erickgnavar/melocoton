@@ -82,6 +82,7 @@ defmodule Melocoton.MixProject do
       {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false},
       {:req_llm, "~> 1.8"},
       {:mdex, "~> 0.2"},
+      {:myxql, "~> 0.8"},
       {:testcontainers, "~> 2.0", only: [:dev, :test]}
     ]
   end

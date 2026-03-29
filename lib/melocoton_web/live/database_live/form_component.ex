@@ -29,7 +29,7 @@ defmodule MelocotonWeb.DatabaseLive.FormComponent do
           label="Type"
         />
 
-        <%= if @db_type == :postgres do %>
+        <%= if @db_type in [:postgres, :mysql] do %>
           <fieldset
             class="rounded p-3 space-y-3"
             style="border: 1px solid var(--border-medium);"
@@ -38,7 +38,7 @@ defmodule MelocotonWeb.DatabaseLive.FormComponent do
               class="px-2 text-[10px] uppercase font-semibold tracking-wide"
               style="color: var(--text-tertiary);"
             >
-              PostgreSQL Connection
+              {if @db_type == :postgres, do: "PostgreSQL", else: "MySQL"} Connection
             </legend>
             <.input field={@form[:pg_host]} type="text" label="Host" value={@pg_host} />
             <.input field={@form[:pg_port]} type="text" label="Port" value={@pg_port} />
@@ -53,9 +53,11 @@ defmodule MelocotonWeb.DatabaseLive.FormComponent do
             <div
               class="px-2.5 py-1.5 rounded text-[11px] font-mono truncate"
               style="background: var(--bg-tertiary); color: var(--text-tertiary); border: 0.5px solid var(--border-medium);"
-              title={build_display_url(@pg_host, @pg_port, @pg_user, @pg_password, @pg_database)}
+              title={
+                build_display_url(@db_type, @pg_host, @pg_port, @pg_user, @pg_password, @pg_database)
+              }
             >
-              {build_display_url(@pg_host, @pg_port, @pg_user, @pg_password, @pg_database)}
+              {build_display_url(@db_type, @pg_host, @pg_port, @pg_user, @pg_password, @pg_database)}
             </div>
           </fieldset>
         <% else %>
@@ -83,8 +85,10 @@ defmodule MelocotonWeb.DatabaseLive.FormComponent do
 
   @impl true
   def update(%{database: database} = assigns, socket) do
-    {pg_host, pg_port, pg_user, pg_password, pg_database} = parse_postgres_url(database.url)
     db_type = database.type || :sqlite
+
+    {pg_host, pg_port, pg_user, pg_password, pg_database} =
+      parse_connection_url(database.url, db_type)
 
     {:ok,
      socket
@@ -107,7 +111,7 @@ defmodule MelocotonWeb.DatabaseLive.FormComponent do
     db_type = String.to_existing_atom(database_params["type"] || "sqlite")
 
     socket =
-      if db_type == :postgres do
+      if db_type in [:postgres, :mysql] do
         pg_host = database_params["pg_host"] || socket.assigns.pg_host
         pg_port = database_params["pg_port"] || socket.assigns.pg_port
         pg_user = database_params["pg_user"] || socket.assigns.pg_user
@@ -166,22 +170,28 @@ defmodule MelocotonWeb.DatabaseLive.FormComponent do
     end
   end
 
-  defp build_display_url(host, port, user, password, database) do
+  defp build_display_url(db_type, host, port, user, password, database) do
     masked = if password != "", do: String.duplicate("*", String.length(password)), else: ""
-    build_postgres_url(host, port, user, masked, database)
+    build_connection_url(db_type, host, port, user, masked, database)
   end
 
   defp maybe_build_url(params, :postgres, assigns) do
-    pg = extract_pg_fields(params, assigns)
-    url = build_postgres_url(pg.host, pg.port, pg.user, pg.password, pg.database)
+    pg = extract_pg_fields(params, assigns, "5432")
+    url = build_connection_url(:postgres, pg.host, pg.port, pg.user, pg.password, pg.database)
+    Map.put(params, "url", url)
+  end
+
+  defp maybe_build_url(params, :mysql, assigns) do
+    pg = extract_pg_fields(params, assigns, "3306")
+    url = build_connection_url(:mysql, pg.host, pg.port, pg.user, pg.password, pg.database)
     Map.put(params, "url", url)
   end
 
   defp maybe_build_url(params, _type, _assigns), do: params
 
-  defp extract_pg_fields(params, assigns) do
+  defp extract_pg_fields(params, assigns, default_port) do
     fields = ~w(host port user password database)
-    defaults = %{"host" => "localhost", "port" => "5432"}
+    defaults = %{"host" => "localhost", "port" => default_port}
 
     Map.new(fields, fn field ->
       pg_key = "pg_#{field}"
@@ -194,41 +204,50 @@ defmodule MelocotonWeb.DatabaseLive.FormComponent do
     end)
   end
 
-  defp build_postgres_url(host, port, user, password, database) do
+  defp build_connection_url(db_type, host, port, user, password, database) do
+    scheme = if db_type == :mysql, do: "mysql", else: "postgres"
+    default_port = if db_type == :mysql, do: "3306", else: "5432"
     userinfo = format_userinfo(user || "", password || "")
-    "postgres://#{userinfo}#{host || "localhost"}:#{port || "5432"}/#{database || ""}"
+    "#{scheme}://#{userinfo}#{host || "localhost"}:#{port || default_port}/#{database || ""}"
   end
 
   defp format_userinfo("", _), do: ""
   defp format_userinfo(user, ""), do: "#{user}@"
   defp format_userinfo(user, pass), do: "#{user}:#{pass}@"
 
-  defp parse_postgres_url(nil), do: {"localhost", "5432", "", "", ""}
-  defp parse_postgres_url(""), do: {"localhost", "5432", "", "", ""}
+  defp parse_connection_url(url, db_type) when url in [nil, ""],
+    do: default_connection_values(db_type)
 
-  defp parse_postgres_url(url) do
+  defp parse_connection_url(url, db_type) do
     case URI.parse(url) do
       %URI{host: host, port: port, path: path, userinfo: userinfo}
       when not is_nil(host) ->
-        {user, password} =
-          case userinfo do
-            nil ->
-              {"", ""}
-
-            info ->
-              case String.split(info, ":", parts: 2) do
-                [u, p] -> {u, p}
-                [u] -> {u, ""}
-              end
-          end
-
-        database = if path, do: String.trim_leading(path, "/"), else: ""
-        {host, to_string(port || 5432), user, password, database}
+        {user, password} = parse_userinfo(userinfo)
+        database = extract_database(path)
+        {host, to_string(port || default_port(db_type)), user, password, database}
 
       _ ->
-        {"localhost", "5432", "", "", ""}
+        default_connection_values(db_type)
     end
   end
+
+  defp extract_database(nil), do: ""
+  defp extract_database(path), do: String.trim_leading(path, "/")
+
+  defp default_port(:mysql), do: 3306
+  defp default_port(_), do: 5432
+
+  defp parse_userinfo(nil), do: {"", ""}
+
+  defp parse_userinfo(info) do
+    case String.split(info, ":", parts: 2) do
+      [user, password] -> {user, password}
+      [user] -> {user, ""}
+    end
+  end
+
+  defp default_connection_values(:mysql), do: {"localhost", "3306", "", "", ""}
+  defp default_connection_values(_), do: {"localhost", "5432", "", "", ""}
 
   defp notify_parent(msg), do: send(self(), {__MODULE__, msg})
 end

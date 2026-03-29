@@ -37,6 +37,7 @@ defmodule Melocoton.DatabaseClient do
     do: do_get_table_structure(conn, table_name, type)
 
   def translate_query_error(%Postgrex.Error{postgres: %{message: message}}), do: message
+  def translate_query_error(%MyXQL.Error{message: message}), do: message
   def translate_query_error(%Exqlite.Error{message: message}), do: message
   def translate_query_error(%DBConnection.ConnectionError{message: message}), do: message
   def translate_query_error(%Postgrex.QueryError{message: message}), do: message
@@ -44,19 +45,27 @@ defmodule Melocoton.DatabaseClient do
   def translate_query_error(error), do: inspect(error)
 
   defp do_get_tables(conn, :postgres), do: Melocoton.Engines.Postgres.get_tables(conn)
+  defp do_get_tables(conn, :mysql), do: Melocoton.Engines.Mysql.get_tables(conn)
   defp do_get_tables(conn, :sqlite), do: Melocoton.Engines.Sqlite.get_tables(conn)
 
   defp do_get_indexes(conn, :postgres), do: Melocoton.Engines.Postgres.get_indexes(conn)
+  defp do_get_indexes(conn, :mysql), do: Melocoton.Engines.Mysql.get_indexes(conn)
   defp do_get_indexes(conn, :sqlite), do: Melocoton.Engines.Sqlite.get_indexes(conn)
 
   defp do_get_table_meta(conn, table_name, :postgres),
     do: Melocoton.Engines.Postgres.get_table_meta(conn, table_name)
+
+  defp do_get_table_meta(conn, table_name, :mysql),
+    do: Melocoton.Engines.Mysql.get_table_meta(conn, table_name)
 
   defp do_get_table_meta(conn, table_name, :sqlite),
     do: Melocoton.Engines.Sqlite.get_table_meta(conn, table_name)
 
   defp do_get_table_structure(conn, table_name, :postgres),
     do: Melocoton.Engines.Postgres.get_table_structure(conn, table_name)
+
+  defp do_get_table_structure(conn, table_name, :mysql),
+    do: Melocoton.Engines.Mysql.get_table_structure(conn, table_name)
 
   defp do_get_table_structure(conn, table_name, :sqlite),
     do: Melocoton.Engines.Sqlite.get_table_structure(conn, table_name)

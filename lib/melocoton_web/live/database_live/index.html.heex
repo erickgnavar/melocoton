@@ -60,7 +60,11 @@
                   <span>{database.name}</span>
                 </.link>
                 <span class="font-mono text-[9px]" style="color: var(--text-tertiary);">
-                  {if database.type == :postgres, do: "pg", else: "sqlite"}
+                  {case database.type do
+                    :postgres -> "pg"
+                    :mysql -> "my"
+                    :sqlite -> "sqlite"
+                  end}
                 </span>
               </li>
             </ul>
@@ -170,6 +174,12 @@
               </span>
               <span
                 class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full"
+                style="background: var(--badge-mysql-bg, var(--badge-sqlite-bg)); color: var(--badge-mysql-text, var(--badge-sqlite-text));"
+              >
+                <i class="fas fa-dolphin text-[10px]"></i> MySQL
+              </span>
+              <span
+                class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full"
                 style="background: var(--badge-sqlite-bg); color: var(--badge-sqlite-text);"
               >
                 <i class="fas fa-feather text-[10px]"></i> SQLite
@@ -255,10 +265,15 @@
                   <span
                     class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium"
                     style={
-                      if database.type == :postgres do
-                        "background: var(--badge-postgres-bg); color: var(--badge-postgres-text);"
-                      else
-                        "background: var(--badge-sqlite-bg); color: var(--badge-sqlite-text);"
+                      case database.type do
+                        :postgres ->
+                          "background: var(--badge-postgres-bg); color: var(--badge-postgres-text);"
+
+                        :mysql ->
+                          "background: var(--badge-mysql-bg, var(--badge-sqlite-bg)); color: var(--badge-mysql-text, var(--badge-sqlite-text));"
+
+                        :sqlite ->
+                          "background: var(--badge-sqlite-bg); color: var(--badge-sqlite-text);"
                       end
                     }
                   >

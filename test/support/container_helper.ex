@@ -20,4 +20,29 @@ defmodule Melocoton.ContainerHelper do
 
     {container, conn}
   end
+
+  def start_mysql(seed_sql \\ []) do
+    config =
+      Testcontainers.MySqlContainer.new()
+      |> Testcontainers.MySqlContainer.with_database("melocoton_test")
+      |> Testcontainers.MySqlContainer.with_user("test")
+      |> Testcontainers.MySqlContainer.with_password("test")
+
+    {:ok, container} = Testcontainers.start_container(config)
+    conn_params = Testcontainers.MySqlContainer.connection_parameters(container)
+
+    {:ok, pid} =
+      MyXQL.start_link(
+        conn_params ++
+          [after_connect: fn conn -> MyXQL.query!(conn, "SET sql_mode = 'ANSI_QUOTES'", []) end]
+      )
+
+    conn = %Connection{pid: pid, type: :mysql}
+
+    for sql <- seed_sql do
+      {:ok, _} = Connection.query(conn, sql)
+    end
+
+    {container, conn}
+  end
 end

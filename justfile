@@ -49,6 +49,9 @@ db-migrate:
 db-reset:
     mix ecto.reset
 
+mysql:
+    docker run --rm --name melocoton-mysql --network host -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=melocoton_dev mysql:8
+
 version:
     @grep '"version"' src-tauri/tauri.conf.json | head -1 | sed 's/.*"\([0-9.]*\)".*/\1/'
 

@@ -40,7 +40,31 @@ defmodule Melocoton.Pool do
     Postgrex.start_link(opts ++ [pool_size: 5, ssl_opts: [verify: :verify_none]])
   end
 
+  defp start_connection(%{type: :mysql, url: url}) do
+    uri = URI.parse(url)
+    {user, password} = parse_userinfo(uri.userinfo)
+
+    MyXQL.start_link(
+      hostname: uri.host || "localhost",
+      port: uri.port || 3306,
+      username: user,
+      password: password,
+      database: String.trim_leading(uri.path || "", "/"),
+      pool_size: 5,
+      after_connect: fn conn -> MyXQL.query!(conn, "SET sql_mode = 'ANSI_QUOTES'", []) end
+    )
+  end
+
   defp start_connection(%{type: :sqlite, url: url}) do
     DBConnection.start_link(Exqlite.Connection, database: url, pool_size: 1)
+  end
+
+  defp parse_userinfo(nil), do: {"", ""}
+
+  defp parse_userinfo(userinfo) do
+    case String.split(userinfo, ":", parts: 2) do
+      [user, pass] -> {user, pass}
+      [user] -> {user, ""}
+    end
   end
 end

@@ -5,11 +5,12 @@ defmodule Melocoton.Databases.Database do
   alias Melocoton.Databases.{Group, Session}
 
   @postgres_regex ~r/^postgres(?:ql)?:\/\/(?:([^:@]+)(?::([^@]*))?@)?([^:\/]+)(?::(\d+))?\/([^?]+)(?:\?(.+))?$/
+  @mysql_regex ~r/^mysql:\/\/(?:([^:@]+)(?::([^@]*))?@)?([^:\/]+)(?::(\d+))?\/([^?]+)(?:\?(.+))?$/
   @sqlite_regex ~r/^\/(?:[^\/\0]+\/?)*$/
 
   schema "databases" do
     field :name, :string
-    field :type, Ecto.Enum, values: [:sqlite, :postgres], default: :sqlite
+    field :type, Ecto.Enum, values: [:sqlite, :postgres, :mysql], default: :sqlite
     field :url, :string
 
     belongs_to :group, Group
@@ -41,6 +42,13 @@ defmodule Melocoton.Databases.Database do
           add_error(changeset, :url, "Invalid connection string")
         end
 
+      :mysql ->
+        if Regex.match?(@mysql_regex, url) do
+          changeset
+        else
+          add_error(changeset, :url, "Invalid connection string")
+        end
+
       :sqlite ->
         if Regex.match?(@sqlite_regex, url) do
           changeset
@@ -52,7 +60,10 @@ defmodule Melocoton.Databases.Database do
 
   def show_public_url(%{type: :sqlite, url: url}), do: url
 
-  def show_public_url(%{type: :postgres, url: url}) do
+  def show_public_url(%{type: :mysql, url: url}), do: mask_url_password(url)
+  def show_public_url(%{type: :postgres, url: url}), do: mask_url_password(url)
+
+  defp mask_url_password(url) do
     parsed = URI.parse(url)
 
     case parsed.userinfo do
