@@ -195,6 +195,91 @@ const liveSocket = new LiveSocket("/live", Socket, {
         this.el.scrollTop = this.el.scrollHeight;
       },
     },
+    PanelResize: {
+      mounted() {
+        const container = this.el;
+        let activeHandle = null;
+        let startX = 0;
+        let startWidths = {};
+
+        const getPanel = (id) => container.querySelector(`#panel-${id}`);
+
+        container.querySelectorAll(".panel-resize-handle").forEach((handle) => {
+          handle.addEventListener("mousedown", (e) => {
+            e.preventDefault();
+            activeHandle = handle;
+            activeHandle.classList.add("active");
+            startX = e.clientX;
+            const containerWidth = container.offsetWidth;
+
+            const sidebar = getPanel("sidebar");
+            const ai = getPanel("ai");
+            startWidths = {
+              sidebar: sidebar
+                ? (sidebar.offsetWidth / containerWidth) * 100
+                : 0,
+              ai: ai ? (ai.offsetWidth / containerWidth) * 100 : 0,
+            };
+
+            document.body.style.cursor = "col-resize";
+            document.body.style.userSelect = "none";
+          });
+        });
+
+        const onMouseMove = (e) => {
+          if (!activeHandle) return;
+          const containerWidth = container.offsetWidth;
+          const dx = ((e.clientX - startX) / containerWidth) * 100;
+          const which = activeHandle.dataset.resize;
+
+          if (which === "sidebar") {
+            const newW = Math.min(50, Math.max(10, startWidths.sidebar + dx));
+            const sidebar = getPanel("sidebar");
+            if (sidebar) sidebar.style.width = `${newW}%`;
+          } else if (which === "ai") {
+            const newW = Math.min(50, Math.max(10, startWidths.ai - dx));
+            const ai = getPanel("ai");
+            if (ai) ai.style.width = `${newW}%`;
+          }
+        };
+
+        const onMouseUp = () => {
+          if (!activeHandle) return;
+          activeHandle.classList.remove("active");
+          activeHandle = null;
+          document.body.style.cursor = "";
+          document.body.style.userSelect = "";
+
+          const containerWidth = container.offsetWidth;
+          const sidebar = getPanel("sidebar");
+          const ai = getPanel("ai");
+          const sidebarPct = sidebar
+            ? parseFloat(
+                ((sidebar.offsetWidth / containerWidth) * 100).toFixed(1),
+              )
+            : 0;
+          const aiPct = ai
+            ? parseFloat(((ai.offsetWidth / containerWidth) * 100).toFixed(1))
+            : 0;
+
+          this.pushEvent("save-panel-widths", {
+            sidebar: sidebarPct,
+            ai: aiPct,
+          });
+        };
+
+        document.addEventListener("mousemove", onMouseMove);
+        document.addEventListener("mouseup", onMouseUp);
+
+        this.cleanup = () => {
+          document.removeEventListener("mousemove", onMouseMove);
+          document.removeEventListener("mouseup", onMouseUp);
+        };
+      },
+      destroyed() {
+        if (this.cleanup) this.cleanup();
+      },
+    },
     CellEditor: {
       mounted() {
         const input = this.el.querySelector("input[name='value']");

@@ -186,6 +186,19 @@ input:focus, button:active, textarea:focus, select:focus,
   border-right: 1px solid var(--border-medium);
 }
 
+.panel-resize-handle {
+  width: 4px;
+  cursor: col-resize;
+  flex-shrink: 0;
+  background: transparent;
+  transition: background 0.15s;
+}
+
+.panel-resize-handle:hover,
+.panel-resize-handle.active {
+  background: var(--app-accent, #0078d7);
+}
+
 .app-toolbar {
   padding: 0.5rem;
   border-bottom: 1px solid var(--border-medium);

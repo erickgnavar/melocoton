@@ -5,9 +5,13 @@
   <%!-- Environment top rail — 3px colored stripe --%>
   <div class="w-full h-[3px]" style={"background: #{@database.group.color};"}></div>
 
-  <div class="flex-1 flex overflow-hidden">
+  <div class="flex-1 flex overflow-hidden" id="panel-container" phx-hook="PanelResize">
     <%!-- Sidebar --%>
-    <aside class="w-64 flex flex-col app-sidebar">
+    <aside
+      class="flex flex-col app-sidebar"
+      style={"width: #{@sidebar_width}%;"}
+      id="panel-sidebar"
+    >
       <%!-- Database name header --%>
       <div class="px-2 py-2 flex items-center gap-1 app-section-border">
         <button
@@ -255,11 +259,15 @@
       </div>
     </aside>
 
+    <%!-- Resize handle: sidebar | main --%>
+    <div class="panel-resize-handle" data-resize="sidebar"></div>
+
     <%!-- Main Content Area --%>
     <main
       :if={is_nil(@table_explorer)}
       class="flex-1 flex flex-col overflow-hidden"
       style="background: var(--bg-primary);"
+      id="panel-main"
     >
       <%!-- Toolbar with connection pill and actions --%>
       <div class="flex items-center app-toolbar">
@@ -637,8 +645,16 @@
       database={@database}
     />
 
+    <%!-- Resize handle: main | AI panel --%>
+    <div :if={@ai_panel_open} class="panel-resize-handle" data-resize="ai"></div>
+
     <%!-- AI Chat Panel --%>
-    <div :if={@ai_panel_open} class="w-80 flex flex-col shrink-0">
+    <div
+      :if={@ai_panel_open}
+      class="flex flex-col shrink-0"
+      style={"width: #{@ai_panel_width}%;"}
+      id="panel-ai"
+    >
       <.live_component
         module={MelocotonWeb.SqlLive.AiChatComponent}
         id="ai-chat"

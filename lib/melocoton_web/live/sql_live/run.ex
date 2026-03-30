@@ -40,6 +40,14 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> assign(:table_explorer, nil)
     |> assign(:query_time, 0)
     |> assign(:ai_panel_open, project_setting(database.id, "ai_panel_open") == "true")
+    |> assign(
+      :sidebar_width,
+      parse_panel_width(project_setting(database.id, "sidebar_width"), 18)
+    )
+    |> assign(
+      :ai_panel_width,
+      parse_panel_width(project_setting(database.id, "ai_panel_width"), 22)
+    )
     |> ok()
   end
 
@@ -184,6 +192,17 @@ defmodule MelocotonWeb.SQLLive.Run do
 
     socket
     |> assign(:ai_panel_open, open)
+    |> noreply()
+  end
+
+  def handle_event("save-panel-widths", %{"sidebar" => sidebar, "ai" => ai}, socket) do
+    db_id = socket.assigns.database.id
+    save_project_setting(db_id, "sidebar_width", to_string(sidebar))
+    save_project_setting(db_id, "ai_panel_width", to_string(ai))
+
+    socket
+    |> assign(:sidebar_width, sidebar)
+    |> assign(:ai_panel_width, ai)
     |> noreply()
   end
 
@@ -399,6 +418,15 @@ defmodule MelocotonWeb.SQLLive.Run do
     session = Enum.at(sessions, new_index)
 
     socket |> load_session(session) |> noreply()
+  end
+
+  defp parse_panel_width(nil, default), do: default
+
+  defp parse_panel_width(value, default) do
+    case Float.parse(value) do
+      {width, _} when width >= 10 and width <= 50 -> width
+      _ -> default
+    end
   end
 
   defp project_setting(database_id, key) do
