@@ -54,6 +54,17 @@ defmodule MelocotonWeb.PageControllerTest do
     end
   end
 
+  describe "export SQL" do
+    test "downloads SQL file with query content", %{conn: conn} do
+      token = ExportStore.put(%{query: "SELECT * FROM users;", database_name: "my_database"})
+      conn = get(conn, ~p"/export/sql/#{token}")
+
+      assert response(conn, 200) == "SELECT * FROM users;"
+      assert get_resp_header(conn, "content-disposition") |> hd() =~ "my_database_"
+      assert get_resp_header(conn, "content-disposition") |> hd() =~ ".sql"
+    end
+  end
+
   describe "export errors" do
     test "returns 404 for invalid token", %{conn: conn} do
       conn = get(conn, ~p"/export/csv/invalid-token")

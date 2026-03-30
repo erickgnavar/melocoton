@@ -850,6 +850,16 @@ defmodule MelocotonWeb.SQLLive.RunTest do
     end
   end
 
+  describe "save query" do
+    test "save-query pushes a download event", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+
+      render_click(live_view, "save-query")
+
+      assert_push_event(live_view, "open-url", %{url: "/export/sql/" <> _token})
+    end
+  end
+
   describe "read-only mode" do
     setup %{db_path: db_path} do
       group = group_fixture(%{name: "Production", color: "#ff0000", read_only: true})

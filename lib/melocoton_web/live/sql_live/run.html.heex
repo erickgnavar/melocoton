@@ -290,7 +290,12 @@
 
         <%!-- File actions group --%>
         <div class="flex items-center gap-0.5 mr-2">
-          <button class="icon-btn" title="Save" aria-label="Save">
+          <button
+            class="icon-btn"
+            title="Save query"
+            aria-label="Save query"
+            phx-click="save-query"
+          >
             <.icon name="lucide-save" class="size-3.5" />
           </button>
           <div :if={@result.rows != []} class="relative" id="export-dropdown">

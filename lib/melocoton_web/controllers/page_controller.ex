@@ -7,12 +7,16 @@ defmodule MelocotonWeb.PageController do
     redirect(conn, to: ~p"/databases")
   end
 
-  def export(conn, %{"token" => token, "format" => format}) when format in ["csv", "xlsx"] do
+  def export(conn, %{"token" => token, "format" => format})
+      when format in ["csv", "xlsx", "sql"] do
     case Melocoton.ExportStore.pop(token) do
       nil ->
         conn
         |> put_status(:not_found)
         |> text("Export not found")
+
+      %{query: query, database_name: database_name} ->
+        send_download(conn, {:binary, query}, filename: export_filename(database_name, "sql"))
 
       %{result: result, database_name: database_name} ->
         do_export(conn, format, result, database_name)

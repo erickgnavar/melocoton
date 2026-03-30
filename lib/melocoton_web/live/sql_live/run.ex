@@ -153,6 +153,18 @@ defmodule MelocotonWeb.SQLLive.Run do
     {:noreply, socket}
   end
 
+  def handle_event("save-query", _params, socket) do
+    token =
+      Melocoton.ExportStore.put(%{
+        query: socket.assigns.current_session.query,
+        database_name: socket.assigns.database.name
+      })
+
+    socket
+    |> push_event("open-url", %{url: ~p"/export/sql/#{token}"})
+    |> noreply()
+  end
+
   def handle_event("export", %{"format" => format}, socket) do
     token =
       Melocoton.ExportStore.put(%{
