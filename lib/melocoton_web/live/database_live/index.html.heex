@@ -343,12 +343,25 @@
                 </span>
                 <span :if={!database.last_connected_at} class="flex-1"></span>
                 <.link
-                  class="px-2 py-1 text-[10px] rounded"
+                  class="px-2 py-1 text-[10px] rounded flex items-center gap-1.5"
                   style="background: var(--bg-tertiary); border: 1px solid var(--border-strong); color: var(--text-primary);"
                   phx-click="test-connection"
                   phx-value-id={database.id}
                 >
-                  Test
+                  <div
+                    :if={database.last_test_status}
+                    class="size-1.5 rounded-full flex-shrink-0"
+                    style={
+                      if database.last_test_status == "ok",
+                        do: "background: #22c55e;",
+                        else: "background: #ef4444;"
+                    }
+                    title={
+                      if database.last_tested_at,
+                        do: "Tested #{time_ago(database.last_tested_at)}",
+                        else: ""
+                    }
+                  /> Test
                 </.link>
                 <.link
                   class="px-2 py-1 text-[10px] rounded text-white font-medium"

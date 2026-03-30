@@ -52,14 +52,19 @@ defmodule MelocotonWeb.DatabaseLive.Index do
 
     case engine.test_connection(database) do
       :ok ->
+        Databases.save_test_result(database, "ok")
+
         socket
+        |> assign(:data, get_grouped_databases(socket.assigns.search_term))
         |> put_flash(:info, gettext("Connection successful"))
         |> then(&{:noreply, &1})
 
       {:error, reason} ->
         Logger.error("Error on connection: #{inspect(reason)}")
+        Databases.save_test_result(database, "error")
 
         socket
+        |> assign(:data, get_grouped_databases(socket.assigns.search_term))
         |> put_flash(
           :error,
           gettext("Error on connection: %{reason}", %{reason: "#{inspect(reason)}"})
@@ -116,7 +121,7 @@ defmodule MelocotonWeb.DatabaseLive.Index do
 
   defp get_grouped_databases(term \\ nil)
 
-  defp get_grouped_databases(nil) do
+  defp get_grouped_databases(term) when term in [nil, ""] do
     grouped = Enum.group_by(Databases.list_databases(), & &1.group)
 
     empty_groups =

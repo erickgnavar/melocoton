@@ -108,6 +108,15 @@ defmodule Melocoton.Databases do
     |> Repo.update()
   end
 
+  def save_test_result(%Database{} = database, status) when status in ["ok", "error"] do
+    database
+    |> Ecto.Changeset.change(
+      last_test_status: status,
+      last_tested_at: DateTime.truncate(DateTime.utc_now(), :second)
+    )
+    |> Repo.update()
+  end
+
   @doc """
   Returns an `%Ecto.Changeset{}` for tracking database changes.
 
