@@ -16,7 +16,7 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self' data: http://localhost:* ws://localhost:*; script-src 'self' 'unsafe-inline' http://localhost:*; style-src 'self' 'unsafe-inline' http://localhost:* https://cdnjs.cloudflare.com; img-src 'self' data: http://localhost:*; font-src 'self' data: http://localhost:* https://cdnjs.cloudflare.com; connect-src 'self' http://localhost:* ws://localhost:*"
     }
   },
   "bundle": {
