@@ -136,7 +136,7 @@ defmodule MelocotonWeb.SqlLive.AiChatComponent do
   defp render_markdown(text) do
     text
     |> String.trim()
-    |> MDEx.to_html!()
+    |> MDEx.to_html!(sanitize: MDEx.Document.default_sanitize_options())
     |> Phoenix.HTML.raw()
   end
 
