@@ -396,7 +396,7 @@
                     :if={database.last_test_status}
                     class="size-1.5 rounded-full flex-shrink-0"
                     style={
-                      if database.last_test_status == "ok",
+                      if database.last_test_status == :ok,
                         do: "background: #22c55e;",
                         else: "background: #ef4444;"
                     }

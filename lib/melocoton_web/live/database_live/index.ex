@@ -88,7 +88,7 @@ defmodule MelocotonWeb.DatabaseLive.Index do
 
     case engine.test_connection(database) do
       :ok ->
-        Databases.save_test_result(database, "ok")
+        Databases.save_test_result(database, :ok)
 
         socket
         |> reload_data()
@@ -97,7 +97,7 @@ defmodule MelocotonWeb.DatabaseLive.Index do
 
       {:error, reason} ->
         Logger.error("Error on connection: #{inspect(reason)}")
-        Databases.save_test_result(database, "error")
+        Databases.save_test_result(database, :error)
 
         socket
         |> reload_data()
