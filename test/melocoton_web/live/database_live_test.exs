@@ -73,6 +73,18 @@ defmodule MelocotonWeb.DatabaseLiveTest do
       assert html =~ "some updated name"
     end
 
+    test "clones database in listing", %{conn: conn, database: database} do
+      {:ok, index_live, _html} = live(conn, ~p"/databases")
+
+      assert index_live
+             |> element("#databases-#{database.id} button[title='Clone']")
+             |> render_click()
+
+      html = render(index_live)
+      assert html =~ "Connection cloned"
+      assert html =~ "#{database.name} (copy)"
+    end
+
     test "deletes database in listing", %{conn: conn, database: database} do
       {:ok, index_live, _html} = live(conn, ~p"/databases")
 

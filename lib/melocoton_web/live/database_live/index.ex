@@ -40,6 +40,29 @@ defmodule MelocotonWeb.DatabaseLive.Index do
   end
 
   @impl true
+  def handle_event("clone", %{"id" => id}, socket) do
+    database = Databases.get_database!(id)
+
+    case Databases.create_database(%{
+           name: database.name <> " (copy)",
+           type: database.type,
+           url: database.url,
+           group_id: database.group_id
+         }) do
+      {:ok, _clone} ->
+        socket
+        |> assign(:data, get_grouped_databases(socket.assigns.search_term))
+        |> put_flash(:info, gettext("Connection cloned"))
+        |> then(&{:noreply, &1})
+
+      {:error, _changeset} ->
+        socket
+        |> put_flash(:error, gettext("Failed to clone connection"))
+        |> then(&{:noreply, &1})
+    end
+  end
+
+  @impl true
   def handle_event("test-connection", %{"id" => id}, socket) do
     database = Databases.get_database!(id)
 
