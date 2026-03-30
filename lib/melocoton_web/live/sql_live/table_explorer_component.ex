@@ -6,9 +6,9 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
   @initial_limit 20
 
   @impl true
-  def update(%{repo: repo, table_name: table_name, database: database} = assigns, socket) do
+  def update(%{repo: repo, table_name: table_name, database: _database} = assigns, socket) do
     page = 1
-    pages = 1..get_num_pages(repo, table_name, database.type, @initial_limit)
+    pages = 1..get_num_pages(repo, table_name, @initial_limit)
 
     %{columns: columns, pk_columns: pk_columns, column_types: column_types} =
       DatabaseClient.get_table_meta(repo, table_name)
@@ -469,53 +469,9 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
     end)
   end
 
-  defp get_num_pages(repo, table_name, db_type, limit) do
-    count = get_estimated_count(repo, table_name, db_type)
+  defp get_num_pages(repo, table_name, limit) do
+    count = DatabaseClient.get_estimated_count(repo, table_name)
     max(div(count, limit) + 1, 1)
-  end
-
-  defp get_estimated_count(repo, table_name, :postgres) do
-    sql =
-      "SELECT reltuples::bigint AS count FROM pg_class WHERE relname = #{quote_identifier(table_name)}"
-
-    case DatabaseClient.query(repo, sql) do
-      {:ok, %{rows: [%{"count" => count}]}, _} when count >= 0 ->
-        count
-
-      _ ->
-        # Fall back to exact count if pg_class has no stats (e.g. never analyzed)
-        get_exact_count(repo, table_name)
-    end
-  end
-
-  defp get_estimated_count(repo, table_name, :mysql) do
-    escaped = String.replace(table_name, "'", "''")
-
-    sql =
-      "SELECT TABLE_ROWS AS count FROM information_schema.TABLES WHERE TABLE_NAME = '#{escaped}' AND TABLE_SCHEMA = DATABASE()"
-
-    case DatabaseClient.query(repo, sql) do
-      {:ok, %{rows: [%{"count" => count}]}, _} when not is_nil(count) and count >= 0 ->
-        count
-
-      _ ->
-        get_exact_count(repo, table_name)
-    end
-  end
-
-  defp get_estimated_count(repo, table_name, :sqlite) do
-    # sqlite_stat1 may not exist if ANALYZE has never been run, fall back to exact count
-    get_exact_count(repo, table_name)
-  end
-
-  defp get_exact_count(repo, table_name) do
-    case DatabaseClient.query(
-           repo,
-           "SELECT COUNT(*) AS count FROM #{quote_identifier(table_name)}"
-         ) do
-      {:ok, %{rows: [%{"count" => count}]}, _} -> count
-      {:error, _error} -> 0
-    end
   end
 
   defp get_result(repo, table_name, opts) do

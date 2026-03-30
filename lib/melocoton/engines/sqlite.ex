@@ -208,6 +208,11 @@ defmodule Melocoton.Engines.Sqlite do
   end
 
   @impl true
+  def get_estimated_count(conn, table_name) do
+    Melocoton.DatabaseClient.exact_count(conn, table_name)
+  end
+
+  @impl true
   def test_connection(database) do
     if File.exists?(database.url) do
       :ok

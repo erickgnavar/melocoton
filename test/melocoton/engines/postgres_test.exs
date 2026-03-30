@@ -138,6 +138,25 @@ defmodule Melocoton.Engines.PostgresTest do
     end
   end
 
+  describe "get_estimated_count/2" do
+    test "returns a count for users table", %{conn: conn} do
+      count = Postgres.get_estimated_count(conn, "users")
+      assert is_integer(count)
+      assert count >= 0
+    end
+
+    test "returns zero for empty table", %{conn: conn} do
+      {:ok, _} =
+        Melocoton.Connection.query(
+          conn,
+          "CREATE TABLE IF NOT EXISTS empty_table (id SERIAL PRIMARY KEY)"
+        )
+
+      count = Postgres.get_estimated_count(conn, "empty_table")
+      assert count == 0
+    end
+  end
+
   describe "query execution via DatabaseClient" do
     test "executes SELECT and returns normalized result", %{conn: conn} do
       {:ok, result, meta} = DatabaseClient.query(conn, "SELECT name FROM users ORDER BY id")

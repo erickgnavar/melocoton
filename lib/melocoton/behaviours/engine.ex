@@ -32,6 +32,12 @@ defmodule Melocoton.Behaviours.Engine do
   @callback get_table_meta(repo, String.t()) :: TableMeta.t()
 
   @doc """
+  Return an estimated row count for a table, used for pagination.
+  Falls back to exact count when estimates are unavailable.
+  """
+  @callback get_estimated_count(repo, String.t()) :: non_neg_integer()
+
+  @doc """
   Validate if we can connect with the received database
   """
   @callback test_connection(Database.t()) :: :ok | {:error, String.t()}

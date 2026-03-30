@@ -284,6 +284,22 @@ defmodule Melocoton.Engines.Mysql do
   end
 
   @impl true
+  def get_estimated_count(conn, table_name) do
+    escaped = String.replace(table_name, "'", "''")
+
+    sql =
+      "SELECT TABLE_ROWS AS count FROM information_schema.TABLES WHERE TABLE_NAME = '#{escaped}' AND TABLE_SCHEMA = DATABASE()"
+
+    case DatabaseClient.query(conn, sql) do
+      {:ok, %{rows: [%{"count" => count}]}, _} when not is_nil(count) and count >= 0 ->
+        count
+
+      _ ->
+        DatabaseClient.exact_count(conn, table_name)
+    end
+  end
+
+  @impl true
   def test_connection(database) do
     conn = Pool.get_repo(database)
 

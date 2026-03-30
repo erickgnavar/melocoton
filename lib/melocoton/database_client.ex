@@ -36,6 +36,19 @@ defmodule Melocoton.DatabaseClient do
   def get_table_structure(%Connection{type: type} = conn, table_name),
     do: do_get_table_structure(conn, table_name, type)
 
+  @spec get_estimated_count(Connection.t(), String.t()) :: non_neg_integer()
+  def get_estimated_count(%Connection{type: type} = conn, table_name),
+    do: do_get_estimated_count(conn, table_name, type)
+
+  def exact_count(conn, table_name) do
+    quoted = Connection.quote_identifier(table_name)
+
+    case query(conn, "SELECT COUNT(*) AS count FROM #{quoted}") do
+      {:ok, %{rows: [%{"count" => count}]}, _} -> count
+      {:error, _} -> 0
+    end
+  end
+
   def translate_query_error(%Postgrex.Error{postgres: %{message: message}}), do: message
   def translate_query_error(%MyXQL.Error{message: message}), do: message
   def translate_query_error(%Exqlite.Error{message: message}), do: message
@@ -60,6 +73,15 @@ defmodule Melocoton.DatabaseClient do
 
   defp do_get_table_meta(conn, table_name, :sqlite),
     do: Melocoton.Engines.Sqlite.get_table_meta(conn, table_name)
+
+  defp do_get_estimated_count(conn, table_name, :postgres),
+    do: Melocoton.Engines.Postgres.get_estimated_count(conn, table_name)
+
+  defp do_get_estimated_count(conn, table_name, :mysql),
+    do: Melocoton.Engines.Mysql.get_estimated_count(conn, table_name)
+
+  defp do_get_estimated_count(conn, table_name, :sqlite),
+    do: Melocoton.Engines.Sqlite.get_estimated_count(conn, table_name)
 
   defp do_get_table_structure(conn, table_name, :postgres),
     do: Melocoton.Engines.Postgres.get_table_structure(conn, table_name)

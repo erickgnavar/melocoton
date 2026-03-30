@@ -300,6 +300,20 @@ defmodule Melocoton.Engines.Postgres do
   end
 
   @impl true
+  def get_estimated_count(conn, table_name) do
+    sql =
+      "SELECT reltuples::bigint AS count FROM pg_class WHERE relname = #{Connection.quote_identifier(table_name)}"
+
+    case DatabaseClient.query(conn, sql) do
+      {:ok, %{rows: [%{"count" => count}]}, _} when count >= 0 ->
+        count
+
+      _ ->
+        DatabaseClient.exact_count(conn, table_name)
+    end
+  end
+
+  @impl true
   def test_connection(database) do
     conn = Pool.get_repo(database)
 
