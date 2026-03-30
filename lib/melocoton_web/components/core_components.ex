@@ -723,7 +723,13 @@ defmodule MelocotonWeb.CoreComponents do
         other -> inspect(other, structs: false)
       end
 
-    match = str |> String.replace(term, "<mark>#{term}</mark>") |> Phoenix.HTML.raw()
+    escaped_str = Phoenix.HTML.html_escape(str) |> Phoenix.HTML.safe_to_string()
+    escaped_term = Phoenix.HTML.html_escape(term) |> Phoenix.HTML.safe_to_string()
+
+    match =
+      escaped_str
+      |> String.replace(escaped_term, "<mark>#{escaped_term}</mark>")
+      |> Phoenix.HTML.raw()
 
     assigns = assign(assigns, :value, match)
 
