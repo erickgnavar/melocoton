@@ -13,7 +13,7 @@
           title="New connection"
           aria-label="New connection"
         >
-          <.icon name="lucide-plus" class="w-3 h-3" />
+          <.icon name="lucide-plus" class="size-3" />
         </.link>
       </div>
       <div class="overflow-y-auto flex-1 p-1">
@@ -39,7 +39,7 @@
               </span>
               <.icon
                 name="lucide-chevron-down"
-                class="w-3 h-3 ml-auto"
+                class="size-3 ml-auto"
                 style="color: var(--text-tertiary);"
               />
               <.link
@@ -47,7 +47,7 @@
                 style="color: var(--text-tertiary);"
                 patch={~p"/groups/#{group.id}/edit"}
               >
-                <.icon name="lucide-pencil" class="w-3 h-3" />
+                <.icon name="lucide-pencil" class="size-3" />
               </.link>
             </div>
             <ul class="mt-0.5" style="padding-left: 26px;">
@@ -58,7 +58,7 @@
                 <.link patch={~p"/databases/#{database}/run"} class="flex items-center flex-1">
                   <.icon
                     name="lucide-database"
-                    class="w-4 h-4 mr-1.5"
+                    class="size-4 mr-1.5"
                     style="color: var(--text-secondary);"
                   />
                   <span>{database.name}</span>
@@ -95,17 +95,17 @@
           class="px-2 py-1 text-xs bg-app-accent-light text-white rounded hover:bg-app-accent-light/90 flex items-center mr-2"
           patch={~p"/databases/new"}
         >
-          <.icon name="lucide-plus" class="w-4 h-4 mr-1.5" /> New Connection
+          <.icon name="lucide-plus" class="size-4 mr-1.5" /> New Connection
         </.link>
         <.link
           id="new-group-btn"
           class="px-2 py-1 text-xs rounded flex items-center mr-2 btn-ghost"
           patch={~p"/groups/new"}
         >
-          <.icon name="lucide-folder-plus" class="w-4 h-4 mr-1.5" /> New Group
+          <.icon name="lucide-folder-plus" class="size-4 mr-1.5" /> New Group
         </.link>
         <button class="px-2 py-1 text-xs rounded flex items-center btn-ghost">
-          <.icon name="lucide-file-input" class="w-4 h-4 mr-1.5" /> Import
+          <.icon name="lucide-file-input" class="size-4 mr-1.5" /> Import
         </button>
         <div class="flex-1"></div>
         <div class="relative">
@@ -117,7 +117,7 @@
               phx-debounce="200"
             />
             <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-              <.icon name="lucide-search" class="w-3 h-3" style="color: var(--text-tertiary);" />
+              <.icon name="lucide-search" class="size-3" style="color: var(--text-tertiary);" />
             </div>
           </.form>
         </div>
@@ -128,10 +128,10 @@
           title="Settings"
           aria-label="Settings"
         >
-          <.icon name="lucide-settings" class="w-3.5 h-3.5" />
+          <.icon name="lucide-settings" class="size-3.5" />
         </button>
         <button id="theme-toggle" class="icon-btn" title="Toggle theme" aria-label="Toggle theme">
-          <.icon name="lucide-sun-moon" class="w-3.5 h-3.5" />
+          <.icon name="lucide-sun-moon" class="size-3.5" />
         </button>
       </div>
 
@@ -142,7 +142,7 @@
           class="flex flex-col items-center justify-center h-full text-center"
           style="color: var(--text-tertiary);"
         >
-          <.icon name="lucide-database" class={["w-8 h-8 mb-4", "opacity-20"]} />
+          <.icon name="lucide-database" class={["size-8 mb-4", "opacity-20"]} />
           <p class="text-sm font-medium mb-1" style="color: var(--text-secondary);">
             No connections yet
           </p>
@@ -153,14 +153,14 @@
               style="background: var(--bg-tertiary); color: var(--text-secondary); border: 1px solid var(--border-medium);"
               patch={~p"/groups/new"}
             >
-              <.icon name="lucide-folder-plus" class="w-4 h-4 mr-1.5" /> New Group
+              <.icon name="lucide-folder-plus" class="size-4 mr-1.5" /> New Group
             </.link>
             <.link
               class="px-3 py-1.5 text-xs text-white rounded hover:opacity-90 font-medium flex items-center"
               style="background: var(--app-accent);"
               patch={~p"/databases/new"}
             >
-              <.icon name="lucide-plus" class="w-4 h-4 mr-1.5" /> New Connection
+              <.icon name="lucide-plus" class="size-4 mr-1.5" /> New Connection
             </.link>
           </div>
 
@@ -174,19 +174,19 @@
                 class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full"
                 style="background: var(--badge-postgres-bg); color: var(--badge-postgres-text);"
               >
-                <.icon name="brand-postgresql" class="w-3 h-3" /> PostgreSQL
+                <.icon name="brand-postgresql" class="size-3" /> PostgreSQL
               </span>
               <span
                 class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full"
                 style="background: var(--badge-mysql-bg, var(--badge-sqlite-bg)); color: var(--badge-mysql-text, var(--badge-sqlite-text));"
               >
-                <.icon name="brand-mysql" class="w-3 h-3" /> MySQL
+                <.icon name="brand-mysql" class="size-3" /> MySQL
               </span>
               <span
                 class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full"
                 style="background: var(--badge-sqlite-bg); color: var(--badge-sqlite-text);"
               >
-                <.icon name="brand-sqlite" class="w-3 h-3" /> SQLite
+                <.icon name="brand-sqlite" class="size-3" /> SQLite
               </span>
             </div>
           </div>
@@ -213,7 +213,7 @@
               style="color: var(--text-tertiary);"
               patch={~p"/groups/#{group.id}/edit"}
             >
-              <.icon name="lucide-pencil" class="w-3 h-3" />
+              <.icon name="lucide-pencil" class="size-3" />
             </.link>
           </div>
 
@@ -232,7 +232,7 @@
                 <div class="flex items-center">
                   <.icon
                     name="lucide-database"
-                    class="w-4 h-4 mr-1.5"
+                    class="size-4 mr-1.5"
                     style="color: var(--text-secondary);"
                   />
                   <span class="text-xs font-medium">{database.name}</span>
@@ -245,14 +245,14 @@
                     title="Edit"
                     patch={~p"/databases/#{database}/edit"}
                   >
-                    <.icon name="lucide-pencil" class="w-3 h-3" />
+                    <.icon name="lucide-pencil" class="size-3" />
                   </.link>
                   <button
                     class="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10"
                     style="color: var(--text-tertiary);"
                     title="Clone"
                   >
-                    <.icon name="lucide-copy" class="w-3 h-3" />
+                    <.icon name="lucide-copy" class="size-3" />
                   </button>
                   <.link
                     class="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 hover:text-red-500"
@@ -261,7 +261,7 @@
                     phx-click={JS.push("delete", value: %{id: database.id})}
                     data-confirm="Are you sure?"
                   >
-                    <.icon name="lucide-trash-2" class="w-3 h-3" />
+                    <.icon name="lucide-trash-2" class="size-3" />
                   </.link>
                 </div>
               </div>
@@ -289,7 +289,7 @@
                   </span>
                 </div>
                 <div class="flex items-center" style="color: var(--text-secondary);">
-                  <.icon name="lucide-server" class="w-3 h-3" />
+                  <.icon name="lucide-server" class="size-3" />
                   <span class="truncate ml-1">
                     {Melocoton.Databases.Database.show_public_url(database)}
                   </span>

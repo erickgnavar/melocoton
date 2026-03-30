@@ -19,7 +19,7 @@
             class="flex items-center gap-2 px-3 py-2.5"
             style="border-bottom: 1px solid var(--border-medium);"
           >
-            <.icon name="lucide-search" class="w-3.5 h-3.5" style="color: var(--text-tertiary);" />
+            <.icon name="lucide-search" class="size-3.5" style="color: var(--text-tertiary);" />
             <input
               type="text"
               id="command-palette-input"
@@ -65,7 +65,7 @@
                   phx-target={@myself}
                 >
                   <div
-                    class="w-2.5 h-2.5 rounded-full shrink-0"
+                    class="size-2.5 rounded-full shrink-0"
                     style={"background: #{item.group.color};"}
                   >
                   </div>
@@ -101,7 +101,7 @@
                 >
                   <.icon
                     name={item.icon}
-                    class={["w-3.5 h-3.5", "shrink-0"]}
+                    class={["size-3.5", "shrink-0"]}
                     style="color: var(--text-tertiary);"
                   />
                   <div class="flex-1 min-w-0">

@@ -73,7 +73,7 @@ defmodule MelocotonWeb.CoreComponents do
             style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-medium);"
           >
             <div class="flex items-center gap-2 text-sm font-medium">
-              <.icon :if={@icon} name={@icon} class="w-4 h-4" style="color: var(--text-tertiary);" />
+              <.icon :if={@icon} name={@icon} class="size-4" style="color: var(--text-tertiary);" />
               <span>{@title}</span>
             </div>
             <button
@@ -82,7 +82,7 @@ defmodule MelocotonWeb.CoreComponents do
               class="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10"
               style="color: var(--text-tertiary);"
             >
-              <.icon name="lucide-x" class="w-4 h-4" />
+              <.icon name="lucide-x" class="size-4" />
             </button>
           </div>
 
@@ -130,8 +130,8 @@ defmodule MelocotonWeb.CoreComponents do
       {@rest}
     >
       <p :if={@title} class="flex items-center gap-1.5 text-sm font-semibold leading-6">
-        <.icon :if={@kind == :info} name="lucide-info" class="h-4 w-4" />
-        <.icon :if={@kind == :error} name="lucide-alert-circle" class="h-4 w-4" />
+        <.icon :if={@kind == :info} name="lucide-info" class="size-4" />
+        <.icon :if={@kind == :error} name="lucide-alert-circle" class="size-4" />
         {@title}
       </p>
       <p class="mt-2 text-sm leading-5">{msg}</p>
@@ -140,7 +140,7 @@ defmodule MelocotonWeb.CoreComponents do
         class="group absolute top-1 right-1 p-2 opacity-50 hover:opacity-100"
         aria-label={gettext("close")}
       >
-        <.icon name="lucide-x" class="h-5 w-5" />
+        <.icon name="lucide-x" class="size-5" />
       </button>
     </div>
     """
@@ -170,7 +170,7 @@ defmodule MelocotonWeb.CoreComponents do
         hidden
       >
         {gettext("Attempting to reconnect")}
-        <.icon name="lucide-loader-2" class="ml-1 h-3 w-3 animate-spin" />
+        <.icon name="lucide-loader-2" class="ml-1 size-3 animate-spin" />
       </.flash>
 
       <.flash
@@ -182,7 +182,7 @@ defmodule MelocotonWeb.CoreComponents do
         hidden
       >
         {gettext("Hang in there while we get back on track")}
-        <.icon name="lucide-loader-2" class="ml-1 h-3 w-3 animate-spin" />
+        <.icon name="lucide-loader-2" class="ml-1 size-3 animate-spin" />
       </.flash>
     </div>
     """
@@ -421,7 +421,7 @@ defmodule MelocotonWeb.CoreComponents do
   def error(assigns) do
     ~H"""
     <p class="mt-3 flex gap-3 text-sm leading-6 text-rose-600">
-      <.icon name="lucide-alert-circle" class="mt-0.5 h-5 w-5 flex-none" />
+      <.icon name="lucide-alert-circle" class="mt-0.5 size-5 flex-none" />
       {render_slot(@inner_block)}
     </p>
     """
@@ -574,7 +574,7 @@ defmodule MelocotonWeb.CoreComponents do
         navigate={@navigate}
         class="text-sm font-semibold leading-6 text-zinc-900 hover:text-zinc-700"
       >
-        <.icon name="lucide-arrow-left" class="h-3 w-3" />
+        <.icon name="lucide-arrow-left" class="size-3" />
         {render_slot(@inner_block)}
       </.link>
     </div>
@@ -594,8 +594,8 @@ defmodule MelocotonWeb.CoreComponents do
   ## Examples
 
       <.icon name="lucide-search" class={["w-4", "h-4"]} />
-      <.icon name="brand-postgresql" class="w-5 h-5" />
-      <.icon name="lucide-lock" class="w-3 h-3" style="color: red;" />
+      <.icon name="brand-postgresql" class="size-5" />
+      <.icon name="lucide-lock" class="size-3" style="color: red;" />
   """
   attr :name, :string, required: true
   attr :class, :any, default: nil

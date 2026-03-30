@@ -18,7 +18,7 @@
         phx-target={@myself}
         title="Back to Query"
       >
-        <.icon name="lucide-arrow-left" class="w-4 h-4" />
+        <.icon name="lucide-arrow-left" class="size-4" />
       </button>
 
       <%!-- Breadcrumb: panca › ⊞ links --%>
@@ -28,7 +28,7 @@
         <div class="flex items-center font-medium">
           <.icon
             name="lucide-table-2"
-            class="w-4 h-4 mr-1.5"
+            class="size-4 mr-1.5"
             style={"color: #{@database.group.color};"}
           />
           <span id="table-name">{@table_name}</span>
@@ -99,13 +99,13 @@
         phx-click="add-row"
         phx-target={@myself}
       >
-        <.icon name="lucide-plus" class="w-3 h-3 mr-1.5" /> Add row
+        <.icon name="lucide-plus" class="size-3 mr-1.5" /> Add row
       </button>
       <button
         class="px-2 py-1 rounded flex items-center"
         style="background: var(--bg-tertiary); color: var(--text-secondary);"
       >
-        <.icon name="lucide-file-output" class="w-3 h-3 mr-1.5" /> Export
+        <.icon name="lucide-file-output" class="size-3 mr-1.5" /> Export
       </button>
       <div class="w-px h-4" style="background: var(--border-medium);"></div>
       <div class="relative">
@@ -121,7 +121,7 @@
           phx-click="toggle-columns-dropdown"
           phx-target={@myself}
         >
-          <.icon name="lucide-columns" class="w-3 h-3 mr-1.5" /> Columns
+          <.icon name="lucide-columns" class="size-3 mr-1.5" /> Columns
           <%= if MapSet.size(@visible_columns) < length(@columns) do %>
             <span
               class="ml-1 px-1 rounded-full text-[9px] font-medium"
@@ -156,7 +156,7 @@
                     do: "lucide-check-square",
                     else: "lucide-square"
                 }
-                class="w-3 h-3"
+                class="size-3"
               />
             </span>
             <span style="color: var(--text-primary);">{col}</span>
@@ -167,13 +167,13 @@
         class="px-2 py-1 rounded flex items-center"
         style="background: var(--bg-tertiary); color: var(--text-secondary);"
       >
-        <.icon name="lucide-filter" class="w-3 h-3 mr-1.5" /> Filter
+        <.icon name="lucide-filter" class="size-3 mr-1.5" /> Filter
       </button>
       <button
         class="px-2 py-1 rounded flex items-center"
         style="background: var(--bg-tertiary); color: var(--text-secondary);"
       >
-        <.icon name="lucide-arrow-up-down" class="w-3 h-3 mr-1.5" /> Sort
+        <.icon name="lucide-arrow-up-down" class="size-3 mr-1.5" /> Sort
       </button>
       <%= if map_size(@pending_changes) > 0 do %>
         <div class="w-px h-4" style="background: var(--border-medium);"></div>
@@ -183,7 +183,7 @@
           phx-click="apply-changes"
           phx-target={@myself}
         >
-          <.icon name="lucide-check" class="w-3 h-3 mr-1.5" /> Apply changes
+          <.icon name="lucide-check" class="size-3 mr-1.5" /> Apply changes
           <span
             class="ml-1.5 px-1.5 rounded-full text-[9px] font-bold"
             style="background: rgba(255,255,255,0.3);"
@@ -198,7 +198,7 @@
           phx-target={@myself}
           title="Discard all pending changes"
         >
-          <.icon name="lucide-x" class="w-3 h-3 mr-1" /> Discard
+          <.icon name="lucide-x" class="size-3 mr-1" /> Discard
         </button>
       <% end %>
       <div class="flex-1"></div>
@@ -213,7 +213,7 @@
           style="background: var(--bg-primary); border: 0.5px solid var(--border-medium); color: var(--text-primary);"
         />
         <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-          <.icon name="lucide-search" class="w-3 h-3" style="color: var(--text-tertiary);" />
+          <.icon name="lucide-search" class="size-3" style="color: var(--text-tertiary);" />
         </div>
       </form>
     </div>
@@ -224,7 +224,7 @@
         class="px-3 py-2 text-xs flex items-start gap-2"
         style="background: rgba(239, 68, 68, 0.08); border-bottom: 1px solid rgba(239, 68, 68, 0.2); color: #ef4444;"
       >
-        <.icon name="lucide-alert-triangle" class="w-3 h-3 mt-0.5 shrink-0" />
+        <.icon name="lucide-alert-triangle" class="size-3 mt-0.5 shrink-0" />
         <div class="flex-1">
           <div class="font-medium mb-0.5">
             Changes rolled back — no modifications were saved
@@ -240,7 +240,7 @@
           class="shrink-0 p-0.5 rounded hover:bg-red-500/10"
           style="color: rgba(239, 68, 68, 0.5);"
         >
-          <.icon name="lucide-x" class="w-3 h-3" />
+          <.icon name="lucide-x" class="size-3" />
         </button>
       </div>
     <% end %>
@@ -250,7 +250,7 @@
       <.async_result :let={result} assign={@result}>
         <:loading>
           <div class="flex items-center justify-center p-8" style="color: var(--text-tertiary);">
-            <.icon name="lucide-loader-2" class="w-4 h-4 animate-spin mr-2" /> Loading...
+            <.icon name="lucide-loader-2" class="size-4 animate-spin mr-2" /> Loading...
           </div>
         </:loading>
         <:failed :let={failure}>
@@ -281,19 +281,19 @@
                     <% @sort_column == col and @sort_direction == :asc -> %>
                       <.icon
                         name="lucide-arrow-up"
-                        class="w-3 h-3 ml-1"
+                        class="size-3 ml-1"
                         style={"color: #{@database.group.color};"}
                       />
                     <% @sort_column == col and @sort_direction == :desc -> %>
                       <.icon
                         name="lucide-arrow-down"
-                        class="w-3 h-3 ml-1"
+                        class="size-3 ml-1"
                         style={"color: #{@database.group.color};"}
                       />
                     <% true -> %>
                       <.icon
                         name="lucide-arrow-up-down"
-                        class="w-3 h-3 ml-1"
+                        class="size-3 ml-1"
                         style="color: var(--text-tertiary);"
                       />
                   <% end %>
@@ -369,7 +369,7 @@
                       style="color: var(--text-tertiary);"
                       title="Cancel (Esc)"
                     >
-                      <.icon name="lucide-x" class="w-4 h-4" />
+                      <.icon name="lucide-x" class="size-4" />
                     </button>
                   </form>
                 <% else %>
@@ -391,7 +391,7 @@
                           style={"color: #{@database.group.color};"}
                           title="Undo change"
                         >
-                          <.icon name="lucide-undo-2" class="w-3 h-3" />
+                          <.icon name="lucide-undo-2" class="size-3" />
                         </button>
                       </div>
                     <% :error -> %>
@@ -450,7 +450,7 @@
           phx-target={@myself}
           disabled={@page == 1}
         >
-          <.icon name="lucide-chevron-left" class="w-3 h-3" />
+          <.icon name="lucide-chevron-left" class="size-3" />
         </button>
         <button
           :for={page <- @pages}
@@ -475,7 +475,7 @@
           phx-target={@myself}
           disabled={@page == length(@pages)}
         >
-          <.icon name="lucide-chevron-right" class="w-3 h-3" />
+          <.icon name="lucide-chevron-right" class="size-3" />
         </button>
       </div>
     </div>
@@ -486,8 +486,7 @@
       <.async_result :let={structure} assign={@structure}>
         <:loading>
           <div class="flex items-center justify-center p-8" style="color: var(--text-tertiary);">
-            <.icon name="lucide-loader-2" class="w-4 h-4 animate-spin mr-2" />
-            Loading structure...
+            <.icon name="lucide-loader-2" class="size-4 animate-spin mr-2" /> Loading structure...
           </div>
         </:loading>
         <:failed :let={failure}>
@@ -618,7 +617,7 @@
                         <span title="Primary Key">
                           <.icon
                             name="lucide-key-round"
-                            class="w-3 h-3"
+                            class="size-3"
                             style={"color: #{@database.group.color};"}
                           />
                         </span>
@@ -847,7 +846,7 @@
       <.async_result :let={structure} assign={@structure}>
         <:loading>
           <div class="flex items-center justify-center p-8" style="color: var(--text-tertiary);">
-            <.icon name="lucide-loader-2" class="w-4 h-4 animate-spin mr-2" /> Loading indexes...
+            <.icon name="lucide-loader-2" class="size-4 animate-spin mr-2" /> Loading indexes...
           </div>
         </:loading>
         <:failed :let={failure}>
@@ -945,8 +944,7 @@
       <.async_result :let={structure} assign={@structure}>
         <:loading>
           <div class="flex items-center justify-center p-8" style="color: var(--text-tertiary);">
-            <.icon name="lucide-loader-2" class="w-4 h-4 animate-spin mr-2" />
-            Loading relations...
+            <.icon name="lucide-loader-2" class="size-4 animate-spin mr-2" /> Loading relations...
           </div>
         </:loading>
         <:failed :let={failure}>
@@ -1215,14 +1213,14 @@
           }
           title="Toggle SQL expression mode"
         >
-          <.icon name="lucide-code" class="w-4 h-4" />
+          <.icon name="lucide-code" class="size-4" />
         </button>
       </div>
 
       <%= if @add_row_error do %>
         <div class="error-banner">
           <div class="flex items-center gap-2">
-            <.icon name="lucide-alert-circle" class="w-4 h-4 flex-shrink-0" />
+            <.icon name="lucide-alert-circle" class="size-4 flex-shrink-0" />
             <span class="font-medium">{@add_row_error}</span>
           </div>
         </div>
@@ -1246,7 +1244,7 @@
           class="px-3 py-1.5 text-xs rounded font-medium text-white"
           style={"background: #{@database.group.color};"}
         >
-          <.icon name="lucide-plus" class="w-4 h-4 mr-1" /> Insert Row
+          <.icon name="lucide-plus" class="size-4 mr-1" /> Insert Row
         </button>
       </div>
     </form>
