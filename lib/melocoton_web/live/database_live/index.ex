@@ -72,10 +72,10 @@ defmodule MelocotonWeb.DatabaseLive.Index do
     |> assign(:database, Databases.get_database!(id))
   end
 
-  defp apply_action(socket, :new, _params) do
+  defp apply_action(socket, :new, params) do
     socket
     |> assign(:page_title, "New Database")
-    |> assign(:database, %Database{})
+    |> assign(:database, %Database{group_id: params["group_id"]})
   end
 
   defp apply_action(socket, :index, _params) do
@@ -115,10 +115,20 @@ defmodule MelocotonWeb.DatabaseLive.Index do
   defp get_grouped_databases(term \\ nil)
 
   defp get_grouped_databases(nil) do
-    Enum.group_by(Databases.list_databases(), & &1.group)
+    grouped = Enum.group_by(Databases.list_databases(), & &1.group)
+
+    empty_groups =
+      for g <- Databases.list_groups(), not Map.has_key?(grouped, g), into: %{}, do: {g, []}
+
+    Map.merge(empty_groups, grouped)
   end
 
   defp get_grouped_databases(term) do
-    Enum.group_by(Databases.list_databases(term), & &1.group)
+    grouped = Enum.group_by(Databases.list_databases(term), & &1.group)
+
+    empty_groups =
+      for g <- Databases.list_groups(), not Map.has_key?(grouped, g), into: %{}, do: {g, []}
+
+    Map.merge(empty_groups, grouped)
   end
 end

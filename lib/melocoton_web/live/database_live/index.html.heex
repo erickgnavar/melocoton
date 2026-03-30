@@ -217,6 +217,21 @@
             </.link>
           </div>
 
+          <div
+            :if={databases == []}
+            class="flex items-center gap-2 py-4 px-3 rounded text-xs"
+            style="border: 1px dashed var(--border-medium); color: var(--text-tertiary);"
+          >
+            <.icon name="lucide-plus" class="size-3" />
+            <.link
+              patch={~p"/databases/new?group_id=#{group.id}"}
+              style="color: var(--text-secondary);"
+              class="hover:underline"
+            >
+              Add a connection to this group
+            </.link>
+          </div>
+
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             <div
               :for={database <- databases}
