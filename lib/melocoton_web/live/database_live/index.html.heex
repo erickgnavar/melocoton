@@ -22,7 +22,15 @@
         <%!-- Sidebar group rows --%>
         <ul class="text-xs">
           <li :for={{group, databases} <- @data} class="mb-1">
-            <div class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer group rounded">
+            <div
+              class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer group rounded"
+              phx-click={
+                JS.toggle(to: "#sidebar-group-#{group.id}-list")
+                |> JS.toggle_class("rotate-[-90deg]",
+                  to: "#sidebar-group-#{group.id}-chevron"
+                )
+              }
+            >
               <%!-- Group dot --%>
               <div
                 class="w-[7px] h-[7px] rounded-full mr-1.5 flex-shrink-0"
@@ -39,11 +47,13 @@
               <span class="ml-1.5 text-[10px]" style="color: var(--text-tertiary);">
                 {length(databases)}
               </span>
-              <.icon
-                name="lucide-chevron-down"
-                class="size-3 ml-auto"
+              <span
+                id={"sidebar-group-#{group.id}-chevron"}
+                class="ml-auto transition-transform duration-150"
                 style="color: var(--text-tertiary);"
-              />
+              >
+                <.icon name="lucide-chevron-down" class="size-3" />
+              </span>
               <.link
                 class="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"
                 style="color: var(--text-tertiary);"
@@ -52,7 +62,7 @@
                 <.icon name="lucide-pencil" class="size-3" />
               </.link>
             </div>
-            <ul class="mt-0.5" style="padding-left: 26px;">
+            <ul id={"sidebar-group-#{group.id}-list"} class="mt-0.5" style="padding-left: 26px;">
               <li
                 :for={database <- databases}
                 class="flex items-center justify-between p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded"
