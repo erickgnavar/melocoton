@@ -9,7 +9,7 @@
     <%!-- Sidebar --%>
     <aside class="w-64 flex flex-col app-sidebar">
       <%!-- Database name header --%>
-      <div class="px-2 py-1.5 flex items-center gap-1 app-section-border">
+      <div class="px-2 py-2 flex items-center gap-1 app-section-border">
         <button
           class="icon-btn"
           phx-click={JS.patch(~p"/databases")}
@@ -402,7 +402,7 @@
       </div>
 
       <%!-- Tab bar with env dots --%>
-      <div class="flex text-xs" style="border-bottom: 1px solid var(--border-medium);">
+      <div class="flex text-sm" style="border-bottom: 1px solid var(--border-medium);">
         <div
           :for={{session, index} <- Enum.with_index(@database.sessions, 1)}
           class={[
