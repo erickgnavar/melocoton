@@ -125,7 +125,7 @@
 
         <div class="flex items-center gap-1 ml-3">
           <button
-            :for={type <- ~w(postgres mysql sqlite)}
+            :for={type <- ~w(postgres mysql sqlite)a}
             class={[
               "px-2 py-0.5 text-[10px] rounded-full font-medium transition-colors",
               @engine_filter == type && "text-white",
@@ -134,13 +134,13 @@
             style={
               if @engine_filter == type do
                 case type do
-                  "postgres" ->
+                  :postgres ->
                     "background: var(--badge-postgres-bg); color: var(--badge-postgres-text);"
 
-                  "mysql" ->
+                  :mysql ->
                     "background: var(--badge-mysql-bg, var(--badge-sqlite-bg)); color: var(--badge-mysql-text, var(--badge-sqlite-text));"
 
-                  "sqlite" ->
+                  :sqlite ->
                     "background: var(--badge-sqlite-bg); color: var(--badge-sqlite-text);"
                 end
               else

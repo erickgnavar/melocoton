@@ -33,8 +33,8 @@ defmodule MelocotonWeb.DatabaseLive.Index do
 
   @impl true
   def handle_event("filter-engine", %{"type" => type}, socket) do
-    current = socket.assigns.engine_filter
-    filter = if current == type, do: nil, else: type
+    type = String.to_existing_atom(type)
+    filter = if socket.assigns.engine_filter == type, do: nil, else: type
 
     socket
     |> assign(:engine_filter, filter)
@@ -168,7 +168,7 @@ defmodule MelocotonWeb.DatabaseLive.Index do
     databases =
       case engine do
         nil -> databases
-        type -> Enum.filter(databases, &(&1.type == String.to_existing_atom(type)))
+        type -> Enum.filter(databases, &(&1.type == type))
       end
 
     grouped = Enum.group_by(databases, & &1.group)
