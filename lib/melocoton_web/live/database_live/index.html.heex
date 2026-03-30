@@ -122,6 +122,38 @@
         <button class="px-2 py-1 text-xs rounded flex items-center btn-ghost">
           <.icon name="lucide-file-input" class="size-4 mr-1.5" /> Import
         </button>
+
+        <div class="flex items-center gap-1 ml-3">
+          <button
+            :for={type <- ~w(postgres mysql sqlite)}
+            class={[
+              "px-2 py-0.5 text-[10px] rounded-full font-medium transition-colors",
+              @engine_filter == type && "text-white",
+              @engine_filter != type && "hover:bg-black/5 dark:hover:bg-white/5"
+            ]}
+            style={
+              if @engine_filter == type do
+                case type do
+                  "postgres" ->
+                    "background: var(--badge-postgres-bg); color: var(--badge-postgres-text);"
+
+                  "mysql" ->
+                    "background: var(--badge-mysql-bg, var(--badge-sqlite-bg)); color: var(--badge-mysql-text, var(--badge-sqlite-text));"
+
+                  "sqlite" ->
+                    "background: var(--badge-sqlite-bg); color: var(--badge-sqlite-text);"
+                end
+              else
+                "color: var(--text-tertiary); border: 1px solid var(--border-medium);"
+              end
+            }
+            phx-click="filter-engine"
+            phx-value-type={type}
+          >
+            {type}
+          </button>
+        </div>
+
         <div class="flex-1"></div>
         <div class="relative">
           <.form for={@search_form} phx-change="validate-search">

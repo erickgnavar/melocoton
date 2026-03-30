@@ -10,9 +10,11 @@ defmodule MelocotonWeb.DatabaseLive.Index do
   def mount(_params, _session, socket) do
     socket
     |> assign(:groups, Databases.list_groups())
-    |> assign(:data, get_grouped_databases())
     |> assign(:search_form, to_form(%{"term" => ""}))
     |> assign(:search_term, "")
+    |> assign(:engine_filter, nil)
+    |> assign(:data, %{})
+    |> reload_data()
     |> then(&{:ok, &1})
   end
 
@@ -24,8 +26,19 @@ defmodule MelocotonWeb.DatabaseLive.Index do
   @impl true
   def handle_event("validate-search", %{"term" => term}, socket) do
     socket
-    |> assign(:data, get_grouped_databases(term))
     |> assign(:search_term, term)
+    |> reload_data()
+    |> noreply()
+  end
+
+  @impl true
+  def handle_event("filter-engine", %{"type" => type}, socket) do
+    current = socket.assigns.engine_filter
+    filter = if current == type, do: nil, else: type
+
+    socket
+    |> assign(:engine_filter, filter)
+    |> reload_data()
     |> noreply()
   end
 
@@ -35,7 +48,7 @@ defmodule MelocotonWeb.DatabaseLive.Index do
     {:ok, _} = Databases.delete_database(database)
 
     socket
-    |> assign(:data, get_grouped_databases())
+    |> reload_data()
     |> then(&{:noreply, &1})
   end
 
@@ -51,7 +64,7 @@ defmodule MelocotonWeb.DatabaseLive.Index do
          }) do
       {:ok, _clone} ->
         socket
-        |> assign(:data, get_grouped_databases(socket.assigns.search_term))
+        |> reload_data()
         |> put_flash(:info, gettext("Connection cloned"))
         |> then(&{:noreply, &1})
 
@@ -78,7 +91,7 @@ defmodule MelocotonWeb.DatabaseLive.Index do
         Databases.save_test_result(database, "ok")
 
         socket
-        |> assign(:data, get_grouped_databases(socket.assigns.search_term))
+        |> reload_data()
         |> put_flash(:info, gettext("Connection successful"))
         |> then(&{:noreply, &1})
 
@@ -87,7 +100,7 @@ defmodule MelocotonWeb.DatabaseLive.Index do
         Databases.save_test_result(database, "error")
 
         socket
-        |> assign(:data, get_grouped_databases(socket.assigns.search_term))
+        |> reload_data()
         |> put_flash(
           :error,
           gettext("Error on connection: %{reason}", %{reason: "#{inspect(reason)}"})
@@ -129,7 +142,7 @@ defmodule MelocotonWeb.DatabaseLive.Index do
   @impl true
   def handle_info({MelocotonWeb.DatabaseLive.FormComponent, {:saved, _database}}, socket) do
     socket
-    |> assign(:data, get_grouped_databases())
+    |> reload_data()
     |> assign(:groups, Databases.list_groups())
     |> then(&{:noreply, &1})
   end
@@ -137,29 +150,32 @@ defmodule MelocotonWeb.DatabaseLive.Index do
   @impl true
   def handle_info({MelocotonWeb.GroupLive.FormComponent, {:saved, _group}}, socket) do
     socket
-    |> assign(:data, get_grouped_databases())
+    |> reload_data()
     |> assign(:groups, Databases.list_groups())
     |> then(&{:noreply, &1})
   end
 
-  defp get_grouped_databases(term \\ nil)
+  defp reload_data(socket) do
+    term = socket.assigns.search_term
+    engine = socket.assigns.engine_filter
 
-  defp get_grouped_databases(term) when term in [nil, ""] do
-    grouped = Enum.group_by(Databases.list_databases(), & &1.group)
+    databases =
+      case term do
+        t when t in [nil, ""] -> Databases.list_databases()
+        t -> Databases.list_databases(t)
+      end
 
-    empty_groups =
-      for g <- Databases.list_groups(), not Map.has_key?(grouped, g), into: %{}, do: {g, []}
+    databases =
+      case engine do
+        nil -> databases
+        type -> Enum.filter(databases, &(&1.type == String.to_existing_atom(type)))
+      end
 
-    Map.merge(empty_groups, grouped)
-  end
+    grouped = Enum.group_by(databases, & &1.group)
+    groups = Databases.list_groups()
+    empty = for g <- groups, not Map.has_key?(grouped, g), into: %{}, do: {g, []}
 
-  defp get_grouped_databases(term) do
-    grouped = Enum.group_by(Databases.list_databases(term), & &1.group)
-
-    empty_groups =
-      for g <- Databases.list_groups(), not Map.has_key?(grouped, g), into: %{}, do: {g, []}
-
-    Map.merge(empty_groups, grouped)
+    assign(socket, :data, Map.merge(empty, grouped))
   end
 
   defp time_ago(datetime) do
