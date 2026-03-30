@@ -6,6 +6,7 @@ const fs = require("fs");
 const path = require("path");
 
 module.exports = {
+  darkMode: ["selector", '[data-theme="dark"]'],
   content: [
     "./js/**/*.js",
     "../lib/melocoton_web.ex",
@@ -15,6 +16,73 @@ module.exports = {
     extend: {
       colors: {
         brand: "#FD4F00",
+        transaction: {
+          active: {
+            DEFAULT: "#f97316",
+            light: "rgba(249, 115, 22, 0.1)",
+            medium: "rgba(249, 115, 22, 0.2)",
+            dark: "rgba(249, 115, 22, 0.8)",
+          },
+        },
+        env: {
+          local: "#22c55e",
+          dev: "#0ea5e9",
+          prod: "#7c3aed",
+          staging: "#f59e0b",
+        },
+        app: {
+          sidebar: {
+            light: "#f5f5f4",
+            dark: "#242422",
+          },
+          content: {
+            light: "#ffffff",
+            dark: "#1c1c1a",
+          },
+          border: {
+            light: "#d1d1d1",
+            dark: "#3a3a3a",
+          },
+          accent: {
+            light: "#0078d7",
+            dark: "#0078d7",
+          },
+          menubar: {
+            light: "#f0f0f0",
+            dark: "#333333",
+          },
+          input: {
+            light: "#ffffff",
+            dark: "#2d2d2d",
+          },
+          editor: {
+            light: "#ffffff",
+            dark: "#1c1c1a",
+          },
+        },
+      },
+      fontFamily: {
+        system: [
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "Segoe UI",
+          "Roboto",
+          "Helvetica",
+          "Arial",
+          "sans-serif",
+          "Apple Color Emoji",
+          "Segoe UI Emoji",
+          "Segoe UI Symbol",
+        ],
+        mono: [
+          "SFMono-Regular",
+          "Menlo",
+          "Monaco",
+          "Consolas",
+          "Liberation Mono",
+          "Courier New",
+          "monospace",
+        ],
       },
     },
   },
