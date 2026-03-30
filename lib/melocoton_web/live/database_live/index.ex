@@ -12,6 +12,7 @@ defmodule MelocotonWeb.DatabaseLive.Index do
     |> assign(:groups, Databases.list_groups())
     |> assign(:data, get_grouped_databases())
     |> assign(:search_form, to_form(%{"term" => ""}))
+    |> assign(:search_term, "")
     |> then(&{:ok, &1})
   end
 
@@ -24,6 +25,7 @@ defmodule MelocotonWeb.DatabaseLive.Index do
   def handle_event("validate-search", %{"term" => term}, socket) do
     socket
     |> assign(:data, get_grouped_databases(term))
+    |> assign(:search_term, term)
     |> noreply()
   end
 

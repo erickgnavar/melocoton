@@ -61,7 +61,10 @@
                     class="size-4 mr-1.5"
                     style="color: var(--text-secondary);"
                   />
-                  <span>{database.name}</span>
+                  <span>
+                    <.put_mark :if={@search_term != ""} value={database.name} term={@search_term} />
+                    <span :if={@search_term == ""}>{database.name}</span>
+                  </span>
                 </.link>
                 <span class="font-mono text-[9px]" style="color: var(--text-tertiary);">
                   {case database.type do
@@ -250,7 +253,10 @@
                     class="size-4 mr-1.5"
                     style="color: var(--text-secondary);"
                   />
-                  <span class="text-xs font-medium">{database.name}</span>
+                  <span class="text-xs font-medium">
+                    <.put_mark :if={@search_term != ""} value={database.name} term={@search_term} />
+                    <span :if={@search_term == ""}>{database.name}</span>
+                  </span>
                 </div>
                 <%!-- Actions: hidden until hover --%>
                 <div class="card-actions flex items-center space-x-1">
@@ -306,7 +312,14 @@
                 <div class="flex items-center" style="color: var(--text-secondary);">
                   <.icon name="lucide-server" class="size-3" />
                   <span class="truncate ml-1">
-                    {Melocoton.Databases.Database.show_public_url(database)}
+                    <.put_mark
+                      :if={@search_term != ""}
+                      value={Melocoton.Databases.Database.show_public_url(database)}
+                      term={@search_term}
+                    />
+                    <span :if={@search_term == ""}>
+                      {Melocoton.Databases.Database.show_public_url(database)}
+                    </span>
                   </span>
                 </div>
               </div>
