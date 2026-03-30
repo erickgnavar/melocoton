@@ -188,7 +188,7 @@ defmodule MelocotonWeb.SQLLive.RunTest do
       alice_pos = :binary.match(html, "alice") |> elem(0)
       bob_pos = :binary.match(html, "bob") |> elem(0)
       assert alice_pos < bob_pos
-      assert html =~ "fa-sort-up"
+      assert html =~ "lucide-arrow-up"
     end
 
     test "sorts descending on second click", %{conn: conn, database: database} do
@@ -202,7 +202,7 @@ defmodule MelocotonWeb.SQLLive.RunTest do
       alice_pos = :binary.match(html, "alice") |> elem(0)
       bob_pos = :binary.match(html, "bob") |> elem(0)
       assert bob_pos < alice_pos
-      assert html =~ "fa-sort-down"
+      assert html =~ "lucide-arrow-down"
     end
 
     test "clears sort on third click", %{conn: conn, database: database} do
@@ -213,8 +213,8 @@ defmodule MelocotonWeb.SQLLive.RunTest do
 
       html = render(live_view)
 
-      refute html =~ "fa-sort-up"
-      refute html =~ "fa-sort-down"
+      refute html =~ "lucide-arrow-up "
+      refute html =~ "lucide-arrow-down "
     end
 
     test "sorting a different column resets to ascending", %{conn: conn, database: database} do
@@ -227,7 +227,7 @@ defmodule MelocotonWeb.SQLLive.RunTest do
 
       # Now sort by id — should start ascending
       html = apply_sort(live_view, "id")
-      assert html =~ "fa-sort-up"
+      assert html =~ "lucide-arrow-up"
     end
 
     test "sort persists across pagination", %{conn: conn, database: database} do
@@ -244,7 +244,7 @@ defmodule MelocotonWeb.SQLLive.RunTest do
       |> render_click()
 
       html = flush_async(live_view)
-      assert html =~ "fa-sort-down"
+      assert html =~ "lucide-arrow-down"
     end
 
     test "paginates with next and previous", %{conn: conn, database: database} do
@@ -347,7 +347,7 @@ defmodule MelocotonWeb.SQLLive.RunTest do
 
       html = render(live_view)
 
-      assert html =~ "fa-check-square"
+      assert html =~ "lucide-check-square"
       assert html =~ "phx-click=\"toggle-column\""
     end
 
@@ -910,7 +910,7 @@ defmodule MelocotonWeb.SQLLive.RunTest do
       {:ok, _live_view, html} = live(conn, ~p"/databases/#{database.id}/run")
 
       assert html =~ "read-only"
-      assert html =~ "fa-lock"
+      assert html =~ "lucide-lock"
     end
   end
 

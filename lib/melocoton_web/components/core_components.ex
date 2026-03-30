@@ -12,7 +12,7 @@ defmodule MelocotonWeb.CoreComponents do
   See the [Tailwind CSS documentation](https://tailwindcss.com) to learn
   how to customize them or feel free to swap in another framework altogether.
 
-  Icons are provided by [heroicons](https://heroicons.com). See `icon/1` for usage.
+  Icons are provided by [Lucide](https://lucide.dev) and [Devicon](https://devicon.dev). See `icon/1` for usage.
   """
   use Phoenix.Component
 
@@ -73,7 +73,7 @@ defmodule MelocotonWeb.CoreComponents do
             style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-medium);"
           >
             <div class="flex items-center gap-2 text-sm font-medium">
-              <i :if={@icon} class={@icon} style="color: var(--text-tertiary);"></i>
+              <.icon :if={@icon} name={@icon} class="w-4 h-4" style="color: var(--text-tertiary);" />
               <span>{@title}</span>
             </div>
             <button
@@ -82,7 +82,7 @@ defmodule MelocotonWeb.CoreComponents do
               class="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10"
               style="color: var(--text-tertiary);"
             >
-              <i class="fas fa-times"></i>
+              <.icon name="lucide-x" class="w-4 h-4" />
             </button>
           </div>
 
@@ -130,8 +130,8 @@ defmodule MelocotonWeb.CoreComponents do
       {@rest}
     >
       <p :if={@title} class="flex items-center gap-1.5 text-sm font-semibold leading-6">
-        <.icon :if={@kind == :info} name="hero-information-circle-mini" class="h-4 w-4" />
-        <.icon :if={@kind == :error} name="hero-exclamation-circle-mini" class="h-4 w-4" />
+        <.icon :if={@kind == :info} name="lucide-info" class="h-4 w-4" />
+        <.icon :if={@kind == :error} name="lucide-alert-circle" class="h-4 w-4" />
         {@title}
       </p>
       <p class="mt-2 text-sm leading-5">{msg}</p>
@@ -140,7 +140,7 @@ defmodule MelocotonWeb.CoreComponents do
         class="group absolute top-1 right-1 p-2 opacity-50 hover:opacity-100"
         aria-label={gettext("close")}
       >
-        <.icon name="hero-x-mark-solid" class="h-5 w-5" />
+        <.icon name="lucide-x" class="h-5 w-5" />
       </button>
     </div>
     """
@@ -170,7 +170,7 @@ defmodule MelocotonWeb.CoreComponents do
         hidden
       >
         {gettext("Attempting to reconnect")}
-        <.icon name="hero-arrow-path" class="ml-1 h-3 w-3 animate-spin" />
+        <.icon name="lucide-loader-2" class="ml-1 h-3 w-3 animate-spin" />
       </.flash>
 
       <.flash
@@ -182,7 +182,7 @@ defmodule MelocotonWeb.CoreComponents do
         hidden
       >
         {gettext("Hang in there while we get back on track")}
-        <.icon name="hero-arrow-path" class="ml-1 h-3 w-3 animate-spin" />
+        <.icon name="lucide-loader-2" class="ml-1 h-3 w-3 animate-spin" />
       </.flash>
     </div>
     """
@@ -421,7 +421,7 @@ defmodule MelocotonWeb.CoreComponents do
   def error(assigns) do
     ~H"""
     <p class="mt-3 flex gap-3 text-sm leading-6 text-rose-600">
-      <.icon name="hero-exclamation-circle-mini" class="mt-0.5 h-5 w-5 flex-none" />
+      <.icon name="lucide-alert-circle" class="mt-0.5 h-5 w-5 flex-none" />
       {render_slot(@inner_block)}
     </p>
     """
@@ -574,7 +574,7 @@ defmodule MelocotonWeb.CoreComponents do
         navigate={@navigate}
         class="text-sm font-semibold leading-6 text-zinc-900 hover:text-zinc-700"
       >
-        <.icon name="hero-arrow-left-solid" class="h-3 w-3" />
+        <.icon name="lucide-arrow-left" class="h-3 w-3" />
         {render_slot(@inner_block)}
       </.link>
     </div>
@@ -582,29 +582,54 @@ defmodule MelocotonWeb.CoreComponents do
   end
 
   @doc """
-  Renders a [Heroicon](https://heroicons.com).
+  Renders an icon from Lucide or brand icons.
 
-  Heroicons come in three styles – outline, solid, and mini.
-  By default, the outline style is used, but solid and mini may
-  be applied by using the `-solid` and `-mini` suffix.
+  Lucide icons use the `lucide-` prefix and are rendered via CSS masks
+  bundled by the Tailwind plugin in `assets/tailwind.config.js`.
+  They inherit `currentColor` for styling.
 
-  You can customize the size and colors of the icons by setting
-  width, height, and background color classes.
-
-  Icons are extracted from the `deps/heroicons` directory and bundled within
-  your compiled app.css by the plugin in your `assets/tailwind.config.js`.
+  Brand icons use the `brand-` prefix and render as inline SVGs
+  with their original brand colors.
 
   ## Examples
 
-      <.icon name="hero-x-mark-solid" />
-      <.icon name="hero-arrow-path" class="ml-1 w-3 h-3 animate-spin" />
+      <.icon name="lucide-search" class={["w-4", "h-4"]} />
+      <.icon name="brand-postgresql" class="w-5 h-5" />
+      <.icon name="lucide-lock" class="w-3 h-3" style="color: red;" />
   """
   attr :name, :string, required: true
-  attr :class, :string, default: nil
+  attr :class, :any, default: nil
+  attr :style, :string, default: nil
 
-  def icon(%{name: "hero-" <> _} = assigns) do
+  def icon(%{name: "lucide-" <> _} = assigns) do
     ~H"""
-    <span class={[@name, @class]} />
+    <span class={[@name | List.wrap(@class)]} style={@style} />
+    """
+  end
+
+  # Brand icons — 3 database vendor logos with original brand colors
+  @external_resource "priv/static/icons/brand/postgresql.svg"
+  @external_resource "priv/static/icons/brand/mysql.svg"
+  @external_resource "priv/static/icons/brand/sqlite.svg"
+
+  @brand_icons (for name <- ~w(postgresql mysql sqlite), into: %{} do
+                  svg = File.read!("priv/static/icons/brand/#{name}.svg")
+                  [_, inner] = Regex.run(~r/<svg[^>]*>(.*)<\/svg>/s, svg)
+                  {name, inner}
+                end)
+
+  def icon(%{name: "brand-" <> name} = assigns) do
+    assigns = assign(assigns, :svg_body, @brand_icons[name])
+
+    ~H"""
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 128 128"
+      class={List.wrap(@class)}
+      style={@style}
+    >
+      {Phoenix.HTML.raw(@svg_body)}
+    </svg>
     """
   end
 

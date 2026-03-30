@@ -19,7 +19,7 @@
             class="flex items-center gap-2 px-3 py-2.5"
             style="border-bottom: 1px solid var(--border-medium);"
           >
-            <i class="fas fa-search text-sm" style="color: var(--text-tertiary);"></i>
+            <.icon name="lucide-search" class="w-3.5 h-3.5" style="color: var(--text-tertiary);" />
             <input
               type="text"
               id="command-palette-input"
@@ -99,11 +99,11 @@
                   phx-value-action={item.action}
                   phx-target={@myself}
                 >
-                  <i
-                    class={"fas #{item.icon} text-sm shrink-0"}
+                  <.icon
+                    name={item.icon}
+                    class={["w-3.5 h-3.5", "shrink-0"]}
                     style="color: var(--text-tertiary);"
-                  >
-                  </i>
+                  />
                   <div class="flex-1 min-w-0">
                     <div class="font-medium truncate">{item.name}</div>
                   </div>

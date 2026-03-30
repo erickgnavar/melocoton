@@ -4,10 +4,20 @@ defmodule MelocotonWeb.CommandPalette do
   alias Melocoton.Databases
 
   @actions [
-    %{id: :home, name: "Home", icon: "fa-house", action: "navigate-home"},
-    %{id: :export_csv, name: "Export to CSV", icon: "fa-file-csv", action: "export-csv"},
-    %{id: :export_xlsx, name: "Export to Excel", icon: "fa-file-excel", action: "export-xlsx"},
-    %{id: :settings, name: "Settings", icon: "fa-cog", action: "open-settings"}
+    %{id: :home, name: "Home", icon: "lucide-home", action: "navigate-home"},
+    %{
+      id: :export_csv,
+      name: "Export to CSV",
+      icon: "lucide-file-spreadsheet",
+      action: "export-csv"
+    },
+    %{
+      id: :export_xlsx,
+      name: "Export to Excel",
+      icon: "lucide-file-spreadsheet",
+      action: "export-xlsx"
+    },
+    %{id: :settings, name: "Settings", icon: "lucide-settings", action: "open-settings"}
   ]
 
   @impl true

@@ -13,7 +13,7 @@
           title="New connection"
           aria-label="New connection"
         >
-          <i class="fas fa-plus text-[10px]"></i>
+          <.icon name="lucide-plus" class="w-3 h-3" />
         </.link>
       </div>
       <div class="overflow-y-auto flex-1 p-1">
@@ -37,17 +37,17 @@
               <span class="ml-1.5 text-[10px]" style="color: var(--text-tertiary);">
                 {length(databases)}
               </span>
-              <i
-                class="fas fa-chevron-down ml-auto text-[10px]"
+              <.icon
+                name="lucide-chevron-down"
+                class="w-3 h-3 ml-auto"
                 style="color: var(--text-tertiary);"
-              >
-              </i>
+              />
               <.link
                 class="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"
                 style="color: var(--text-tertiary);"
                 patch={~p"/groups/#{group.id}/edit"}
               >
-                <i class="fas fa-pen-to-square text-[10px]"></i>
+                <.icon name="lucide-pencil" class="w-3 h-3" />
               </.link>
             </div>
             <ul class="mt-0.5" style="padding-left: 26px;">
@@ -56,7 +56,11 @@
                 class="flex items-center justify-between p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded"
               >
                 <.link patch={~p"/databases/#{database}/run"} class="flex items-center flex-1">
-                  <i class="fas fa-database mr-1.5" style="color: var(--text-secondary);"></i>
+                  <.icon
+                    name="lucide-database"
+                    class="w-4 h-4 mr-1.5"
+                    style="color: var(--text-secondary);"
+                  />
                   <span>{database.name}</span>
                 </.link>
                 <span class="font-mono text-[9px]" style="color: var(--text-tertiary);">
@@ -91,17 +95,17 @@
           class="px-2 py-1 text-xs bg-app-accent-light text-white rounded hover:bg-app-accent-light/90 flex items-center mr-2"
           patch={~p"/databases/new"}
         >
-          <i class="fas fa-plus mr-1.5"></i> New Connection
+          <.icon name="lucide-plus" class="w-4 h-4 mr-1.5" /> New Connection
         </.link>
         <.link
           id="new-group-btn"
           class="px-2 py-1 text-xs rounded flex items-center mr-2 btn-ghost"
           patch={~p"/groups/new"}
         >
-          <i class="fas fa-folder-plus mr-1.5"></i> New Group
+          <.icon name="lucide-folder-plus" class="w-4 h-4 mr-1.5" /> New Group
         </.link>
         <button class="px-2 py-1 text-xs rounded flex items-center btn-ghost">
-          <i class="fas fa-file-import mr-1.5"></i> Import
+          <.icon name="lucide-file-input" class="w-4 h-4 mr-1.5" /> Import
         </button>
         <div class="flex-1"></div>
         <div class="relative">
@@ -113,7 +117,7 @@
               phx-debounce="200"
             />
             <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-              <i class="fas fa-search text-[10px]" style="color: var(--text-tertiary);"></i>
+              <.icon name="lucide-search" class="w-3 h-3" style="color: var(--text-tertiary);" />
             </div>
           </.form>
         </div>
@@ -124,10 +128,10 @@
           title="Settings"
           aria-label="Settings"
         >
-          <i class="fas fa-cog text-sm"></i>
+          <.icon name="lucide-settings" class="w-3.5 h-3.5" />
         </button>
         <button id="theme-toggle" class="icon-btn" title="Toggle theme" aria-label="Toggle theme">
-          <i class="fas fa-circle-half-stroke text-sm"></i>
+          <.icon name="lucide-sun-moon" class="w-3.5 h-3.5" />
         </button>
       </div>
 
@@ -138,7 +142,7 @@
           class="flex flex-col items-center justify-center h-full text-center"
           style="color: var(--text-tertiary);"
         >
-          <i class="fas fa-database text-3xl mb-4" style="opacity: 0.2;"></i>
+          <.icon name="lucide-database" class={["w-8 h-8 mb-4", "opacity-20"]} />
           <p class="text-sm font-medium mb-1" style="color: var(--text-secondary);">
             No connections yet
           </p>
@@ -149,14 +153,14 @@
               style="background: var(--bg-tertiary); color: var(--text-secondary); border: 1px solid var(--border-medium);"
               patch={~p"/groups/new"}
             >
-              <i class="fas fa-folder-plus mr-1.5"></i> New Group
+              <.icon name="lucide-folder-plus" class="w-4 h-4 mr-1.5" /> New Group
             </.link>
             <.link
               class="px-3 py-1.5 text-xs text-white rounded hover:opacity-90 font-medium flex items-center"
               style="background: var(--app-accent);"
               patch={~p"/databases/new"}
             >
-              <i class="fas fa-plus mr-1.5"></i> New Connection
+              <.icon name="lucide-plus" class="w-4 h-4 mr-1.5" /> New Connection
             </.link>
           </div>
 
@@ -170,19 +174,19 @@
                 class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full"
                 style="background: var(--badge-postgres-bg); color: var(--badge-postgres-text);"
               >
-                <i class="fas fa-elephant text-[10px]"></i> PostgreSQL
+                <.icon name="brand-postgresql" class="w-3 h-3" /> PostgreSQL
               </span>
               <span
                 class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full"
                 style="background: var(--badge-mysql-bg, var(--badge-sqlite-bg)); color: var(--badge-mysql-text, var(--badge-sqlite-text));"
               >
-                <i class="fas fa-dolphin text-[10px]"></i> MySQL
+                <.icon name="brand-mysql" class="w-3 h-3" /> MySQL
               </span>
               <span
                 class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full"
                 style="background: var(--badge-sqlite-bg); color: var(--badge-sqlite-text);"
               >
-                <i class="fas fa-feather text-[10px]"></i> SQLite
+                <.icon name="brand-sqlite" class="w-3 h-3" /> SQLite
               </span>
             </div>
           </div>
@@ -209,7 +213,7 @@
               style="color: var(--text-tertiary);"
               patch={~p"/groups/#{group.id}/edit"}
             >
-              <i class="fas fa-pen-to-square text-[10px]"></i>
+              <.icon name="lucide-pencil" class="w-3 h-3" />
             </.link>
           </div>
 
@@ -226,7 +230,11 @@
                 style="border-bottom: 1px solid var(--border-medium);"
               >
                 <div class="flex items-center">
-                  <i class="fas fa-database mr-1.5" style="color: var(--text-secondary);"></i>
+                  <.icon
+                    name="lucide-database"
+                    class="w-4 h-4 mr-1.5"
+                    style="color: var(--text-secondary);"
+                  />
                   <span class="text-xs font-medium">{database.name}</span>
                 </div>
                 <%!-- Actions: hidden until hover --%>
@@ -237,14 +245,14 @@
                     title="Edit"
                     patch={~p"/databases/#{database}/edit"}
                   >
-                    <i class="fas fa-pen-to-square text-[10px]"></i>
+                    <.icon name="lucide-pencil" class="w-3 h-3" />
                   </.link>
                   <button
                     class="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10"
                     style="color: var(--text-tertiary);"
                     title="Clone"
                   >
-                    <i class="fas fa-copy text-[10px]"></i>
+                    <.icon name="lucide-copy" class="w-3 h-3" />
                   </button>
                   <.link
                     class="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 hover:text-red-500"
@@ -253,7 +261,7 @@
                     phx-click={JS.push("delete", value: %{id: database.id})}
                     data-confirm="Are you sure?"
                   >
-                    <i class="fas fa-trash-alt text-[10px]"></i>
+                    <.icon name="lucide-trash-2" class="w-3 h-3" />
                   </.link>
                 </div>
               </div>
@@ -281,7 +289,7 @@
                   </span>
                 </div>
                 <div class="flex items-center" style="color: var(--text-secondary);">
-                  <i class="fas fa-server w-4 text-[10px]"></i>
+                  <.icon name="lucide-server" class="w-3 h-3" />
                   <span class="truncate ml-1">
                     {Melocoton.Databases.Database.show_public_url(database)}
                   </span>
@@ -352,7 +360,7 @@
   />
 </.modal>
 
-<.modal id="settings-modal" title="Settings" icon="fas fa-cog">
+<.modal id="settings-modal" title="Settings" icon="lucide-settings">
   <.live_component
     module={MelocotonWeb.SettingsModalComponent}
     id="settings-modal-content"
