@@ -102,6 +102,12 @@ defmodule Melocoton.Databases do
     Repo.delete(database)
   end
 
+  def touch_last_connected(%Database{} = database) do
+    database
+    |> Ecto.Changeset.change(last_connected_at: DateTime.truncate(DateTime.utc_now(), :second))
+    |> Repo.update()
+  end
+
   @doc """
   Returns an `%Ecto.Changeset{}` for tracking database changes.
 

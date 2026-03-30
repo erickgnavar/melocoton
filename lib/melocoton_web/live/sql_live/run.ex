@@ -9,6 +9,7 @@ defmodule MelocotonWeb.SQLLive.Run do
     Melocoton.Settings.apply_api_keys_to_runtime()
 
     database = Databases.get_database!(database_id)
+    Databases.touch_last_connected(database)
     conn = Pool.get_repo(database)
     # we need to get pid here because the call to get_tables/2 will be
     # made in another process so we won't be able to get the correct

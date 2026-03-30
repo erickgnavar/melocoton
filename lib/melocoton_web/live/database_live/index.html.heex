@@ -330,9 +330,18 @@
 
               <%!-- Card footer --%>
               <div
-                class="px-3 py-2 flex justify-end gap-2"
+                class="px-3 py-2 flex items-center gap-2"
                 style="border-top: 1px solid var(--border-medium);"
               >
+                <span
+                  :if={database.last_connected_at}
+                  class="text-[10px] flex-1"
+                  style="color: var(--text-tertiary);"
+                  title={Calendar.strftime(database.last_connected_at, "%Y-%m-%d %H:%M:%S UTC")}
+                >
+                  {time_ago(database.last_connected_at)}
+                </span>
+                <span :if={!database.last_connected_at} class="flex-1"></span>
                 <.link
                   class="px-2 py-1 text-[10px] rounded"
                   style="background: var(--bg-tertiary); border: 1px solid var(--border-strong); color: var(--text-primary);"

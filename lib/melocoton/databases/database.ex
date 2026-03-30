@@ -12,6 +12,7 @@ defmodule Melocoton.Databases.Database do
     field :name, :string
     field :type, Ecto.Enum, values: [:sqlite, :postgres, :mysql], default: :sqlite
     field :url, :string
+    field :last_connected_at, :utc_datetime
 
     belongs_to :group, Group
     has_many :sessions, Session
