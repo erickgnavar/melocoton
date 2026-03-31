@@ -35,32 +35,41 @@ import {
 } from "@codemirror/autocomplete";
 import { format } from "sql-formatter";
 
-function formatSQL(editorView) {
+const formatOptions = {
+  language: "sql",
+  indent: "  ",
+  tabWidth: 2,
+  keywordCase: "upper",
+  linesBetweenQueries: 1,
+};
+
+function formatSQL(editorView, from, to) {
   const { state } = editorView;
-  const code = state.doc.toString();
 
-  // TODO: define a way to apply format only to selected text in case
-  // there is any
+  if (from === undefined || to === undefined) {
+    const sel = state.selection.main;
+    if (sel.from !== sel.to) {
+      from = sel.from;
+      to = sel.to;
+    } else {
+      from = 0;
+      to = state.doc.length;
+    }
+  }
 
-  const formatted = format(code, {
-    language: "sql",
-    indent: "  ",
-    tabWidth: 2,
-    keywordCase: "upper",
-    linesBetweenQueries: 1,
-  });
-
-  editorView.dispatch({
-    changes: {
-      from: 0,
-      to: state.doc.length,
-      insert: formatted,
-    },
-  });
+  const formatted = format(state.sliceDoc(from, to), formatOptions);
+  editorView.dispatch({ changes: { from, to, insert: formatted } });
 }
 
-Vim.defineEx("format", "", (cm) => {
-  formatSQL(cm.cm6);
+Vim.defineEx("format", "", (cm, params) => {
+  const view = cm.cm6;
+  if (params.line !== undefined && params.lineEnd !== undefined) {
+    const from = view.state.doc.line(params.line + 1).from;
+    const to = view.state.doc.line(params.lineEnd + 1).to;
+    formatSQL(view, from, to);
+  } else {
+    formatSQL(view);
+  }
 });
 
 Vim.defineAction("toggle-comment", (cm) => {
