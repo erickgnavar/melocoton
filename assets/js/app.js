@@ -280,6 +280,21 @@ const liveSocket = new LiveSocket("/live", Socket, {
         if (this.cleanup) this.cleanup();
       },
     },
+    AutoHideFlash: {
+      mounted() {
+        this.timer = setTimeout(() => {
+          this.el.style.transition = "opacity 0.3s ease-out";
+          this.el.style.opacity = "0";
+          setTimeout(() => {
+            this.pushEvent("lv:clear-flash", {});
+            this.el.remove();
+          }, 300);
+        }, 2000);
+      },
+      destroyed() {
+        clearTimeout(this.timer);
+      },
+    },
     CellEditor: {
       mounted() {
         const input = this.el.querySelector("input[name='value']");
