@@ -56,6 +56,7 @@ defmodule MelocotonWeb.SqlLive.AiChatComponent do
 
     socket
     |> assign(messages: messages, input: "", loading: true, error: nil, task_ref: task_ref)
+    |> push_event("focus-ai-chat", %{})
     |> noreply()
   end
 
@@ -109,13 +110,14 @@ defmodule MelocotonWeb.SqlLive.AiChatComponent do
               database_id: socket.assigns.database_id
             })
 
-          assign(socket,
-            messages: socket.assigns.messages ++ [assistant_msg],
-            loading: false
-          )
+          socket
+          |> assign(messages: socket.assigns.messages ++ [assistant_msg], loading: false)
+          |> push_event("focus-ai-chat", %{})
 
         {:error, error} ->
-          assign(socket, loading: false, error: error)
+          socket
+          |> assign(loading: false, error: error)
+          |> push_event("focus-ai-chat", %{})
       end
     else
       socket
