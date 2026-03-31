@@ -40,6 +40,7 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> assign(:transaction_session, nil)
     |> assign(:table_explorer, nil)
     |> assign(:query_time, 0)
+    |> assign(:last_query, nil)
     |> assign(:ai_panel_open, project_setting(database.id, "ai_panel_open") == "true")
     |> assign(
       :sidebar_width,
@@ -199,6 +200,46 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> noreply()
   end
 
+  def handle_event("explain-with-ai", _params, socket) do
+    result = socket.assigns.result
+    query = socket.assigns.last_query
+
+    explain_output =
+      Enum.map_join(result.rows, "\n", fn row ->
+        row |> Map.values() |> Enum.map_join("\t", &to_string/1)
+      end)
+
+    prompt = """
+    Analyze the following query execution plan and provide:
+    1. A summary of what the query does
+    2. Key performance observations (sequential scans, index usage, cost, rows)
+    3. Specific optimization suggestions if any
+
+    **Query:**
+    ```sql
+    #{query}
+    ```
+
+    **EXPLAIN ANALYZE output:**
+    ```
+    #{explain_output}
+    ```
+    """
+
+    # Open AI panel if closed
+    socket =
+      if socket.assigns.ai_panel_open do
+        socket
+      else
+        save_project_setting(socket.assigns.database.id, "ai_panel_open", "true")
+        assign(socket, :ai_panel_open, true)
+      end
+
+    send_update(MelocotonWeb.SqlLive.AiChatComponent, id: "ai-chat", send_message: prompt)
+
+    socket |> noreply()
+  end
+
   def handle_event("save-panel-widths", %{"sidebar" => sidebar, "ai" => ai}, socket) do
     db_id = socket.assigns.database.id
     save_project_setting(db_id, "sidebar_width", to_string(sidebar))
@@ -344,6 +385,7 @@ defmodule MelocotonWeb.SQLLive.Run do
         socket
         |> assign(result: DatabaseClient.handle_response(raw_result))
         |> assign(query_time: total_time)
+        |> assign(last_query: query)
         |> assign(:error_message, nil)
         |> noreply()
 
@@ -360,6 +402,7 @@ defmodule MelocotonWeb.SQLLive.Run do
         socket
         |> assign(result: result)
         |> assign(query_time: total_time)
+        |> assign(last_query: query)
         |> assign(:error_message, nil)
         |> noreply()
 
@@ -394,6 +437,11 @@ defmodule MelocotonWeb.SQLLive.Run do
       {:error, error} -> {:error, error}
     end
   end
+
+  defp explain_query?(nil), do: false
+
+  defp explain_query?(query),
+    do: query |> String.trim() |> String.downcase() |> String.starts_with?("explain")
 
   defp write_query?(normalized) do
     Regex.match?(~r/^(insert|update|delete|drop|alter|create|truncate|replace)\b/, normalized)

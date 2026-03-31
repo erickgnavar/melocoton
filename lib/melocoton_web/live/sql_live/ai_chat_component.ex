@@ -10,6 +10,12 @@ defmodule MelocotonWeb.SqlLive.AiChatComponent do
     |> ok()
   end
 
+  def update(%{send_message: message}, socket) do
+    socket
+    |> send_message(message)
+    |> ok()
+  end
+
   def update(assigns, socket) do
     if socket.assigns[:database_id] && socket.assigns.database_id == assigns.database.id do
       # Same database — preserve state, only update parent-driven assigns
@@ -36,28 +42,7 @@ defmodule MelocotonWeb.SqlLive.AiChatComponent do
 
   @impl true
   def handle_event("send-message", %{"message" => message}, socket) when message != "" do
-    %{database_id: database_id, repo: repo, messages: messages} = socket.assigns
-
-    {:ok, user_msg} =
-      Databases.create_chat_message(%{
-        role: "user",
-        content: message,
-        database_id: database_id
-      })
-
-    messages = messages ++ [user_msg]
-    parent = self()
-    task_ref = make_ref()
-
-    Task.start(fn ->
-      result = AI.chat(repo, messages)
-      send(parent, {__MODULE__, {:ai_response, task_ref, result}})
-    end)
-
-    socket
-    |> assign(messages: messages, input: "", loading: true, error: nil, task_ref: task_ref)
-    |> push_event("focus-ai-chat", %{})
-    |> noreply()
+    socket |> send_message(message) |> noreply()
   end
 
   def handle_event("send-message", _params, socket), do: noreply(socket)
@@ -122,6 +107,30 @@ defmodule MelocotonWeb.SqlLive.AiChatComponent do
     else
       socket
     end
+  end
+
+  defp send_message(socket, message) do
+    %{database_id: database_id, repo: repo, messages: messages} = socket.assigns
+
+    {:ok, user_msg} =
+      Databases.create_chat_message(%{
+        role: "user",
+        content: message,
+        database_id: database_id
+      })
+
+    messages = messages ++ [user_msg]
+    parent = self()
+    task_ref = make_ref()
+
+    Task.start(fn ->
+      result = AI.chat(repo, messages)
+      send(parent, {__MODULE__, {:ai_response, task_ref, result}})
+    end)
+
+    socket
+    |> assign(messages: messages, input: "", loading: true, error: nil, task_ref: task_ref)
+    |> push_event("focus-ai-chat", %{})
   end
 
   defp parse_message_parts(content) do
