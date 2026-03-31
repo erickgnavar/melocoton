@@ -23,6 +23,7 @@ import { LiveSocket } from "phoenix_live_view";
 import topbar from "../vendor/topbar";
 
 import { EditorView, basicSetup } from "codemirror";
+import { toggleComment } from "@codemirror/commands";
 import { Compartment } from "@codemirror/state";
 import { keymap } from "@codemirror/view";
 import { sql, PostgreSQL, SQLite, StandardSQL } from "@codemirror/lang-sql";
@@ -61,6 +62,13 @@ function formatSQL(editorView) {
 Vim.defineEx("format", "", (cm) => {
   formatSQL(cm.cm6);
 });
+
+Vim.defineAction("toggle-comment", (cm) => {
+  toggleComment(cm.cm6);
+});
+
+Vim.mapCommand("gcc", "action", "toggle-comment", {}, { context: "normal" });
+Vim.mapCommand("gc", "action", "toggle-comment", {}, { context: "visual" });
 
 const csrfToken = document
   .querySelector("meta[name='csrf-token']")
