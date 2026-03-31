@@ -22,14 +22,17 @@ defmodule Melocoton.Shortcuts do
     # SQL Editor
     {["⌘", "Enter"], :sql_editor, "Run query (selection or all)"},
     {["⌘", "S"], :sql_editor, "Save query to file"},
-    {["g", "t"], :sql_editor, "Next session tab"},
-    {["g", "T"], :sql_editor, "Previous session tab"},
-    {[":format"], :sql_editor, "Format SQL"},
-    {[":tabnext"], :sql_editor, "Next session tab (ex)"},
-    {[":tabprev"], :sql_editor, "Previous session tab (ex)"},
+    {["⌘", "⇧", "F"], :sql_editor, "Format SQL"},
     {["Tab"], :sql_editor, "Accept autocomplete suggestion"},
     {["Ctrl", "N"], :sql_editor, "Next autocomplete suggestion"},
     {["Ctrl", "P"], :sql_editor, "Previous autocomplete suggestion"},
+
+    # Vim mode
+    {["g", "t"], :sql_editor, "Next session tab (Vim)"},
+    {["g", "T"], :sql_editor, "Previous session tab (Vim)"},
+    {[":format"], :sql_editor, "Format SQL (Vim)"},
+    {[":tabnext"], :sql_editor, "Next session tab (Vim)"},
+    {[":tabprev"], :sql_editor, "Previous session tab (Vim)"},
 
     # Databases page
     {["/"], :databases, "Focus search"},

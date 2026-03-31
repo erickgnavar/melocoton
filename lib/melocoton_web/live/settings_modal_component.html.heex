@@ -62,6 +62,45 @@
     class="text-[10px] uppercase font-semibold tracking-wide mb-3"
     style="color: var(--text-tertiary);"
   >
+    Editor
+  </div>
+
+  <div>
+    <label class="block text-xs font-medium mb-1.5" style="color: var(--text-secondary);">
+      Keybindings
+    </label>
+    <div class="flex gap-1">
+      <button
+        :for={
+          {label, value, hint} <- [
+            {"Vim", "vim", "Vim keybindings with ex-commands"},
+            {"Standard", "standard", "Standard text editing"}
+          ]
+        }
+        type="button"
+        phx-click="set-editor-mode"
+        phx-value-mode={value}
+        phx-target={@myself}
+        class="px-3 py-1.5 text-xs rounded font-medium"
+        style={
+          if @editor_mode == value,
+            do: "background: var(--focus-color); color: white;",
+            else:
+              "background: var(--bg-tertiary); color: var(--text-secondary); border: 0.5px solid var(--border-medium);"
+        }
+        title={hint}
+      >
+        {label}
+      </button>
+    </div>
+  </div>
+
+  <div class="w-full h-px" style="background: var(--border-medium);"></div>
+
+  <div
+    class="text-[10px] uppercase font-semibold tracking-wide mb-3"
+    style="color: var(--text-tertiary);"
+  >
     LLM Provider API Keys
   </div>
 

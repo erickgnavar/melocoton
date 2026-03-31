@@ -34,9 +34,8 @@ import {
 } from "@codemirror/autocomplete";
 import { format } from "sql-formatter";
 
-Vim.defineEx("format", "", (cm, _params) => {
-  const view = cm.cm6;
-  const { state } = view;
+function formatSQL(editorView) {
+  const { state } = editorView;
   const code = state.doc.toString();
 
   // TODO: define a way to apply format only to selected text in case
@@ -50,13 +49,17 @@ Vim.defineEx("format", "", (cm, _params) => {
     linesBetweenQueries: 1,
   });
 
-  view.dispatch({
+  editorView.dispatch({
     changes: {
       from: 0,
       to: state.doc.length,
       insert: formatted,
     },
   });
+}
+
+Vim.defineEx("format", "", (cm) => {
+  formatSQL(cm.cm6);
 });
 
 const csrfToken = document
@@ -70,9 +73,11 @@ const liveSocket = new LiveSocket("/live", Socket, {
       mounted() {
         const that = this;
         const sqlExtensionCompartment = new Compartment();
+        const vimCompartment = new Compartment();
         // HACK: allow to load schema after receiving its value from
         // server once the database was inspected
         window.sqlExtensionCompartment = sqlExtensionCompartment;
+        window.vimCompartment = vimCompartment;
 
         Vim.defineEx("tabnext", "tabn", () => {
           that.pushEvent("next-session", {});
@@ -100,6 +105,13 @@ const liveSocket = new LiveSocket("/live", Socket, {
               run: moveCompletionSelection(false),
             },
             {
+              key: "Mod-Shift-f",
+              run() {
+                formatSQL(view);
+                return true;
+              },
+            },
+            {
               key: "Mod-Enter",
               run() {
                 // run query with current selection when pressing
@@ -119,13 +131,15 @@ const liveSocket = new LiveSocket("/live", Socket, {
           ]);
         }
 
+        const editorMode = localStorage.getItem("editor-mode") || "vim";
+
         const view = new EditorView({
           // because this element is a textarea we pass its content
           // when initializing the editor
           doc: this.el.value,
           parent: document.getElementById("editor"),
           extensions: [
-            vim(),
+            vimCompartment.of(editorMode === "vim" ? vim() : []),
             keymaps(),
             basicSetup,
             sqlExtensionCompartment.of(sql({})),
@@ -525,6 +539,18 @@ window.addEventListener("phx:set-font-size", (event) => {
     document.documentElement.style.setProperty("--font-size-base", `${size}px`);
   }
   localStorage.setItem("font-size", size);
+});
+
+// Editor mode (vim/standard)
+window.addEventListener("phx:set-editor-mode", (event) => {
+  const mode = event.detail.mode;
+  localStorage.setItem("editor-mode", mode);
+
+  if (typeof view !== "undefined" && window.vimCompartment) {
+    view.dispatch({
+      effects: window.vimCompartment.reconfigure(mode === "vim" ? vim() : []),
+    });
+  }
 });
 
 // this only work when running through Tauri web view

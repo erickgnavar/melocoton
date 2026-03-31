@@ -12,6 +12,8 @@ defmodule MelocotonWeb.SettingsModalComponent do
     font_size = Settings.get("font_size") || "md"
     {provider, model} = Models.parse_model_string(settings["ai_model"])
 
+    editor_mode = Settings.get("editor_mode") || "vim"
+
     socket
     |> assign(assigns)
     |> assign(
@@ -19,6 +21,7 @@ defmodule MelocotonWeb.SettingsModalComponent do
       saved: false,
       font_size: font_size,
       font_size_px: font_size_to_px(font_size),
+      editor_mode: editor_mode,
       provider: provider,
       model: model,
       model_options: Models.model_options(provider),
@@ -47,6 +50,16 @@ defmodule MelocotonWeb.SettingsModalComponent do
 
   @impl true
   def handle_event("set-font-size-px", _params, socket), do: noreply(socket)
+
+  @impl true
+  def handle_event("set-editor-mode", %{"mode" => mode}, socket) when mode in ~w(vim standard) do
+    Settings.set("editor_mode", mode)
+
+    socket
+    |> assign(editor_mode: mode)
+    |> push_event("set-editor-mode", %{mode: mode})
+    |> noreply()
+  end
 
   @impl true
   def handle_event("change-provider", %{"provider" => provider}, socket) do
