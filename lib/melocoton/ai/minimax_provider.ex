@@ -1,23 +1,18 @@
 defmodule Melocoton.AI.MinimaxProvider do
   @moduledoc """
-  Minimax LLM provider for ReqLLM.
+  MiniMax LLM provider using their OpenAI-compatible chat completions API.
 
-  Minimax exposes an OpenAI-compatible chat completions API.
-  Set MINIMAX_API_KEY to use directly, or use via OpenRouter
-  with model string "openrouter:minimax/minimax-01".
+  API base: https://api.minimax.io/v1
+  Available models: MiniMax-M2.7, MiniMax-M2.7-highspeed, MiniMax-M2.5,
+  MiniMax-M2.5-highspeed, MiniMax-M2.1, MiniMax-M2.
 
-  ## Direct usage
+  ## Usage
 
-      AI_MODEL=minimax:minimax-01
-      MINIMAX_API_KEY=your_key
-
-  ## Via OpenRouter
-
-      AI_MODEL=openrouter:minimax/minimax-01
-      OPENROUTER_API_KEY=your_key
+      AI_MODEL=minimax:MiniMax-M2.7
+      MINIMAX_API_KEY=sk-cp-...
   """
 
-  @base_url "https://api.minimax.chat/v1"
+  @base_url "https://api.minimax.io/v1"
 
   def chat(messages, opts \\ []) do
     api_key =
@@ -25,7 +20,7 @@ defmodule Melocoton.AI.MinimaxProvider do
         Application.get_env(:req_llm, :minimax_api_key) ||
         System.get_env("MINIMAX_API_KEY")
 
-    model = opts[:model] || "minimax-01"
+    model = opts[:model] || "MiniMax-M2.7"
 
     if api_key do
       body = %{
@@ -41,7 +36,9 @@ defmodule Melocoton.AI.MinimaxProvider do
           headers: [
             {"authorization", "Bearer #{api_key}"},
             {"content-type", "application/json"}
-          ]
+          ],
+          connect_options: [timeout: :timer.seconds(60)],
+          receive_timeout: :timer.seconds(300)
         )
 
       case Req.post(request) do

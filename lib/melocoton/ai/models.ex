@@ -20,11 +20,16 @@ defmodule Melocoton.AI.Models do
        {"anthropic/claude-haiku-4-5", "Claude Haiku 4.5"},
        {"openai/gpt-4o", "GPT-4o"},
        {"google/gemini-2.5-pro", "Gemini 2.5 Pro"},
-       {"minimax/minimax-01", "MiniMax-01"}
+       {"minimax/MiniMax-M2.7", "MiniMax M2.7"}
      ]},
     {"minimax", "MiniMax",
      [
-       {"minimax-01", "MiniMax-01"}
+       {"MiniMax-M2.7", "MiniMax M2.7"},
+       {"MiniMax-M2.7-highspeed", "MiniMax M2.7 Highspeed"},
+       {"MiniMax-M2.5", "MiniMax M2.5"},
+       {"MiniMax-M2.5-highspeed", "MiniMax M2.5 Highspeed"},
+       {"MiniMax-M2.1", "MiniMax M2.1"},
+       {"MiniMax-M2", "MiniMax M2"}
      ]}
   ]
 
