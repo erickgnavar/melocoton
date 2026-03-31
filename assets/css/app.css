@@ -533,5 +533,24 @@ tr.row-selected {
   text-decoration: underline;
 }
 
+.ai-markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.5rem 0;
+  font-size: 0.7rem;
+}
+
+.ai-markdown th,
+.ai-markdown td {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--border-medium);
+  text-align: left;
+}
+
+.ai-markdown th {
+  font-weight: 600;
+  background: var(--bg-secondary);
+}
+
 /* Reset browser default pre margin inside AI chat SQL blocks */
 .ai-sql-block pre { margin: 0; }
