@@ -106,7 +106,7 @@
                           phx-click="insert-sql"
                           phx-value-sql={sql}
                           phx-target={@myself}
-                          class="px-1.5 py-0.5 rounded text-[10px]"
+                          class="px-1.5 py-0.5 rounded text-[10px] opacity-70 hover:opacity-100"
                           style={"background: #{@database.group.color}22; color: #{@database.group.color};"}
                         >
                           <.icon name="lucide-file-input" class="size-3 mr-0.5 inline-block" />
@@ -116,7 +116,7 @@
                           phx-click="run-sql"
                           phx-value-sql={sql}
                           phx-target={@myself}
-                          class="px-1.5 py-0.5 rounded text-[10px]"
+                          class="px-1.5 py-0.5 rounded text-[10px] opacity-70 hover:opacity-100"
                           style="background: var(--bg-secondary); color: var(--text-secondary);"
                         >
                           <.icon name="lucide-play" class="size-3 mr-0.5 inline-block" /> Run
@@ -128,7 +128,7 @@
                               to: "#ai-chat-messages"
                             )
                           }
-                          class="px-1.5 py-0.5 rounded text-[10px]"
+                          class="px-1.5 py-0.5 rounded text-[10px] opacity-70 hover:opacity-100"
                           style="background: var(--bg-secondary); color: var(--text-secondary);"
                           title="Copy to clipboard"
                         >
