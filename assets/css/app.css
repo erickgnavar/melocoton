@@ -468,6 +468,11 @@ tr.row-selected {
 .ai-markdown {
   font-size: 0.75rem;
   line-height: 1.5;
+  min-width: 0;
+}
+
+.ai-markdown pre {
+  overflow-x: auto;
 }
 
 .ai-markdown p {
@@ -538,6 +543,8 @@ tr.row-selected {
   border-collapse: collapse;
   margin: 0.5rem 0;
   font-size: 0.7rem;
+  display: block;
+  overflow-x: auto;
 }
 
 .ai-markdown th,

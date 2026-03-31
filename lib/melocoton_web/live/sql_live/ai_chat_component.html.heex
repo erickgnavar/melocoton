@@ -82,10 +82,10 @@
         <%= if msg.role == "user" do %>
           <div class="flex justify-end">
             <div
-              class="px-2.5 py-1.5 rounded-lg max-w-[90%]"
+              class="px-2.5 py-1.5 rounded-lg max-w-[90%] ai-markdown ai-markdown-user"
               style={"background: #{@database.group.color}; color: white;"}
             >
-              {msg.content}
+              {render_markdown(msg.content)}
             </div>
           </div>
         <% else %>
