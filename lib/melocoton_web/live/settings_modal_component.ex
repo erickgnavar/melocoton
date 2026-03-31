@@ -1,6 +1,7 @@
 defmodule MelocotonWeb.SettingsModalComponent do
   use MelocotonWeb, :live_component
 
+  alias Melocoton.AI.Models
   alias Melocoton.Settings
 
   @presets %{"xs" => 11, "sm" => 12, "md" => 14, "lg" => 16, "xl" => 18}
@@ -9,6 +10,7 @@ defmodule MelocotonWeb.SettingsModalComponent do
   def update(assigns, socket) do
     settings = Settings.get_api_key_settings()
     font_size = Settings.get("font_size") || "md"
+    {provider, model} = Models.parse_model_string(settings["ai_model"])
 
     socket
     |> assign(assigns)
@@ -17,7 +19,10 @@ defmodule MelocotonWeb.SettingsModalComponent do
       saved: false,
       font_size: font_size,
       font_size_px: font_size_to_px(font_size),
-      current_model: Application.get_env(:melocoton, :ai)[:model] || ""
+      provider: provider,
+      model: model,
+      model_options: Models.model_options(provider),
+      required_key: Models.required_api_key(provider)
     )
     |> ok()
   end
@@ -44,14 +49,46 @@ defmodule MelocotonWeb.SettingsModalComponent do
   def handle_event("set-font-size-px", _params, socket), do: noreply(socket)
 
   @impl true
+  def handle_event("change-provider", %{"provider" => provider}, socket) do
+    model_options = Models.model_options(provider)
+
+    first_model =
+      case model_options do
+        [{_, id} | _] -> id
+        [] -> nil
+      end
+
+    socket
+    |> assign(
+      provider: provider,
+      model: first_model,
+      model_options: model_options,
+      required_key: Models.required_api_key(provider)
+    )
+    |> noreply()
+  end
+
+  @impl true
+  def handle_event("change-model", %{"model" => model}, socket) do
+    socket |> assign(model: model) |> noreply()
+  end
+
+  @impl true
   def handle_event("save-settings", params, socket) do
+    ai_model = Models.build_model_string(socket.assigns.provider, socket.assigns.model)
+    params = if ai_model, do: Map.put(params, "ai_model", ai_model), else: params
+
     Settings.save_api_key_settings(params)
+    settings = Settings.get_api_key_settings()
+    {provider, model} = Models.parse_model_string(settings["ai_model"])
 
     socket
     |> assign(
       saved: true,
-      settings: Settings.get_api_key_settings(),
-      current_model: Application.get_env(:melocoton, :ai)[:model] || ""
+      settings: settings,
+      provider: provider,
+      model: model,
+      model_options: Models.model_options(provider)
     )
     |> noreply()
   end
