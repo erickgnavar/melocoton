@@ -193,6 +193,7 @@ defmodule MelocotonWeb.SQLLive.Run do
 
     socket
     |> assign(:ai_panel_open, open)
+    |> then(fn s -> if open, do: push_event(s, "focus-ai-chat", %{}), else: s end)
     |> noreply()
   end
 

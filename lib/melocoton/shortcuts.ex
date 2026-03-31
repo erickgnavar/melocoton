@@ -19,6 +19,7 @@ defmodule Melocoton.Shortcuts do
     # Global
     {["⌘", "K"], :global, "Command palette"},
     {["⌘", ","], :global, "Settings"},
+    {["⌘", "B"], :global, "Toggle AI panel"},
     {["?"], :global, "Keyboard shortcuts"},
 
     # SQL Editor

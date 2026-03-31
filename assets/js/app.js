@@ -378,6 +378,14 @@ window.addEventListener("phx:open-settings-modal", () => {
   }
 });
 
+// Focus AI chat input when panel opens
+window.addEventListener("phx:focus-ai-chat", () => {
+  requestAnimationFrame(() => {
+    const input = document.getElementById("ai-chat-input");
+    if (input) input.focus();
+  });
+});
+
 // Open shortcuts modal
 window.addEventListener("phx:open-shortcuts-modal", () => {
   const modal = document.getElementById("shortcuts-modal");
@@ -415,22 +423,40 @@ function isInputFocused() {
   );
 }
 
+function pushLiveEvent(event) {
+  const main = document.querySelector("[data-phx-main]");
+  if (!main) return;
+
+  liveSocket.execJS(
+    main,
+    JSON.stringify([["push", { event: event, value: {} }]]),
+  );
+}
+
 document.addEventListener(
   "keydown",
   (e) => {
+    const mod = e.metaKey || e.ctrlKey;
+
     // CMD+K / Ctrl+K — Command palette
-    if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+    if (mod && e.key === "k") {
       e.preventDefault();
       e.stopPropagation();
       const trigger = document.getElementById("command-palette-trigger");
-      if (trigger) {
-        trigger.click();
-      }
+      if (trigger) trigger.click();
+      return;
+    }
+
+    // CMD+B — Toggle AI panel
+    if (mod && !e.shiftKey && e.key === "b") {
+      e.preventDefault();
+      e.stopPropagation();
+      pushLiveEvent("toggle-ai-panel");
       return;
     }
 
     // ? — Keyboard shortcuts (only when not typing in an input)
-    if (e.key === "?" && !e.metaKey && !e.ctrlKey && !isInputFocused()) {
+    if (e.key === "?" && !mod && !isInputFocused()) {
       e.preventDefault();
       const modal = document.getElementById("shortcuts-modal");
       if (modal) {
