@@ -4,6 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Melocoton — SQL Client Built for Keyboard People</title>
+
+    <!-- Primary meta -->
+    <meta name="description" content="A keyboard-first SQL client for macOS and Linux. Vim keybindings, multi-connection support, schema browser, and a built-in AI agent. Free and open source.">
+    <meta name="author" content="Erick Gnavar">
+
+    <!-- Open Graph (Facebook, LinkedIn, Slack, WhatsApp…) -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://melocoton.app/">
+    <meta property="og:title" content="Melocoton — SQL Client Built for Keyboard People">
+    <meta property="og:description" content="A keyboard-first SQL client for macOS and Linux. Vim keybindings, multi-connection support, schema browser, and a built-in AI agent. Free and open source.">
+    <meta property="og:image" content="https://melocoton.app/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:site_name" content="Melocoton">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter / X Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://melocoton.app/">
+    <meta name="twitter:title" content="Melocoton — SQL Client Built for Keyboard People">
+    <meta name="twitter:description" content="A keyboard-first SQL client for macOS and Linux. Vim keybindings, multi-connection support, schema browser, and a built-in AI agent. Free and open source.">
+    <meta name="twitter:image" content="https://melocoton.app/og-image.png">
+    <meta name="twitter:creator" content="@erickgnavar">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Berkeley+Mono:wght@400;700&family=Space+Mono:wght@400;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
     <script defer data-domain="melocoton.app" src="https://plausible.io/js/script.js"></script>
@@ -1414,6 +1438,7 @@
         html.classList.add(isDark ? 'light' : 'dark');
         localStorage.setItem('theme', isDark ? 'light' : 'dark');
       });
+
       const hints = [
         ['gg', 'first row'],
         ['G', 'last row'],
