@@ -17,6 +17,7 @@ defmodule Melocoton.Shortcuts do
     {["⌘", "K"], :global, "Command palette"},
     {["⌘", ","], :global, "Settings"},
     {["⌘", "B"], :global, "Toggle AI panel"},
+    {["⌘", "N"], :global, "New window"},
     {["?"], :global, "Keyboard shortcuts"},
 
     # SQL Editor
@@ -28,6 +29,8 @@ defmodule Melocoton.Shortcuts do
     {["Ctrl", "P"], :sql_editor, "Previous autocomplete suggestion"},
 
     # Vim mode
+    {["g", "c", "c"], :sql_editor, "Toggle comment on line (Vim)"},
+    {["g", "c"], :sql_editor, "Toggle comment on selection (Vim visual)"},
     {["g", "t"], :sql_editor, "Next session tab (Vim)"},
     {["g", "T"], :sql_editor, "Previous session tab (Vim)"},
     {[":format"], :sql_editor, "Format SQL (Vim)"},
