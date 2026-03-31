@@ -19,6 +19,12 @@ defmodule MelocotonWeb.CommandPalette do
     },
     %{id: :settings, name: "Settings", icon: "lucide-settings", action: "open-settings"},
     %{
+      id: :explain_ai,
+      name: "Analyze Query Plan with AI",
+      icon: "lucide-bot",
+      action: "explain-with-ai"
+    },
+    %{
       id: :shortcuts,
       name: "Keyboard Shortcuts",
       icon: "lucide-keyboard",

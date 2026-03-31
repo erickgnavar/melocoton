@@ -201,43 +201,7 @@ defmodule MelocotonWeb.SQLLive.Run do
   end
 
   def handle_event("explain-with-ai", _params, socket) do
-    result = socket.assigns.result
-    query = socket.assigns.last_query
-
-    explain_output =
-      Enum.map_join(result.rows, "\n", fn row ->
-        row |> Map.values() |> Enum.map_join("\t", &to_string/1)
-      end)
-
-    prompt = """
-    Analyze the following query execution plan and provide:
-    1. A summary of what the query does
-    2. Key performance observations (sequential scans, index usage, cost, rows)
-    3. Specific optimization suggestions if any
-
-    **Query:**
-    ```sql
-    #{query}
-    ```
-
-    **EXPLAIN ANALYZE output:**
-    ```
-    #{explain_output}
-    ```
-    """
-
-    # Open AI panel if closed
-    socket =
-      if socket.assigns.ai_panel_open do
-        socket
-      else
-        save_project_setting(socket.assigns.database.id, "ai_panel_open", "true")
-        assign(socket, :ai_panel_open, true)
-      end
-
-    send_update(MelocotonWeb.SqlLive.AiChatComponent, id: "ai-chat", send_message: prompt)
-
-    socket |> noreply()
+    socket |> explain_with_ai() |> noreply()
   end
 
   def handle_event("save-panel-widths", %{"sidebar" => sidebar, "ai" => ai}, socket) do
@@ -310,6 +274,11 @@ defmodule MelocotonWeb.SQLLive.Run do
 
   def handle_info({:DOWN, _ref, :process, _pid, _reason}, socket) do
     noreply(socket)
+  end
+
+  @impl true
+  def handle_info(:explain_with_ai, socket) do
+    socket |> explain_with_ai() |> noreply()
   end
 
   @impl true
@@ -436,6 +405,45 @@ defmodule MelocotonWeb.SQLLive.Run do
       {:ok, indexes} -> {:ok, %{indexes: indexes}}
       {:error, error} -> {:error, error}
     end
+  end
+
+  defp explain_with_ai(socket) do
+    result = socket.assigns.result
+    query = socket.assigns.last_query
+
+    explain_output =
+      Enum.map_join(result.rows, "\n", fn row ->
+        row |> Map.values() |> Enum.map_join("\t", &to_string/1)
+      end)
+
+    prompt = """
+    Analyze the following query execution plan and provide:
+    1. A summary of what the query does
+    2. Key performance observations (sequential scans, index usage, cost, rows)
+    3. Specific optimization suggestions if any
+
+    **Query:**
+    ```sql
+    #{query}
+    ```
+
+    **EXPLAIN ANALYZE output:**
+    ```
+    #{explain_output}
+    ```
+    """
+
+    socket =
+      if socket.assigns.ai_panel_open do
+        socket
+      else
+        save_project_setting(socket.assigns.database.id, "ai_panel_open", "true")
+        assign(socket, :ai_panel_open, true)
+      end
+
+    send_update(MelocotonWeb.SqlLive.AiChatComponent, id: "ai-chat", send_message: prompt)
+
+    socket
   end
 
   defp explain_query?(nil), do: false

@@ -44,6 +44,20 @@ defmodule MelocotonWeb.CommandPaletteHook do
     {:halt, push_event(socket, "open-shortcuts-modal", %{})}
   end
 
+  defp handle_info(
+         {MelocotonWeb.CommandPalette, {:palette_action, "explain-with-ai"}},
+         socket
+       ) do
+    query = socket.assigns[:last_query]
+
+    if query && query |> String.trim() |> String.downcase() |> String.starts_with?("explain") do
+      send(self(), :explain_with_ai)
+      {:halt, socket}
+    else
+      {:halt, put_flash(socket, :error, "Run an EXPLAIN query first.")}
+    end
+  end
+
   defp handle_info({MelocotonWeb.CommandPalette, {:palette_action, "export-" <> format}}, socket) do
     result = socket.assigns[:result]
 
