@@ -23,10 +23,6 @@ defmodule MelocotonWeb.CommandPaletteHook do
     {:halt, socket}
   end
 
-  defp handle_event("open-shortcuts-modal", _params, socket) do
-    {:halt, push_event(socket, "open-shortcuts-modal", %{})}
-  end
-
   # Panel toggle shortcuts — only active on pages that have these assigns
   defp handle_event("toggle-ai-panel", _params, socket) do
     if Map.has_key?(socket.assigns, :ai_panel_open) do

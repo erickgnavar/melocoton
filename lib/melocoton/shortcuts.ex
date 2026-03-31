@@ -2,19 +2,16 @@ defmodule Melocoton.Shortcuts do
   @moduledoc """
   Central registry of all keyboard shortcuts in the application.
   Single source of truth — UI rendering and event handlers reference this.
+  Each shortcut is a {keys, context, description} tuple.
   """
 
-  defstruct [:key, :modifiers, :context, :action, :description]
+  @context_labels %{
+    global: "Global",
+    sql_editor: "SQL Editor",
+    databases: "Connections",
+    table_explorer: "Table Explorer"
+  }
 
-  @type t :: %__MODULE__{
-          key: String.t(),
-          modifiers: list(:cmd | :shift | :ctrl | :alt),
-          context: :global | :sql_editor | :databases | :table_explorer,
-          action: String.t(),
-          description: String.t()
-        }
-
-  # Defined as keyword lists, converted to structs at compile time via function
   @shortcut_data [
     # Global
     {["⌘", "K"], :global, "Command palette"},
@@ -42,22 +39,16 @@ defmodule Melocoton.Shortcuts do
     {["⌘", "Enter"], :table_explorer, "Set cell to NULL"}
   ]
 
-  @doc "Returns all shortcuts as a list of {keys, context, description} tuples."
-  def all, do: @shortcut_data
+  @grouped_data @shortcut_data
+                |> Enum.map(fn {_, ctx, _} -> ctx end)
+                |> Enum.uniq()
+                |> Enum.map(fn ctx ->
+                  %{
+                    label: @context_labels[ctx],
+                    shortcuts: Enum.filter(@shortcut_data, fn {_, c, _} -> c == ctx end)
+                  }
+                end)
 
-  @doc "Returns shortcuts for a given context."
-  def for_context(context) do
-    Enum.filter(@shortcut_data, fn {_keys, ctx, _desc} -> ctx == context end)
-  end
-
-  @doc "Returns all unique contexts in order."
-  def contexts do
-    @shortcut_data |> Enum.map(fn {_, ctx, _} -> ctx end) |> Enum.uniq()
-  end
-
-  @doc "Human-readable context label."
-  def context_label(:global), do: "Global"
-  def context_label(:sql_editor), do: "SQL Editor"
-  def context_label(:databases), do: "Connections"
-  def context_label(:table_explorer), do: "Table Explorer"
+  @doc "Returns all shortcuts grouped by context, precomputed at compile time."
+  def grouped, do: @grouped_data
 end
