@@ -1,0 +1,24 @@
+<div class="p-4 max-h-[70vh] overflow-y-auto">
+  <div :for={group <- @groups} class="mb-4 last:mb-0">
+    <h3
+      class="text-xs font-semibold uppercase tracking-wider mb-2"
+      style="color: var(--text-tertiary);"
+    >
+      {group.label}
+    </h3>
+    <div class="space-y-1">
+      <div
+        :for={{keys, _ctx, description} <- group.shortcuts}
+        class="flex items-center justify-between py-1.5 px-2 rounded"
+        style="color: var(--text-secondary);"
+      >
+        <span class="text-xs">{description}</span>
+        <div class="flex items-center gap-0.5">
+          <kbd :for={segment <- keys} class="kbd-chip">
+            {segment}
+          </kbd>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

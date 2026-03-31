@@ -23,12 +23,20 @@ defmodule MelocotonWeb.CommandPaletteHook do
     {:halt, socket}
   end
 
+  defp handle_event("open-shortcuts-modal", _params, socket) do
+    {:halt, push_event(socket, "open-shortcuts-modal", %{})}
+  end
+
   defp handle_event(_event, _params, socket) do
     {:cont, socket}
   end
 
   defp handle_info({MelocotonWeb.CommandPalette, {:palette_action, "open-settings"}}, socket) do
     {:halt, push_event(socket, "open-settings-modal", %{})}
+  end
+
+  defp handle_info({MelocotonWeb.CommandPalette, {:palette_action, "show-shortcuts"}}, socket) do
+    {:halt, push_event(socket, "open-shortcuts-modal", %{})}
   end
 
   defp handle_info({MelocotonWeb.CommandPalette, {:palette_action, "export-" <> format}}, socket) do

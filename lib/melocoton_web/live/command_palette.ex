@@ -17,7 +17,13 @@ defmodule MelocotonWeb.CommandPalette do
       icon: "lucide-file-spreadsheet",
       action: "export-xlsx"
     },
-    %{id: :settings, name: "Settings", icon: "lucide-settings", action: "open-settings"}
+    %{id: :settings, name: "Settings", icon: "lucide-settings", action: "open-settings"},
+    %{
+      id: :shortcuts,
+      name: "Keyboard Shortcuts",
+      icon: "lucide-keyboard",
+      action: "show-shortcuts"
+    }
   ]
 
   @impl true

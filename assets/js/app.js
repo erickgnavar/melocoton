@@ -378,6 +378,14 @@ window.addEventListener("phx:open-settings-modal", () => {
   }
 });
 
+// Open shortcuts modal
+window.addEventListener("phx:open-shortcuts-modal", () => {
+  const modal = document.getElementById("shortcuts-modal");
+  if (modal) {
+    liveSocket.execJS(modal, modal.getAttribute("data-show-modal"));
+  }
+});
+
 // Show progress bar on live navigation and form submits
 topbar.config({ barColors: { 0: "#29d" }, shadowColor: "rgba(0, 0, 0, .3)" });
 window.addEventListener("phx:page-loading-start", (_info) => topbar.show(300));
@@ -392,18 +400,41 @@ liveSocket.connect();
 // >> liveSocket.disableLatencySim()
 window.liveSocket = liveSocket;
 
-// Command palette (CMD+K / Ctrl+K)
-// Use capture phase so it fires before CodeMirror's Vim mode consumes Ctrl+K
+// Global keyboard shortcuts
+// Use capture phase so it fires before CodeMirror's Vim mode consumes keys
+function isInputFocused() {
+  const el = document.activeElement;
+  if (!el) return false;
+  const tag = el.tagName;
+  return (
+    tag === "INPUT" ||
+    tag === "TEXTAREA" ||
+    tag === "SELECT" ||
+    el.isContentEditable ||
+    el.closest(".cm-editor")
+  );
+}
+
 document.addEventListener(
   "keydown",
   (e) => {
+    // CMD+K / Ctrl+K — Command palette
     if ((e.metaKey || e.ctrlKey) && e.key === "k") {
       e.preventDefault();
       e.stopPropagation();
-      // Dispatch a custom event that any LiveView element can pick up
       const trigger = document.getElementById("command-palette-trigger");
       if (trigger) {
         trigger.click();
+      }
+      return;
+    }
+
+    // ? — Keyboard shortcuts (only when not typing in an input)
+    if (e.key === "?" && !e.metaKey && !e.ctrlKey && !isInputFocused()) {
+      e.preventDefault();
+      const modal = document.getElementById("shortcuts-modal");
+      if (modal) {
+        liveSocket.execJS(modal, modal.getAttribute("data-show-modal"));
       }
     }
   },
