@@ -26,7 +26,13 @@ import { EditorView, basicSetup } from "codemirror";
 import { toggleComment } from "@codemirror/commands";
 import { Compartment } from "@codemirror/state";
 import { keymap } from "@codemirror/view";
-import { sql, PostgreSQL, SQLite, StandardSQL } from "@codemirror/lang-sql";
+import {
+  sql,
+  PostgreSQL,
+  SQLite,
+  MySQL,
+  StandardSQL,
+} from "@codemirror/lang-sql";
 import { vim, Vim } from "@replit/codemirror-vim";
 import { oneDark } from "@codemirror/theme-one-dark";
 import {
@@ -376,6 +382,7 @@ window.addEventListener("phx:load-schema", ({ detail: { schema, type } }) => {
   let dialect = StandardSQL;
   if (type === "postgres") dialect = PostgreSQL;
   if (type === "sqlite") dialect = SQLite;
+  if (type === "mysql") dialect = MySQL;
 
   view.dispatch({
     effects: sqlExtensionCompartment.reconfigure(
