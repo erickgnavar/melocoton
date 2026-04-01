@@ -410,11 +410,11 @@
       <div style="color: var(--text-tertiary);">
         Showing
         <span class="font-medium" style="color: var(--text-secondary);">
-          {(@page - 1) * @limit + 1}-{@page * @limit}
+          {(@page - 1) * @limit + 1}-{min(@page * @limit, @total_count)}
         </span>
         of
         <span class="font-medium" style="color: var(--text-secondary);">
-          {length(@pages) * @limit}
+          ~{@total_count}
         </span>
         rows
       </div>
@@ -437,42 +437,69 @@
         </.simple_form>
       </div>
 
-      <%!-- Right: page buttons --%>
-      <div class="flex items-center space-x-1">
-        <button
-          class="px-1.5 py-1 rounded"
-          style="background: var(--bg-secondary); color: var(--text-tertiary);"
-          phx-click="previous-page"
+      <%!-- Right: page navigation --%>
+      <div class="flex items-center gap-1.5">
+        <div class="flex items-center space-x-1">
+          <button
+            class="px-1.5 py-1 rounded"
+            style="background: var(--bg-secondary); color: var(--text-tertiary);"
+            phx-click="previous-page"
+            phx-target={@myself}
+            disabled={@page == 1}
+          >
+            <.icon name="lucide-chevron-left" class="size-3" />
+          </button>
+          <%= for item <- visible_pages(@page, @total_pages) do %>
+            <%= if item == :ellipsis do %>
+              <span class="px-1" style="color: var(--text-tertiary);">…</span>
+            <% else %>
+              <button
+                phx-click="change-page"
+                phx-value-page={item}
+                phx-target={@myself}
+                class="px-2 py-1 rounded"
+                style={
+                  if item == @page do
+                    "background: #{@database.group.color}22; border: 1px solid #{@database.group.color}44; color: #{@database.group.color};"
+                  else
+                    "background: var(--bg-secondary); color: var(--text-tertiary);"
+                  end
+                }
+              >
+                {item}
+              </button>
+            <% end %>
+          <% end %>
+          <button
+            class="px-1.5 py-1 rounded"
+            style="background: var(--bg-secondary); color: var(--text-tertiary);"
+            phx-click="next-page"
+            phx-target={@myself}
+            disabled={@page == @total_pages}
+          >
+            <.icon name="lucide-chevron-right" class="size-3" />
+          </button>
+        </div>
+
+        <form
+          phx-submit="jump-to-page"
           phx-target={@myself}
-          disabled={@page == 1}
+          class="flex items-center gap-1 ml-2"
         >
-          <.icon name="lucide-chevron-left" class="size-3" />
-        </button>
-        <button
-          :for={page <- @pages}
-          phx-click="change-page"
-          phx-value-page={page}
-          phx-target={@myself}
-          class="px-2 py-1 rounded"
-          style={
-            if page == @page do
-              "background: #{@database.group.color}22; border: 1px solid #{@database.group.color}44; color: #{@database.group.color};"
-            else
-              "background: var(--bg-secondary); color: var(--text-tertiary);"
-            end
-          }
-        >
-          {page}
-        </button>
-        <button
-          class="px-1.5 py-1 rounded"
-          style="background: var(--bg-secondary); color: var(--text-tertiary);"
-          phx-click="next-page"
-          phx-target={@myself}
-          disabled={@page == length(@pages)}
-        >
-          <.icon name="lucide-chevron-right" class="size-3" />
-        </button>
+          <span class="text-[10px]" style="color: var(--text-tertiary);">Page</span>
+          <input
+            type="number"
+            name="page"
+            value={@page}
+            min="1"
+            max={@total_pages}
+            class="w-12 px-1 py-0.5 text-xs text-center rounded"
+            style="background: var(--bg-primary); border: 0.5px solid var(--border-medium); color: var(--text-primary);"
+          />
+          <span class="text-[10px]" style="color: var(--text-tertiary);">
+            of {@total_pages}
+          </span>
+        </form>
       </div>
     </div>
   <% end %>

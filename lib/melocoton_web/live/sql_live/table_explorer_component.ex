@@ -8,7 +8,8 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
   @impl true
   def update(%{repo: repo, table_name: table_name, database: _database} = assigns, socket) do
     page = 1
-    pages = 1..get_num_pages(repo, table_name, @initial_limit)
+    total_count = DatabaseClient.get_estimated_count(repo, table_name)
+    total_pages = max(ceil(total_count / @initial_limit), 1)
 
     %{columns: columns, pk_columns: pk_columns, column_types: column_types} =
       DatabaseClient.get_table_meta(repo, table_name)
@@ -16,7 +17,12 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
     socket
     |> assign(assigns)
     |> assign(active_tab: "data")
-    |> assign(limit: @initial_limit, page: page, pages: Enum.to_list(pages))
+    |> assign(
+      limit: @initial_limit,
+      page: page,
+      total_pages: total_pages,
+      total_count: total_count
+    )
     |> assign(sort_column: nil, sort_direction: nil, filter: "", columns: columns)
     |> assign(pk_columns: pk_columns)
     |> assign(column_types: column_types)
@@ -86,7 +92,7 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
 
   @impl true
   def handle_event("next-page", _params, socket) do
-    page = min(socket.assigns.page + 1, length(socket.assigns.pages))
+    page = min(socket.assigns.page + 1, socket.assigns.total_pages)
 
     socket
     |> assign(page: page)
@@ -105,11 +111,29 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
   end
 
   @impl true
+  def handle_event("jump-to-page", %{"page" => page}, socket) do
+    case Integer.parse(page) do
+      {p, _} ->
+        p = p |> max(1) |> min(socket.assigns.total_pages)
+
+        socket
+        |> assign(page: p)
+        |> load_data()
+        |> noreply()
+
+      :error ->
+        noreply(socket)
+    end
+  end
+
+  @impl true
   def handle_event("validate-limit", %{"limit" => limit}, socket) do
     {limit, _} = Integer.parse(limit)
+    total_pages = max(ceil(socket.assigns.total_count / limit), 1)
+    page = min(socket.assigns.page, total_pages)
 
     socket
-    |> assign(limit: limit)
+    |> assign(limit: limit, total_pages: total_pages, page: page)
     |> load_data()
     |> noreply()
   end
@@ -469,9 +493,23 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
     end)
   end
 
-  defp get_num_pages(repo, table_name, limit) do
-    count = DatabaseClient.get_estimated_count(repo, table_name)
-    max(div(count, limit) + 1, 1)
+  defp visible_pages(_current, total) when total <= 7 do
+    Enum.to_list(1..total)
+  end
+
+  defp visible_pages(current, total) do
+    window = MapSet.new([1, total] ++ Enum.to_list(max(current - 1, 1)..min(current + 1, total)))
+
+    1..total
+    |> Enum.reduce({[], nil}, fn page, {acc, prev} ->
+      if MapSet.member?(window, page) do
+        {[page | acc], page}
+      else
+        if prev != :ellipsis, do: {[:ellipsis | acc], :ellipsis}, else: {acc, :ellipsis}
+      end
+    end)
+    |> elem(0)
+    |> Enum.reverse()
   end
 
   defp get_result(repo, table_name, opts) do
