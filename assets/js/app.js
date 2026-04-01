@@ -493,6 +493,16 @@ document.addEventListener(
       return;
     }
 
+    // / — Focus search input on databases page
+    if (e.key === "/" && !mod && !isInputFocused()) {
+      const searchInput = document.getElementById("search-connections");
+      if (searchInput) {
+        e.preventDefault();
+        searchInput.focus();
+      }
+      return;
+    }
+
     // ? — Keyboard shortcuts (only when not typing in an input)
     if (e.key === "?" && !mod && !isInputFocused()) {
       e.preventDefault();
