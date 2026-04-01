@@ -7,7 +7,7 @@ defmodule MelocotonWeb.OnboardingTest do
   alias Melocoton.Settings
 
   setup do
-    Settings.delete("onboarding_completed")
+    Settings.reset_onboarding()
     database_fixture()
     :ok
   end
@@ -21,7 +21,7 @@ defmodule MelocotonWeb.OnboardingTest do
     end
 
     test "does not show onboarding when already completed", %{conn: conn} do
-      Settings.set("onboarding_completed", "true")
+      Settings.complete_onboarding()
 
       {:ok, _view, html} = live(conn, ~p"/databases")
 
@@ -91,7 +91,7 @@ defmodule MelocotonWeb.OnboardingTest do
       view |> element("button", "Get Started") |> render_click()
 
       refute has_element?(view, "#onboarding-modal")
-      assert Settings.get("onboarding_completed") == "true"
+      assert Settings.onboarding_completed?()
     end
 
     test "skip saves setting and hides modal", %{conn: conn} do
@@ -100,7 +100,7 @@ defmodule MelocotonWeb.OnboardingTest do
       view |> element("button", "Skip") |> render_click()
 
       refute has_element?(view, "#onboarding-modal")
-      assert Settings.get("onboarding_completed") == "true"
+      assert Settings.onboarding_completed?()
     end
 
     test "dismiss via cancel saves setting and hides modal", %{conn: conn} do
@@ -111,13 +111,13 @@ defmodule MelocotonWeb.OnboardingTest do
       render_hook(view, "dismiss-onboarding", %{})
 
       refute has_element?(view, "#onboarding-modal")
-      assert Settings.get("onboarding_completed") == "true"
+      assert Settings.onboarding_completed?()
     end
   end
 
   describe "re-trigger" do
     test "show-onboarding event re-shows the tutorial", %{conn: conn} do
-      Settings.set("onboarding_completed", "true")
+      Settings.complete_onboarding()
 
       {:ok, view, _html} = live(conn, ~p"/databases")
       refute has_element?(view, "#onboarding-modal")
@@ -126,7 +126,7 @@ defmodule MelocotonWeb.OnboardingTest do
 
       assert has_element?(view, "#onboarding-modal")
       assert render(view) =~ "Welcome to Melocoton"
-      assert is_nil(Settings.get("onboarding_completed"))
+      refute Settings.onboarding_completed?()
     end
   end
 

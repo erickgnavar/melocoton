@@ -88,7 +88,7 @@ defmodule MelocotonWeb.SettingsModalComponent do
 
   @impl true
   def handle_event("show-onboarding", _params, socket) do
-    Settings.delete("onboarding_completed")
+    Settings.reset_onboarding()
     send(self(), {__MODULE__, :show_onboarding})
 
     socket

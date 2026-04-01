@@ -45,7 +45,7 @@ defmodule MelocotonWeb.CommandPaletteHook do
   end
 
   defp handle_info({MelocotonWeb.CommandPalette, {:palette_action, "show-onboarding"}}, socket) do
-    Melocoton.Settings.delete("onboarding_completed")
+    Melocoton.Settings.reset_onboarding()
     {:halt, push_navigate(socket, to: ~p"/databases")}
   end
 

@@ -14,7 +14,7 @@ defmodule MelocotonWeb.DatabaseLive.Index do
     |> assign(:search_term, "")
     |> assign(:engine_filter, nil)
     |> assign(:data, %{})
-    |> assign(:show_onboarding, is_nil(Melocoton.Settings.get("onboarding_completed")))
+    |> assign(:show_onboarding, not Melocoton.Settings.onboarding_completed?())
     |> reload_data()
     |> then(&{:ok, &1})
   end
@@ -26,7 +26,7 @@ defmodule MelocotonWeb.DatabaseLive.Index do
 
   @impl true
   def handle_event("dismiss-onboarding", _params, socket) do
-    Melocoton.Settings.set("onboarding_completed", "true")
+    Melocoton.Settings.complete_onboarding()
 
     socket
     |> assign(:show_onboarding, false)
@@ -35,7 +35,7 @@ defmodule MelocotonWeb.DatabaseLive.Index do
 
   @impl true
   def handle_event("show-onboarding", _params, socket) do
-    Melocoton.Settings.delete("onboarding_completed")
+    Melocoton.Settings.reset_onboarding()
 
     socket
     |> assign(:show_onboarding, true)

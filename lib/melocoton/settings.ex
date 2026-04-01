@@ -44,6 +44,20 @@ defmodule Melocoton.Settings do
     end
   end
 
+  @onboarding_key "onboarding_completed"
+
+  def onboarding_completed? do
+    get(@onboarding_key) != nil
+  end
+
+  def complete_onboarding do
+    set(@onboarding_key, "true")
+  end
+
+  def reset_onboarding do
+    delete(@onboarding_key)
+  end
+
   @doc """
   Returns all API key settings as a map with empty string defaults.
   """

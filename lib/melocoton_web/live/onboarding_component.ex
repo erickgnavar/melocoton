@@ -10,7 +10,7 @@ defmodule MelocotonWeb.OnboardingComponent do
     socket
     |> assign(assigns)
     |> assign_new(:step, fn -> 0 end)
-    |> assign(:total_steps, @total_steps)
+    |> assign_new(:total_steps, fn -> @total_steps end)
     |> ok()
   end
 
@@ -34,7 +34,7 @@ defmodule MelocotonWeb.OnboardingComponent do
   end
 
   defp complete(socket) do
-    Settings.set("onboarding_completed", "true")
+    Settings.complete_onboarding()
     send(self(), {__MODULE__, :onboarding_completed})
     noreply(socket)
   end
