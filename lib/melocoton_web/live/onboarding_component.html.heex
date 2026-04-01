@@ -1,0 +1,210 @@
+<div id="onboarding-wrapper" phx-hook="OnboardingModal" phx-target={@myself}>
+  <%!-- Step indicator dots --%>
+  <div class="flex justify-center gap-1.5 mb-5 px-5 pt-5">
+    <div
+      :for={i <- 0..(@total_steps - 1)}
+      class="size-1.5 rounded-full transition-colors"
+      style={
+        if i == @step,
+          do: "background: var(--focus-color);",
+          else: "background: var(--border-medium);"
+      }
+    />
+  </div>
+
+  <%!-- Step content --%>
+  <div class="px-5 text-xs" style="color: var(--text-secondary); min-height: 160px;">
+    <%!-- Step 0: Welcome --%>
+    <div :if={@step == 0} class="space-y-3">
+      <h3 class="text-sm font-semibold" style="color: var(--text-primary);">
+        Welcome to Melocoton
+      </h3>
+      <p>
+        A keyboard-driven database client for PostgreSQL, MySQL, and SQLite.
+        This quick tour covers the essentials.
+      </p>
+      <div class="flex items-center gap-3 pt-2">
+        <span
+          class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-medium"
+          style="background: var(--badge-postgres-bg); color: var(--badge-postgres-text);"
+        >
+          PostgreSQL
+        </span>
+        <span
+          class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-medium"
+          style="background: var(--badge-mysql-bg, var(--badge-sqlite-bg)); color: var(--badge-mysql-text, var(--badge-sqlite-text));"
+        >
+          MySQL
+        </span>
+        <span
+          class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-medium"
+          style="background: var(--badge-sqlite-bg); color: var(--badge-sqlite-text);"
+        >
+          SQLite
+        </span>
+      </div>
+    </div>
+
+    <%!-- Step 1: Connections --%>
+    <div :if={@step == 1} class="space-y-3">
+      <h3
+        class="text-sm font-semibold flex items-center gap-2"
+        style="color: var(--text-primary);"
+      >
+        <.icon name="lucide-database" class="size-4" /> Connections
+      </h3>
+      <p>
+        A connection points to a single database. It stores the connection URL
+        and engine type.
+      </p>
+      <p>
+        You can test connections before opening them, clone them, and export
+        query results to CSV or Excel.
+      </p>
+    </div>
+
+    <%!-- Step 2: Groups --%>
+    <div :if={@step == 2} class="space-y-3">
+      <h3
+        class="text-sm font-semibold flex items-center gap-2"
+        style="color: var(--text-primary);"
+      >
+        <.icon name="lucide-folder-plus" class="size-4" /> Groups
+      </h3>
+      <p>
+        Connections are organized into groups. Each group has a name and color
+        that tints the UI when you're connected — so you always know which
+        environment you're working in.
+      </p>
+      <div class="flex items-center gap-2 pt-1">
+        <.icon name="lucide-lock" class="size-3.5" style="color: var(--text-tertiary);" />
+        <span class="text-[11px]" style="color: var(--text-tertiary);">
+          Groups can be set to <strong style="color: var(--text-secondary);">read-only</strong>,
+          blocking all write queries (INSERT, UPDATE, DELETE, DROP).
+        </span>
+      </div>
+    </div>
+
+    <%!-- Step 3: SQL Workspace --%>
+    <div :if={@step == 3} class="space-y-3">
+      <h3
+        class="text-sm font-semibold flex items-center gap-2"
+        style="color: var(--text-primary);"
+      >
+        <.icon name="lucide-terminal-square" class="size-4" /> SQL Workspace
+      </h3>
+      <p>
+        Full SQL editor with autocomplete, syntax highlighting, and multiple
+        session tabs. The sidebar shows tables, columns, and indexes.
+      </p>
+      <div class="space-y-1.5 pt-1">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px]">Run query</span>
+          <span class="kbd-chip">&#8984;Enter</span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-[11px]">Format SQL</span>
+          <span class="kbd-chip">&#8984;&#8679;F</span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-[11px]">Autocomplete</span>
+          <span class="kbd-chip">Tab</span>
+        </div>
+      </div>
+    </div>
+
+    <%!-- Step 4: AI Assistant --%>
+    <div :if={@step == 4} class="space-y-3">
+      <h3
+        class="text-sm font-semibold flex items-center gap-2"
+        style="color: var(--text-primary);"
+      >
+        <.icon name="lucide-bot" class="size-4" /> AI Assistant
+      </h3>
+      <p>
+        Toggle the AI panel to ask questions about your schema, generate queries,
+        or analyze EXPLAIN plans. The AI knows your database structure and can
+        insert suggested SQL directly into the editor.
+      </p>
+      <div class="flex items-center justify-between pt-1">
+        <span class="text-[11px]">Toggle AI panel</span>
+        <span class="kbd-chip">&#8984;B</span>
+      </div>
+      <p class="text-[11px]" style="color: var(--text-tertiary);">
+        Configure your LLM provider and API key in Settings.
+      </p>
+    </div>
+
+    <%!-- Step 5: Keyboard Shortcuts --%>
+    <div :if={@step == 5} class="space-y-3">
+      <h3
+        class="text-sm font-semibold flex items-center gap-2"
+        style="color: var(--text-primary);"
+      >
+        <.icon name="lucide-keyboard" class="size-4" /> Keyboard-First
+      </h3>
+      <p>
+        Everything is reachable from the keyboard. Vim keybindings are available
+        in the editor (configurable in Settings).
+      </p>
+      <div class="space-y-1.5 pt-1">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px]">Command palette</span>
+          <span class="kbd-chip">&#8984;K</span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-[11px]">Keyboard shortcuts</span>
+          <span class="kbd-chip">?</span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-[11px]">Settings</span>
+          <span class="kbd-chip">&#8984;,</span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-[11px]">Search connections</span>
+          <span class="kbd-chip">/</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%!-- Navigation footer --%>
+  <div
+    class="flex items-center justify-between px-5 py-3 mt-4"
+    style="border-top: 1px solid var(--border-medium);"
+  >
+    <button
+      phx-click="skip-onboarding"
+      phx-target={@myself}
+      class="text-[10px] hover:underline"
+      style="color: var(--text-tertiary);"
+    >
+      Skip <span class="kbd-chip ml-0.5">esc</span>
+    </button>
+    <div class="flex items-center gap-2">
+      <button
+        :if={@step > 0}
+        phx-click="prev-step"
+        phx-target={@myself}
+        class="px-2.5 py-1 text-xs rounded font-medium"
+        style="background: var(--bg-tertiary); color: var(--text-secondary); border: 0.5px solid var(--border-medium);"
+      >
+        Back
+      </button>
+      <button
+        phx-click="next-step"
+        phx-target={@myself}
+        class="px-2.5 py-1 text-xs rounded font-medium text-white"
+        style="background: var(--focus-color);"
+      >
+        {if @step == @total_steps - 1, do: "Get Started", else: "Next"}
+        <span
+          class="kbd-chip ml-1"
+          style="color: rgba(255,255,255,0.7); border-color: rgba(255,255,255,0.3);"
+        >
+          enter
+        </span>
+      </button>
+    </div>
+  </div>
+</div>

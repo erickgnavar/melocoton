@@ -29,6 +29,12 @@ defmodule MelocotonWeb.CommandPalette do
       name: "Keyboard Shortcuts",
       icon: "lucide-keyboard",
       action: "show-shortcuts"
+    },
+    %{
+      id: :onboarding,
+      name: "Show Welcome Tutorial",
+      icon: "lucide-graduation-cap",
+      action: "show-onboarding"
     }
   ]
 

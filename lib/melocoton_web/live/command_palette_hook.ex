@@ -44,6 +44,11 @@ defmodule MelocotonWeb.CommandPaletteHook do
     {:halt, push_event(socket, "open-shortcuts-modal", %{})}
   end
 
+  defp handle_info({MelocotonWeb.CommandPalette, {:palette_action, "show-onboarding"}}, socket) do
+    Melocoton.Settings.delete("onboarding_completed")
+    {:halt, push_navigate(socket, to: ~p"/databases")}
+  end
+
   defp handle_info(
          {MelocotonWeb.CommandPalette, {:palette_action, "explain-with-ai"}},
          socket

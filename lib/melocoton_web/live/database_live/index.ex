@@ -14,6 +14,7 @@ defmodule MelocotonWeb.DatabaseLive.Index do
     |> assign(:search_term, "")
     |> assign(:engine_filter, nil)
     |> assign(:data, %{})
+    |> assign(:show_onboarding, is_nil(Melocoton.Settings.get("onboarding_completed")))
     |> reload_data()
     |> then(&{:ok, &1})
   end
@@ -21,6 +22,24 @@ defmodule MelocotonWeb.DatabaseLive.Index do
   @impl true
   def handle_params(params, _url, socket) do
     {:noreply, apply_action(socket, socket.assigns.live_action, params)}
+  end
+
+  @impl true
+  def handle_event("dismiss-onboarding", _params, socket) do
+    Melocoton.Settings.set("onboarding_completed", "true")
+
+    socket
+    |> assign(:show_onboarding, false)
+    |> noreply()
+  end
+
+  @impl true
+  def handle_event("show-onboarding", _params, socket) do
+    Melocoton.Settings.delete("onboarding_completed")
+
+    socket
+    |> assign(:show_onboarding, true)
+    |> noreply()
   end
 
   @impl true
@@ -145,6 +164,16 @@ defmodule MelocotonWeb.DatabaseLive.Index do
     |> reload_data()
     |> assign(:groups, Databases.list_groups())
     |> then(&{:noreply, &1})
+  end
+
+  @impl true
+  def handle_info({MelocotonWeb.OnboardingComponent, :onboarding_completed}, socket) do
+    {:noreply, assign(socket, :show_onboarding, false)}
+  end
+
+  @impl true
+  def handle_info({MelocotonWeb.SettingsModalComponent, :show_onboarding}, socket) do
+    {:noreply, assign(socket, :show_onboarding, true)}
   end
 
   @impl true

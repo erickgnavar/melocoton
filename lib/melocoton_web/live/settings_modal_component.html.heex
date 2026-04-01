@@ -201,12 +201,21 @@
     class="flex items-center justify-between pt-3"
     style="border-top: 1px solid var(--border-medium);"
   >
-    <div>
+    <div class="flex items-center gap-3">
       <%= if @saved do %>
         <span class="text-xs text-green-500">
           <.icon name="lucide-check" class="size-4 mr-1 inline-block" /> Settings saved
         </span>
       <% end %>
+      <button
+        type="button"
+        phx-click="show-onboarding"
+        phx-target={@myself}
+        class="text-[10px] hover:underline"
+        style="color: var(--text-tertiary);"
+      >
+        Show welcome tutorial
+      </button>
     </div>
     <button
       type="submit"

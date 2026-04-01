@@ -87,6 +87,16 @@ defmodule MelocotonWeb.SettingsModalComponent do
   end
 
   @impl true
+  def handle_event("show-onboarding", _params, socket) do
+    Settings.delete("onboarding_completed")
+    send(self(), {__MODULE__, :show_onboarding})
+
+    socket
+    |> push_event("hide-settings-modal", %{})
+    |> noreply()
+  end
+
+  @impl true
   def handle_event("save-settings", params, socket) do
     ai_model = Models.build_model_string(socket.assigns.provider, socket.assigns.model)
     params = if ai_model, do: Map.put(params, "ai_model", ai_model), else: params

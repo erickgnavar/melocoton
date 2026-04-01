@@ -456,6 +456,21 @@
   />
 </.modal>
 
+<.modal
+  :if={@show_onboarding}
+  id="onboarding-modal"
+  show
+  on_cancel={JS.push("dismiss-onboarding")}
+  title="Welcome"
+  icon="lucide-book-open"
+  max_width="max-w-md"
+>
+  <.live_component
+    module={MelocotonWeb.OnboardingComponent}
+    id="onboarding"
+  />
+</.modal>
+
 <.modal id="settings-modal" title="Settings" icon="lucide-settings">
   <.live_component
     module={MelocotonWeb.SettingsModalComponent}

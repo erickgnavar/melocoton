@@ -332,6 +332,29 @@ const liveSocket = new LiveSocket("/live", Socket, {
         clearTimeout(this.timer);
       },
     },
+    OnboardingModal: {
+      mounted() {
+        this.handleKeydown = (e) => {
+          if (e.key === "Enter" || e.key === "ArrowRight") {
+            e.preventDefault();
+            e.stopPropagation();
+            this.pushEventTo(this.el, "next-step", {});
+          } else if (e.key === "ArrowLeft") {
+            e.preventDefault();
+            e.stopPropagation();
+            this.pushEventTo(this.el, "prev-step", {});
+          } else if (e.key === "Escape") {
+            e.preventDefault();
+            e.stopPropagation();
+            this.pushEventTo(this.el, "skip-onboarding", {});
+          }
+        };
+        document.addEventListener("keydown", this.handleKeydown, true);
+      },
+      destroyed() {
+        document.removeEventListener("keydown", this.handleKeydown, true);
+      },
+    },
     CellEditor: {
       mounted() {
         const input = this.el.querySelector("input[name='value']");
@@ -422,6 +445,14 @@ window.addEventListener("phx:focus-ai-chat", () => {
     const input = document.getElementById("ai-chat-input");
     if (input) input.focus();
   });
+});
+
+// Hide settings modal (e.g. when opening welcome tutorial from settings)
+window.addEventListener("phx:hide-settings-modal", () => {
+  const modal = document.getElementById("settings-modal");
+  if (modal?.getAttribute("data-cancel")) {
+    liveSocket.execJS(modal, modal.getAttribute("data-cancel"));
+  }
 });
 
 // Open shortcuts modal
