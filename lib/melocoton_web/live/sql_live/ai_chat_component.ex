@@ -4,9 +4,17 @@ defmodule MelocotonWeb.SqlLive.AiChatComponent do
   alias Melocoton.{AI, Databases}
 
   @impl true
-  def update(%{ai_response: {ref, result}}, socket) do
+  def update(%{ai_chat_pubsub: {:assistant_message_saved, message}}, socket) do
     socket
-    |> handle_ai_response(ref, result)
+    |> assign(messages: socket.assigns.messages ++ [message], loading: false)
+    |> push_event("focus-ai-chat", %{})
+    |> ok()
+  end
+
+  def update(%{ai_chat_pubsub: {:ai_error, reason}}, socket) do
+    socket
+    |> assign(loading: false, error: reason)
+    |> push_event("focus-ai-chat", %{})
     |> ok()
   end
 
@@ -33,8 +41,7 @@ defmodule MelocotonWeb.SqlLive.AiChatComponent do
         messages: messages,
         input: "",
         loading: false,
-        error: nil,
-        task_ref: nil
+        error: nil
       )
       |> ok()
     end
@@ -84,31 +91,6 @@ defmodule MelocotonWeb.SqlLive.AiChatComponent do
     noreply(socket)
   end
 
-  defp handle_ai_response(socket, ref, result) do
-    if socket.assigns[:task_ref] == ref do
-      case result do
-        {:ok, text} ->
-          {:ok, assistant_msg} =
-            Databases.create_chat_message(%{
-              role: "assistant",
-              content: text,
-              database_id: socket.assigns.database_id
-            })
-
-          socket
-          |> assign(messages: socket.assigns.messages ++ [assistant_msg], loading: false)
-          |> push_event("focus-ai-chat", %{})
-
-        {:error, error} ->
-          socket
-          |> assign(loading: false, error: error)
-          |> push_event("focus-ai-chat", %{})
-      end
-    else
-      socket
-    end
-  end
-
   defp send_message(socket, message) do
     %{database_id: database_id, repo: repo, messages: messages} = socket.assigns
 
@@ -120,16 +102,34 @@ defmodule MelocotonWeb.SqlLive.AiChatComponent do
       })
 
     messages = messages ++ [user_msg]
-    parent = self()
-    task_ref = make_ref()
 
     Task.start(fn ->
-      result = AI.chat(repo, messages)
-      send(parent, {__MODULE__, {:ai_response, task_ref, result}})
+      case AI.chat(repo, messages) do
+        {:ok, text} ->
+          {:ok, assistant_msg} =
+            Databases.create_chat_message(%{
+              role: "assistant",
+              content: text,
+              database_id: database_id
+            })
+
+          Phoenix.PubSub.broadcast(
+            Melocoton.PubSub,
+            "ai_chat:#{database_id}",
+            {:ai_chat, :assistant_message_saved, assistant_msg}
+          )
+
+        {:error, reason} ->
+          Phoenix.PubSub.broadcast(
+            Melocoton.PubSub,
+            "ai_chat:#{database_id}",
+            {:ai_chat, :ai_error, reason}
+          )
+      end
     end)
 
     socket
-    |> assign(messages: messages, input: "", loading: true, error: nil, task_ref: task_ref)
+    |> assign(messages: messages, input: "", loading: true, error: nil)
     |> push_event("focus-ai-chat", %{})
   end
 
