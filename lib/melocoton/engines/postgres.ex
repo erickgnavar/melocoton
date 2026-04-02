@@ -68,39 +68,42 @@ defmodule Melocoton.Engines.Postgres do
   def get_table_meta(conn, table_name) do
     escaped = String.replace(table_name, "'", "''")
 
-    columns_sql =
-      "SELECT column_name, udt_name FROM information_schema.columns WHERE table_name = '#{escaped}' AND table_schema = 'public' ORDER BY ordinal_position"
-
-    pk_sql = """
-    SELECT kcu.column_name
-    FROM information_schema.table_constraints tc
-    JOIN information_schema.key_column_usage kcu
-      ON tc.constraint_name = kcu.constraint_name
-      AND tc.table_schema = kcu.table_schema
-    WHERE tc.table_name = '#{escaped}'
-      AND tc.table_schema = 'public'
-      AND tc.constraint_type = 'PRIMARY KEY'
-    ORDER BY kcu.ordinal_position
+    sql = """
+    SELECT
+      c.column_name,
+      c.udt_name,
+      CASE WHEN pk.column_name IS NOT NULL THEN 1 ELSE 0 END AS is_pk
+    FROM information_schema.columns c
+    LEFT JOIN (
+      SELECT kcu.column_name
+      FROM information_schema.table_constraints tc
+      JOIN information_schema.key_column_usage kcu
+        ON tc.constraint_name = kcu.constraint_name
+        AND tc.table_schema = kcu.table_schema
+      WHERE tc.table_name = '#{escaped}'
+        AND tc.table_schema = 'public'
+        AND tc.constraint_type = 'PRIMARY KEY'
+    ) pk ON pk.column_name = c.column_name
+    WHERE c.table_name = '#{escaped}'
+      AND c.table_schema = 'public'
+    ORDER BY c.ordinal_position
     """
 
-    {columns, column_types} =
-      case query_and_normalize(conn, columns_sql) do
-        {:ok, %{rows: rows}} ->
-          cols = Enum.map(rows, & &1["column_name"])
-          types = Map.new(rows, fn r -> {r["column_name"], r["udt_name"]} end)
-          {cols, types}
+    case query_and_normalize(conn, sql) do
+      {:ok, %{rows: rows}} ->
+        columns = Enum.map(rows, & &1["column_name"])
+        column_types = Map.new(rows, fn r -> {r["column_name"], r["udt_name"]} end)
 
-        _ ->
-          {[], %{}}
-      end
+        pk_columns =
+          rows
+          |> Enum.filter(&(&1["is_pk"] == 1))
+          |> Enum.map(& &1["column_name"])
 
-    pk_columns =
-      case query_and_normalize(conn, pk_sql) do
-        {:ok, %{rows: rows}} -> Enum.map(rows, & &1["column_name"])
-        _ -> []
-      end
+        %TableMeta{columns: columns, pk_columns: pk_columns, column_types: column_types}
 
-    %TableMeta{columns: columns, pk_columns: pk_columns, column_types: column_types}
+      _ ->
+        %TableMeta{}
+    end
   end
 
   @impl true

@@ -40,8 +40,8 @@ defmodule Melocoton.Engines.Sqlite do
         end)
         |> then(&{:ok, &1})
 
-      {:error, _error} ->
-        []
+      {:error, error} ->
+        {:error, error}
     end
   end
 

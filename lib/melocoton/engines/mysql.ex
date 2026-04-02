@@ -66,40 +66,39 @@ defmodule Melocoton.Engines.Mysql do
   def get_table_meta(conn, table_name) do
     escaped = String.replace(table_name, "'", "''")
 
-    columns_sql = """
-    SELECT COLUMN_NAME, DATA_TYPE
-    FROM information_schema.COLUMNS
-    WHERE TABLE_NAME = '#{escaped}' AND TABLE_SCHEMA = DATABASE()
-    ORDER BY ORDINAL_POSITION
+    sql = """
+    SELECT
+      c.COLUMN_NAME,
+      c.DATA_TYPE,
+      CASE WHEN pk.COLUMN_NAME IS NOT NULL THEN 1 ELSE 0 END AS is_pk
+    FROM information_schema.COLUMNS c
+    LEFT JOIN (
+      SELECT COLUMN_NAME
+      FROM information_schema.KEY_COLUMN_USAGE
+      WHERE TABLE_NAME = '#{escaped}'
+        AND TABLE_SCHEMA = DATABASE()
+        AND CONSTRAINT_NAME = 'PRIMARY'
+    ) pk ON pk.COLUMN_NAME = c.COLUMN_NAME
+    WHERE c.TABLE_NAME = '#{escaped}'
+      AND c.TABLE_SCHEMA = DATABASE()
+    ORDER BY c.ORDINAL_POSITION
     """
 
-    pk_sql = """
-    SELECT COLUMN_NAME
-    FROM information_schema.KEY_COLUMN_USAGE
-    WHERE TABLE_NAME = '#{escaped}'
-      AND TABLE_SCHEMA = DATABASE()
-      AND CONSTRAINT_NAME = 'PRIMARY'
-    ORDER BY ORDINAL_POSITION
-    """
+    case query_and_normalize(conn, sql) do
+      {:ok, %{rows: rows}} ->
+        columns = Enum.map(rows, & &1["COLUMN_NAME"])
+        column_types = Map.new(rows, fn r -> {r["COLUMN_NAME"], r["DATA_TYPE"]} end)
 
-    {columns, column_types} =
-      case query_and_normalize(conn, columns_sql) do
-        {:ok, %{rows: rows}} ->
-          cols = Enum.map(rows, & &1["COLUMN_NAME"])
-          types = Map.new(rows, fn r -> {r["COLUMN_NAME"], r["DATA_TYPE"]} end)
-          {cols, types}
+        pk_columns =
+          rows
+          |> Enum.filter(&(&1["is_pk"] == 1))
+          |> Enum.map(& &1["COLUMN_NAME"])
 
-        _ ->
-          {[], %{}}
-      end
+        %TableMeta{columns: columns, pk_columns: pk_columns, column_types: column_types}
 
-    pk_columns =
-      case query_and_normalize(conn, pk_sql) do
-        {:ok, %{rows: rows}} -> Enum.map(rows, & &1["COLUMN_NAME"])
-        _ -> []
-      end
-
-    %TableMeta{columns: columns, pk_columns: pk_columns, column_types: column_types}
+      _ ->
+        %TableMeta{}
+    end
   end
 
   @impl true
