@@ -19,13 +19,17 @@ defmodule Melocoton.Engines.MysqlTest do
 
   setup_all do
     {container, conn} = ContainerHelper.start_mysql(@seed_sql)
+    conn_params = Testcontainers.MySqlContainer.connection_parameters(container)
+
+    url =
+      "mysql://#{conn_params[:username]}:#{conn_params[:password]}@#{conn_params[:hostname]}:#{conn_params[:port]}/#{conn_params[:database]}"
 
     on_exit(fn ->
       GenServer.stop(conn.pid)
       Testcontainers.stop_container(container.container_id)
     end)
 
-    %{conn: conn}
+    %{conn: conn, container_url: url}
   end
 
   describe "get_tables/1" do
@@ -148,6 +152,20 @@ defmodule Melocoton.Engines.MysqlTest do
 
       count = Mysql.get_estimated_count(conn, "empty_table")
       assert count == 0
+    end
+  end
+
+  describe "test_connection/1" do
+    test "returns :ok for valid connection", %{container_url: url} do
+      :sys.replace_state(Melocoton.Pool, fn _ -> %{} end)
+      database = %{id: :test_mysql, type: :mysql, url: url}
+      assert Mysql.test_connection(database) == :ok
+    end
+
+    test "returns error for invalid connection" do
+      :sys.replace_state(Melocoton.Pool, fn _ -> %{} end)
+      database = %{id: :test_mysql_bad, type: :mysql, url: "mysql://localhost:1/nonexistent"}
+      assert {:error, _reason} = Mysql.test_connection(database)
     end
   end
 
