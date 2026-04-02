@@ -17,7 +17,7 @@ defmodule Melocoton.Databases.ChatMessage do
   def changeset(chat_message, attrs) do
     chat_message
     |> cast(attrs, [:role, :content, :database_id, :chat_id])
-    |> validate_required([:role, :content, :database_id])
+    |> validate_required([:role, :content, :database_id, :chat_id])
     |> validate_inclusion(:role, ["user", "assistant"])
   end
 end

@@ -10,7 +10,7 @@ defmodule MelocotonWeb.SQLLive.Run do
 
     database = Databases.get_database!(database_id)
     Task.start(fn -> Databases.touch_last_connected(database) end)
-    Phoenix.PubSub.subscribe(Melocoton.PubSub, "ai_chat:#{database_id}")
+    Phoenix.PubSub.subscribe(Melocoton.PubSub, Databases.ai_chat_topic(database_id))
     conn = Pool.get_repo(database)
     # we need to get pid here because the call to get_tables/2 will be
     # made in another process so we won't be able to get the correct
@@ -255,11 +255,11 @@ defmodule MelocotonWeb.SQLLive.Run do
   end
 
   @impl true
-  def handle_info({:ai_chat, event, _data} = msg, socket)
+  def handle_info({:ai_chat, event, data}, socket)
       when event in [:assistant_message_saved, :ai_error] do
     send_update(MelocotonWeb.SqlLive.AiChatComponent,
       id: "ai-chat",
-      ai_chat_pubsub: {event, elem(msg, 2)}
+      ai_chat_pubsub: {event, data}
     )
 
     noreply(socket)

@@ -171,8 +171,8 @@ defmodule MelocotonWeb.SqlLive.AiChatComponent do
   end
 
   @impl true
-  def handle_event("send-suggestion", %{"message" => message}, socket) do
-    handle_event("send-message", %{"message" => message}, socket)
+  def handle_event("send-suggestion", %{"message" => message}, socket) when message != "" do
+    socket |> send_message(message) |> noreply()
   end
 
   @impl true
@@ -193,9 +193,8 @@ defmodule MelocotonWeb.SqlLive.AiChatComponent do
         chat_id: chat.id
       })
 
-    # Set title from first user message
     if messages == [] do
-      Databases.update_chat_title(chat.id, String.slice(message, 0, 80))
+      Databases.update_chat_title(chat, String.slice(message, 0, 80))
     end
 
     messages = messages ++ [user_msg]
@@ -213,14 +212,14 @@ defmodule MelocotonWeb.SqlLive.AiChatComponent do
 
           Phoenix.PubSub.broadcast(
             Melocoton.PubSub,
-            "ai_chat:#{database_id}",
+            Databases.ai_chat_topic(database_id),
             {:ai_chat, :assistant_message_saved, assistant_msg}
           )
 
         {:error, reason} ->
           Phoenix.PubSub.broadcast(
             Melocoton.PubSub,
-            "ai_chat:#{database_id}",
+            Databases.ai_chat_topic(database_id),
             {:ai_chat, :ai_error, reason}
           )
       end

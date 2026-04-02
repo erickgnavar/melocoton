@@ -275,6 +275,8 @@ defmodule Melocoton.Databases do
     Group.changeset(group, attrs)
   end
 
+  def ai_chat_topic(database_id), do: "ai_chat:#{database_id}"
+
   def get_or_create_active_chat(database_id) do
     Chat
     |> where([c], c.database_id == ^database_id and is_nil(c.archived_at))
@@ -292,9 +294,7 @@ defmodule Melocoton.Databases do
   end
 
   def archive_chat(chat_id) do
-    chat = Repo.get!(Chat, chat_id)
-
-    chat
+    Repo.get!(Chat, chat_id)
     |> Chat.changeset(%{archived_at: DateTime.utc_now() |> DateTime.truncate(:second)})
     |> Repo.update()
   end
@@ -310,8 +310,8 @@ defmodule Melocoton.Databases do
     Repo.get!(Chat, chat_id) |> Repo.delete()
   end
 
-  def update_chat_title(chat_id, title) do
-    Repo.get!(Chat, chat_id)
+  def update_chat_title(%Chat{} = chat, title) do
+    chat
     |> Chat.changeset(%{title: title})
     |> Repo.update()
   end
