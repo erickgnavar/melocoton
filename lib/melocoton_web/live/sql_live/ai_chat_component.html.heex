@@ -13,13 +13,22 @@
     </div>
     <div class="flex items-center gap-1">
       <button
-        phx-click="clear-chat"
+        phx-click="toggle-history"
         phx-target={@myself}
         class="icon-btn"
-        title="Clear chat history"
-        aria-label="Clear chat history"
+        title="Chat history"
+        aria-label="Chat history"
       >
-        <.icon name="lucide-trash-2" class="size-3.5" />
+        <.icon name="lucide-history" class="size-3.5" />
+      </button>
+      <button
+        phx-click="new-chat"
+        phx-target={@myself}
+        class="icon-btn"
+        title="New chat"
+        aria-label="New chat"
+      >
+        <.icon name="lucide-plus" class="size-3.5" />
       </button>
       <button
         phx-click="close-panel"
@@ -32,6 +41,77 @@
       </button>
     </div>
   </div>
+
+  <%!-- History panel --%>
+  <%= if @show_history do %>
+    <div
+      class="overflow-y-auto text-xs border-b"
+      style="background: var(--bg-secondary); border-color: var(--border-medium); max-height: 50%;"
+    >
+      <div
+        class="px-3 py-2 flex items-center justify-between"
+        style="color: var(--text-tertiary);"
+      >
+        <span class="font-medium text-[10px] uppercase tracking-wide">Chat History</span>
+      </div>
+      <%= if @archived_chats == [] do %>
+        <div class="px-3 py-4 text-center" style="color: var(--text-tertiary);">
+          <p class="text-[10px]">No previous chats</p>
+        </div>
+      <% else %>
+        <div class="flex flex-col">
+          <div
+            :for={chat <- @archived_chats}
+            class="flex items-center justify-between px-3 py-1.5 cursor-pointer group"
+            style="border-bottom: 0.5px solid var(--border-subtle);"
+            phx-click="view-chat"
+            phx-value-chat-id={chat.id}
+            phx-target={@myself}
+          >
+            <div class="flex-1 min-w-0 mr-2">
+              <p class="truncate text-[11px]" style="color: var(--text-primary);">
+                {chat.title || "Untitled chat"}
+              </p>
+              <p class="text-[9px]" style="color: var(--text-tertiary);">
+                {Calendar.strftime(chat.archived_at, "%b %d, %H:%M")}
+              </p>
+            </div>
+            <button
+              phx-click="delete-chat"
+              phx-value-chat-id={chat.id}
+              phx-target={@myself}
+              class="icon-btn opacity-0 group-hover:opacity-100 shrink-0"
+              title="Delete chat"
+              aria-label="Delete chat"
+            >
+              <.icon name="lucide-trash-2" class="size-3" />
+            </button>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%!-- Viewing archived banner --%>
+  <%= if @viewing_archived do %>
+    <div
+      class="px-3 py-1.5 flex items-center justify-between text-[10px]"
+      style="background: var(--bg-tertiary); border-bottom: 0.5px solid var(--border-medium); color: var(--text-secondary);"
+    >
+      <span class="truncate mr-2">
+        <.icon name="lucide-archive" class="size-3 mr-1 inline-block" />
+        {@current_chat.title || "Untitled chat"}
+      </span>
+      <button
+        phx-click="back-to-active"
+        phx-target={@myself}
+        class="shrink-0 font-medium hover:underline"
+        style={"color: #{@database.group.color};"}
+      >
+        Back to current
+      </button>
+    </div>
+  <% end %>
 
   <%!-- Messages --%>
   <div
@@ -166,32 +246,34 @@
     </div>
   <% end %>
 
-  <%!-- Input --%>
-  <form
-    phx-submit="send-message"
-    phx-target={@myself}
-    class="px-3 py-2 flex items-center gap-2 app-status-bar"
-  >
-    <input
-      id="ai-chat-input"
-      type="text"
-      name="message"
-      value={@input}
-      placeholder="Ask about your database..."
-      autocomplete="off"
-      disabled={@loading}
-      class="flex-1 px-2.5 py-1.5 text-xs rounded"
-      style="background: var(--bg-primary); border: 0.5px solid var(--border-medium); color: var(--text-primary);"
-      phx-change="update-input"
+  <%!-- Input (hidden when viewing archived chat) --%>
+  <%= if not @viewing_archived do %>
+    <form
+      phx-submit="send-message"
       phx-target={@myself}
-    />
-    <button
-      type="submit"
-      disabled={@loading}
-      class="px-2 py-1.5 rounded text-xs font-medium"
-      style={"background: #{@database.group.color}; color: white;"}
+      class="px-3 py-2 flex items-center gap-2 app-status-bar"
     >
-      <.icon name="lucide-send" class="size-3.5" />
-    </button>
-  </form>
+      <input
+        id="ai-chat-input"
+        type="text"
+        name="message"
+        value={@input}
+        placeholder="Ask about your database..."
+        autocomplete="off"
+        disabled={@loading}
+        class="flex-1 px-2.5 py-1.5 text-xs rounded"
+        style="background: var(--bg-primary); border: 0.5px solid var(--border-medium); color: var(--text-primary);"
+        phx-change="update-input"
+        phx-target={@myself}
+      />
+      <button
+        type="submit"
+        disabled={@loading}
+        class="px-2 py-1.5 rounded text-xs font-medium"
+        style={"background: #{@database.group.color}; color: white;"}
+      >
+        <.icon name="lucide-send" class="size-3.5" />
+      </button>
+    </form>
+  <% end %>
 </div>

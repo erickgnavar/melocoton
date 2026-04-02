@@ -26,9 +26,10 @@ defmodule MelocotonWeb.SqlLive.AiChatTest do
 
     db_path = create_test_db()
     database = database_fixture(%{url: db_path, type: :sqlite})
+    {:ok, chat} = Databases.get_or_create_active_chat(database.id)
     on_exit(fn -> File.rm(db_path) end)
 
-    %{database: database, db_path: db_path}
+    %{database: database, db_path: db_path, chat: chat}
   end
 
   describe "AI panel toggle" do
@@ -81,20 +82,25 @@ defmodule MelocotonWeb.SqlLive.AiChatTest do
       assert html =~ "I know the schema"
     end
 
-    test "displays persisted chat messages on mount", %{conn: conn, database: database} do
-      # Pre-create messages in DB
+    test "displays persisted chat messages on mount", %{
+      conn: conn,
+      database: database,
+      chat: chat
+    } do
       {:ok, _} =
         Databases.create_chat_message(%{
           role: "user",
           content: "show me all users",
-          database_id: database.id
+          database_id: database.id,
+          chat_id: chat.id
         })
 
       {:ok, _} =
         Databases.create_chat_message(%{
           role: "assistant",
           content: "```sql\nSELECT * FROM users;\n```",
-          database_id: database.id
+          database_id: database.id,
+          chat_id: chat.id
         })
 
       {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
@@ -108,12 +114,17 @@ defmodule MelocotonWeb.SqlLive.AiChatTest do
       assert html =~ "SELECT * FROM users;"
     end
 
-    test "clear-chat removes all messages", %{conn: conn, database: database} do
+    test "new-chat archives current and starts fresh", %{
+      conn: conn,
+      database: database,
+      chat: chat
+    } do
       {:ok, _} =
         Databases.create_chat_message(%{
           role: "user",
           content: "hello",
-          database_id: database.id
+          database_id: database.id,
+          chat_id: chat.id
         })
 
       {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
@@ -124,27 +135,30 @@ defmodule MelocotonWeb.SqlLive.AiChatTest do
 
       html =
         live_view
-        |> element("[phx-click='clear-chat']")
+        |> element("[phx-click='new-chat']")
         |> render_click()
 
       assert html =~ "Ask me about your database"
       refute html =~ "hello"
 
-      # Verify DB is cleared
-      assert Databases.list_chat_messages(database.id) == []
+      # Original chat is archived
+      archived = Databases.list_archived_chats(database.id)
+      assert length(archived) == 1
     end
   end
 
   describe "SQL action buttons" do
     test "renders Insert and Run buttons for SQL code blocks", %{
       conn: conn,
-      database: database
+      database: database,
+      chat: chat
     } do
       {:ok, _} =
         Databases.create_chat_message(%{
           role: "assistant",
           content: "Here you go:\n\n```sql\nSELECT * FROM users;\n```\n",
-          database_id: database.id
+          database_id: database.id,
+          chat_id: chat.id
         })
 
       {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
@@ -162,13 +176,15 @@ defmodule MelocotonWeb.SqlLive.AiChatTest do
 
     test "insert-sql sends SQL to parent to load into editor", %{
       conn: conn,
-      database: database
+      database: database,
+      chat: chat
     } do
       {:ok, _} =
         Databases.create_chat_message(%{
           role: "assistant",
           content: "```sql\nSELECT * FROM users;\n```",
-          database_id: database.id
+          database_id: database.id,
+          chat_id: chat.id
         })
 
       {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
@@ -190,69 +206,98 @@ defmodule MelocotonWeb.SqlLive.AiChatTest do
   end
 
   describe "chat message persistence" do
-    test "messages are stored in the database", %{database: database} do
+    test "messages are stored in the database", %{database: database, chat: chat} do
       {:ok, msg} =
         Databases.create_chat_message(%{
           role: "user",
           content: "hello world",
-          database_id: database.id
+          database_id: database.id,
+          chat_id: chat.id
         })
 
       assert msg.role == "user"
       assert msg.content == "hello world"
       assert msg.database_id == database.id
 
-      messages = Databases.list_chat_messages(database.id)
+      messages = Databases.list_chat_messages(chat.id)
       assert length(messages) == 1
       assert hd(messages).content == "hello world"
     end
 
-    test "clear_chat_messages removes all messages for a database", %{database: database} do
+    test "archive_chat archives and new chat starts empty", %{database: database, chat: chat} do
       for i <- 1..3 do
         Databases.create_chat_message(%{
           role: "user",
           content: "message #{i}",
-          database_id: database.id
+          database_id: database.id,
+          chat_id: chat.id
         })
       end
 
-      assert length(Databases.list_chat_messages(database.id)) == 3
+      assert length(Databases.list_chat_messages(chat.id)) == 3
 
-      Databases.clear_chat_messages(database.id)
-      assert Databases.list_chat_messages(database.id) == []
+      {:ok, archived} = Databases.archive_chat(chat.id)
+      assert archived.archived_at != nil
+
+      {:ok, new_chat} = Databases.get_or_create_active_chat(database.id)
+      assert new_chat.id != chat.id
+      assert Databases.list_chat_messages(new_chat.id) == []
     end
 
-    test "messages are scoped to database", %{database: database} do
-      other_db = database_fixture(%{url: "/tmp/other.db", type: :sqlite, name: "other"})
+    test "messages are scoped to chat", %{database: database, chat: chat} do
+      # Archive current chat and create a new one
+      Databases.create_chat_message(%{
+        role: "user",
+        content: "for chat1",
+        database_id: database.id,
+        chat_id: chat.id
+      })
+
+      Databases.archive_chat(chat.id)
+      {:ok, chat2} = Databases.get_or_create_active_chat(database.id)
 
       Databases.create_chat_message(%{
         role: "user",
-        content: "for db1",
-        database_id: database.id
+        content: "for chat2",
+        database_id: database.id,
+        chat_id: chat2.id
       })
 
-      Databases.create_chat_message(%{
-        role: "user",
-        content: "for db2",
-        database_id: other_db.id
-      })
+      chat1_messages = Databases.list_chat_messages(chat.id)
+      chat2_messages = Databases.list_chat_messages(chat2.id)
 
-      db1_messages = Databases.list_chat_messages(database.id)
-      db2_messages = Databases.list_chat_messages(other_db.id)
-
-      assert length(db1_messages) == 1
-      assert hd(db1_messages).content == "for db1"
-      assert length(db2_messages) == 1
-      assert hd(db2_messages).content == "for db2"
+      assert length(chat1_messages) == 1
+      assert hd(chat1_messages).content == "for chat1"
+      assert length(chat2_messages) == 1
+      assert hd(chat2_messages).content == "for chat2"
     end
 
-    test "rejects invalid role", %{database: database} do
+    test "rejects invalid role", %{database: database, chat: chat} do
       assert {:error, %Ecto.Changeset{valid?: false}} =
                Databases.create_chat_message(%{
                  role: "invalid",
                  content: "hello",
-                 database_id: database.id
+                 database_id: database.id,
+                 chat_id: chat.id
                })
+    end
+  end
+
+  describe "chat history" do
+    test "list_archived_chats returns archived chats", %{database: database, chat: chat} do
+      Databases.archive_chat(chat.id)
+      {:ok, _new_chat} = Databases.get_or_create_active_chat(database.id)
+
+      archived = Databases.list_archived_chats(database.id)
+      assert length(archived) == 1
+      assert hd(archived).id == chat.id
+    end
+
+    test "delete_chat removes an archived chat", %{database: database, chat: chat} do
+      Databases.archive_chat(chat.id)
+      {:ok, _} = Databases.delete_chat(chat.id)
+
+      assert Databases.list_archived_chats(database.id) == []
     end
   end
 end

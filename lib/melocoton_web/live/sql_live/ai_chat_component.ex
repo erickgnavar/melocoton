@@ -5,17 +5,25 @@ defmodule MelocotonWeb.SqlLive.AiChatComponent do
 
   @impl true
   def update(%{ai_chat_pubsub: {:assistant_message_saved, message}}, socket) do
-    socket
-    |> assign(messages: socket.assigns.messages ++ [message], loading: false)
-    |> push_event("focus-ai-chat", %{})
-    |> ok()
+    if socket.assigns.viewing_archived do
+      ok(socket)
+    else
+      socket
+      |> assign(messages: socket.assigns.messages ++ [message], loading: false)
+      |> push_event("focus-ai-chat", %{})
+      |> ok()
+    end
   end
 
   def update(%{ai_chat_pubsub: {:ai_error, reason}}, socket) do
-    socket
-    |> assign(loading: false, error: reason)
-    |> push_event("focus-ai-chat", %{})
-    |> ok()
+    if socket.assigns.viewing_archived do
+      ok(socket)
+    else
+      socket
+      |> assign(loading: false, error: reason)
+      |> push_event("focus-ai-chat", %{})
+      |> ok()
+    end
   end
 
   def update(%{send_message: message}, socket) do
@@ -32,16 +40,21 @@ defmodule MelocotonWeb.SqlLive.AiChatComponent do
       |> ok()
     else
       # First mount or database changed — full init
-      messages = Databases.list_chat_messages(assigns.database.id)
+      {:ok, chat} = Databases.get_or_create_active_chat(assigns.database.id)
+      messages = Databases.list_chat_messages(chat.id)
 
       socket
       |> assign(assigns)
       |> assign(
         database_id: assigns.database.id,
+        current_chat: chat,
         messages: messages,
         input: "",
         loading: false,
-        error: nil
+        error: nil,
+        show_history: false,
+        viewing_archived: false,
+        archived_chats: []
       )
       |> ok()
     end
@@ -72,11 +85,88 @@ defmodule MelocotonWeb.SqlLive.AiChatComponent do
   end
 
   @impl true
-  def handle_event("clear-chat", _params, socket) do
-    Databases.clear_chat_messages(socket.assigns.database_id)
+  def handle_event("new-chat", _params, socket) do
+    chat = socket.assigns.current_chat
+
+    # Only archive if the current chat has messages
+    if socket.assigns.messages != [] do
+      Databases.archive_chat(chat.id)
+    end
+
+    {:ok, new_chat} = Databases.get_or_create_active_chat(socket.assigns.database_id)
 
     socket
-    |> assign(messages: [], error: nil)
+    |> assign(
+      current_chat: new_chat,
+      messages: [],
+      error: nil,
+      show_history: false,
+      viewing_archived: false
+    )
+    |> noreply()
+  end
+
+  @impl true
+  def handle_event("toggle-history", _params, socket) do
+    show = !socket.assigns.show_history
+
+    socket =
+      if show do
+        chats = Databases.list_archived_chats(socket.assigns.database_id)
+        assign(socket, archived_chats: chats, show_history: true)
+      else
+        assign(socket, show_history: false)
+      end
+
+    noreply(socket)
+  end
+
+  @impl true
+  def handle_event("view-chat", %{"chat-id" => chat_id}, socket) do
+    chat_id = String.to_integer(chat_id)
+    chat = Enum.find(socket.assigns.archived_chats, &(&1.id == chat_id))
+
+    if chat do
+      messages = Databases.list_chat_messages(chat.id)
+
+      socket
+      |> assign(
+        current_chat: chat,
+        messages: messages,
+        viewing_archived: true,
+        show_history: false
+      )
+      |> noreply()
+    else
+      noreply(socket)
+    end
+  end
+
+  @impl true
+  def handle_event("back-to-active", _params, socket) do
+    {:ok, chat} = Databases.get_or_create_active_chat(socket.assigns.database_id)
+    messages = Databases.list_chat_messages(chat.id)
+
+    socket
+    |> assign(
+      current_chat: chat,
+      messages: messages,
+      viewing_archived: false,
+      show_history: false,
+      error: nil
+    )
+    |> noreply()
+  end
+
+  @impl true
+  def handle_event("delete-chat", %{"chat-id" => chat_id}, socket) do
+    chat_id = String.to_integer(chat_id)
+    Databases.delete_chat(chat_id)
+
+    chats = Enum.reject(socket.assigns.archived_chats, &(&1.id == chat_id))
+
+    socket
+    |> assign(archived_chats: chats)
     |> noreply()
   end
 
@@ -92,14 +182,21 @@ defmodule MelocotonWeb.SqlLive.AiChatComponent do
   end
 
   defp send_message(socket, message) do
-    %{database_id: database_id, repo: repo, messages: messages} = socket.assigns
+    %{database_id: database_id, repo: repo, messages: messages, current_chat: chat} =
+      socket.assigns
 
     {:ok, user_msg} =
       Databases.create_chat_message(%{
         role: "user",
         content: message,
-        database_id: database_id
+        database_id: database_id,
+        chat_id: chat.id
       })
+
+    # Set title from first user message
+    if messages == [] do
+      Databases.update_chat_title(chat.id, String.slice(message, 0, 80))
+    end
 
     messages = messages ++ [user_msg]
 
@@ -110,7 +207,8 @@ defmodule MelocotonWeb.SqlLive.AiChatComponent do
             Databases.create_chat_message(%{
               role: "assistant",
               content: text,
-              database_id: database_id
+              database_id: database_id,
+              chat_id: chat.id
             })
 
           Phoenix.PubSub.broadcast(

@@ -6,7 +6,7 @@ defmodule Melocoton.Databases do
   import Ecto.Query, warn: false
   alias Melocoton.Repo
 
-  alias Melocoton.Databases.{ChatMessage, Database, Session}
+  alias Melocoton.Databases.{Chat, ChatMessage, Database, Session}
 
   @doc """
   Returns the list of databases.
@@ -275,9 +275,50 @@ defmodule Melocoton.Databases do
     Group.changeset(group, attrs)
   end
 
-  def list_chat_messages(database_id, limit \\ 50) do
+  def get_or_create_active_chat(database_id) do
+    Chat
+    |> where([c], c.database_id == ^database_id and is_nil(c.archived_at))
+    |> limit(1)
+    |> Repo.one()
+    |> case do
+      nil ->
+        %Chat{}
+        |> Chat.changeset(%{database_id: database_id})
+        |> Repo.insert()
+
+      chat ->
+        {:ok, chat}
+    end
+  end
+
+  def archive_chat(chat_id) do
+    chat = Repo.get!(Chat, chat_id)
+
+    chat
+    |> Chat.changeset(%{archived_at: DateTime.utc_now() |> DateTime.truncate(:second)})
+    |> Repo.update()
+  end
+
+  def list_archived_chats(database_id) do
+    Chat
+    |> where([c], c.database_id == ^database_id and not is_nil(c.archived_at))
+    |> order_by(desc: :archived_at)
+    |> Repo.all()
+  end
+
+  def delete_chat(chat_id) do
+    Repo.get!(Chat, chat_id) |> Repo.delete()
+  end
+
+  def update_chat_title(chat_id, title) do
+    Repo.get!(Chat, chat_id)
+    |> Chat.changeset(%{title: title})
+    |> Repo.update()
+  end
+
+  def list_chat_messages(chat_id, limit \\ 50) do
     ChatMessage
-    |> where(database_id: ^database_id)
+    |> where(chat_id: ^chat_id)
     |> order_by(asc: :inserted_at)
     |> limit(^limit)
     |> Repo.all()
@@ -287,11 +328,5 @@ defmodule Melocoton.Databases do
     %ChatMessage{}
     |> ChatMessage.changeset(attrs)
     |> Repo.insert()
-  end
-
-  def clear_chat_messages(database_id) do
-    ChatMessage
-    |> where(database_id: ^database_id)
-    |> Repo.delete_all()
   end
 end
