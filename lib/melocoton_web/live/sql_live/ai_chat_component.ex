@@ -54,7 +54,8 @@ defmodule MelocotonWeb.SqlLive.AiChatComponent do
         error: nil,
         show_history: false,
         viewing_archived: false,
-        archived_chats: []
+        archived_chats: [],
+        confirm_delete_message_id: nil
       )
       |> ok()
     end
@@ -167,6 +168,32 @@ defmodule MelocotonWeb.SqlLive.AiChatComponent do
 
     socket
     |> assign(archived_chats: chats)
+    |> noreply()
+  end
+
+  @impl true
+  def handle_event("confirm-delete-message", %{"message-id" => message_id}, socket) do
+    socket
+    |> assign(confirm_delete_message_id: String.to_integer(message_id))
+    |> noreply()
+  end
+
+  @impl true
+  def handle_event("cancel-delete-message", _params, socket) do
+    socket
+    |> assign(confirm_delete_message_id: nil)
+    |> noreply()
+  end
+
+  @impl true
+  def handle_event("delete-message", %{"message-id" => message_id}, socket) do
+    message_id = String.to_integer(message_id)
+    Databases.delete_chat_message(message_id)
+
+    messages = Enum.reject(socket.assigns.messages, &(&1.id == message_id))
+
+    socket
+    |> assign(messages: messages, confirm_delete_message_id: nil)
     |> noreply()
   end
 

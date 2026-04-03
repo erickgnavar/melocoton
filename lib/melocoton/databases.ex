@@ -329,4 +329,8 @@ defmodule Melocoton.Databases do
     |> ChatMessage.changeset(attrs)
     |> Repo.insert()
   end
+
+  def delete_chat_message(message_id) do
+    Repo.get!(ChatMessage, message_id) |> Repo.delete()
+  end
 end

@@ -158,9 +158,41 @@
         </div>
       </div>
     <% else %>
-      <div :for={msg <- @messages} class="flex flex-col gap-1">
+      <div :for={msg <- @messages} class="flex flex-col gap-1 group/msg">
         <%= if msg.role == "user" do %>
-          <div class="flex justify-end">
+          <div class="flex justify-end items-start gap-1">
+            <%= if not @viewing_archived and @confirm_delete_message_id == msg.id do %>
+              <div class="flex items-center gap-1 shrink-0 self-center">
+                <button
+                  phx-click="delete-message"
+                  phx-value-message-id={msg.id}
+                  phx-target={@myself}
+                  class="px-1.5 py-0.5 rounded text-[10px]"
+                  style="background: var(--bg-tertiary); color: #ef4444;"
+                >
+                  Delete
+                </button>
+                <button
+                  phx-click="cancel-delete-message"
+                  phx-target={@myself}
+                  class="px-1.5 py-0.5 rounded text-[10px]"
+                  style="background: var(--bg-tertiary); color: var(--text-tertiary);"
+                >
+                  Cancel
+                </button>
+              </div>
+            <% else %>
+              <button
+                :if={not @viewing_archived}
+                phx-click="confirm-delete-message"
+                phx-value-message-id={msg.id}
+                phx-target={@myself}
+                class="icon-btn opacity-0 group-hover/msg:opacity-100 shrink-0 self-center"
+                title="Delete message"
+              >
+                <.icon name="lucide-trash-2" class="size-3" />
+              </button>
+            <% end %>
             <div
               class="px-2.5 py-1.5 rounded-lg max-w-[90%] ai-markdown ai-markdown-user"
               style={"background: #{@database.group.color}; color: white;"}
@@ -169,7 +201,7 @@
             </div>
           </div>
         <% else %>
-          <div class="flex justify-start">
+          <div class="flex justify-start items-start gap-1">
             <div
               class="px-2.5 py-1.5 rounded-lg max-w-[90%]"
               style="background: var(--bg-tertiary); color: var(--text-primary);"
@@ -221,6 +253,38 @@
                 <% end %>
               </span>
             </div>
+            <%= if not @viewing_archived and @confirm_delete_message_id == msg.id do %>
+              <div class="flex items-center gap-1 shrink-0 self-center">
+                <button
+                  phx-click="delete-message"
+                  phx-value-message-id={msg.id}
+                  phx-target={@myself}
+                  class="px-1.5 py-0.5 rounded text-[10px]"
+                  style="background: var(--bg-tertiary); color: #ef4444;"
+                >
+                  Delete
+                </button>
+                <button
+                  phx-click="cancel-delete-message"
+                  phx-target={@myself}
+                  class="px-1.5 py-0.5 rounded text-[10px]"
+                  style="background: var(--bg-tertiary); color: var(--text-tertiary);"
+                >
+                  Cancel
+                </button>
+              </div>
+            <% else %>
+              <button
+                :if={not @viewing_archived}
+                phx-click="confirm-delete-message"
+                phx-value-message-id={msg.id}
+                phx-target={@myself}
+                class="icon-btn opacity-0 group-hover/msg:opacity-100 shrink-0 self-center"
+                title="Delete message"
+              >
+                <.icon name="lucide-trash-2" class="size-3" />
+              </button>
+            <% end %>
           </div>
         <% end %>
       </div>
