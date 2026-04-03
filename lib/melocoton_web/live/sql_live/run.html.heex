@@ -613,9 +613,30 @@
                 </div>
               </div>
 
-              <%!-- Empty state --%>
+              <%!-- Query executed with no result rows (INSERT, UPDATE, DELETE, etc.) --%>
               <div
-                :if={@result == [] or (@result.rows == [] and is_nil(@error_message))}
+                :if={
+                  @result != [] and @result.rows == [] and @result.cols == [] and
+                    !is_nil(@last_query) and is_nil(@error_message)
+                }
+                class="flex-1 flex items-center justify-center"
+                style="color: var(--text-tertiary);"
+              >
+                <div class="text-center text-xs space-y-1.5">
+                  <.icon
+                    name="lucide-check-circle"
+                    class="size-5 mx-auto opacity-50"
+                  />
+                  <p class="font-medium" style="color: var(--text-secondary);">
+                    Query executed successfully. {@result.num_rows} rows affected.
+                  </p>
+                  <p>Total time: {@query_time}ms</p>
+                </div>
+              </div>
+
+              <%!-- Empty state (no query run yet) --%>
+              <div
+                :if={(@result == [] or is_nil(@last_query)) and is_nil(@error_message)}
                 class="flex-1 flex items-center justify-center"
                 style="color: var(--text-tertiary);"
               >
