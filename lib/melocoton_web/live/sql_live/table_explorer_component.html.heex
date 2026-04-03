@@ -2,55 +2,6 @@
   class="flex-1 flex flex-col overflow-hidden"
   style="background: var(--bg-primary); color: var(--text-primary);"
 >
-  <div
-    class="px-3 py-3 flex items-center"
-    style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-medium);"
-  >
-    <div class="flex items-center">
-      <button
-        class="mr-3 text-sm p-1 rounded hover:bg-black/10 dark:hover:bg-white/10"
-        style="color: var(--text-secondary);"
-        phx-click="go-back"
-        phx-target={@myself}
-        title="Back to Query"
-      >
-        <.icon name="lucide-arrow-left" class="size-4" />
-      </button>
-
-      <%!-- Breadcrumb: panca › ⊞ links --%>
-      <div class="flex items-center text-sm">
-        <span style="color: var(--text-tertiary);">{@database.name}</span>
-        <span class="mx-2 text-[11px]" style="color: var(--text-tertiary);">›</span>
-        <div class="flex items-center font-medium">
-          <.icon
-            name="lucide-table-2"
-            class="size-4 mr-1.5"
-            style={"color: #{@database.group.color};"}
-          />
-          <span id="table-name">{@table_name}</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="flex-1"></div>
-
-    <%!-- Connection pill (two-part) --%>
-    <div class="flex items-center rounded overflow-hidden text-xs">
-      <div
-        class="px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-white"
-        style={"background: #{@database.group.color};"}
-      >
-        {@database.group.name}
-      </div>
-      <div
-        class="px-2.5 py-1 flex items-center"
-        style="background: var(--bg-tertiary); color: var(--text-secondary);"
-      >
-        {@database.name}
-      </div>
-    </div>
-  </div>
-
   <%!-- Tab bar: Data / Structure / Indexes / Relations --%>
   <div
     class="flex text-xs"

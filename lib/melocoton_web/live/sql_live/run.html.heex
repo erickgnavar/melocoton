@@ -264,7 +264,6 @@
 
     <%!-- Main Content Area --%>
     <main
-      :if={is_nil(@table_explorer)}
       class="flex-1 flex flex-col overflow-hidden"
       style="background: var(--bg-primary);"
       id="panel-main"
@@ -365,7 +364,12 @@
           class="px-3 py-1 text-xs text-white rounded hover:opacity-90 flex items-center font-medium"
           style={"background: #{@database.group.color};"}
           phx-click="run-query"
-          phx-value-query={@current_session.query}
+          phx-value-query={
+            case Enum.at(@tabs, @active_tab_index) do
+              %{type: :query, session: s} -> s.query
+              _ -> ""
+            end
+          }
         >
           <.icon name="lucide-play" class="size-3 mr-1.5" /> Run
           <span
@@ -408,32 +412,43 @@
         </div>
       </div>
 
-      <%!-- Tab bar with env dots --%>
+      <%!-- Tab bar --%>
       <div class="flex text-sm" style="border-bottom: 1px solid var(--border-medium);">
         <div
-          :for={{session, index} <- Enum.with_index(@database.sessions, 1)}
+          :for={{tab, index} <- Enum.with_index(@tabs)}
           class={[
             "px-3 py-1.5 flex items-center cursor-pointer",
-            @current_session.id == session.id && "border-b-2"
+            index == @active_tab_index && "border-b-2"
           ]}
           style={
-            if @current_session.id == session.id do
+            if index == @active_tab_index do
               "border-bottom-color: #{@database.group.color}; background: var(--bg-primary);"
             else
               "background: var(--bg-secondary); color: var(--text-tertiary);"
             end
           }
-          phx-click="change-session"
-          phx-value-session-id={session.id}
+          phx-click="activate-tab"
+          phx-value-index={index}
         >
-          <%!-- Env dot before tab name --%>
-          <div
-            class="w-[6px] h-[6px] rounded-full mr-1.5"
-            style={"background: #{@database.group.color};"}
+          <%= case tab.type do %>
+            <% :query -> %>
+              <.icon name="lucide-code" class="size-3 mr-1.5" />
+              <span>
+                #{Enum.count(Enum.take(@tabs, index + 1), &(&1.type == :query))}
+              </span>
+            <% :table -> %>
+              <.icon
+                name="lucide-table-2"
+                class="size-3 mr-1.5"
+                style={"color: #{@database.group.color};"}
+              />
+              <span class="max-w-[120px] truncate">{tab.table_name}</span>
+          <% end %>
+          <button
+            class="ml-2 hover:bg-black/10 dark:hover:bg-white/10 rounded p-0.5"
+            phx-click="close-tab"
+            phx-value-index={index}
           >
-          </div>
-          <span>#{index}</span>
-          <button class="ml-2 hover:bg-black/10 dark:hover:bg-white/10 rounded p-0.5">
             <.icon name="lucide-x" class="size-3" />
           </button>
         </div>
@@ -445,213 +460,215 @@
         </button>
       </div>
 
-      <%!-- Editor toolbar with env label and keyboard shortcuts --%>
-      <div
-        class="flex items-center justify-between px-3 py-1 text-[11px]"
-        style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-subtle);"
-      >
-        <div class="flex items-center">
-          <span style="color: var(--text-secondary);">
-            query_{Enum.find_index(@database.sessions, &(&1.id == @current_session.id)) ||
-              0 |> Kernel.+(1)}.sql
-          </span>
-          <span class="mx-1.5" style="color: var(--text-tertiary);">·</span>
-          <span
-            class="text-[10px] uppercase tracking-wide font-medium"
-            style={"color: #{@database.group.color};"}
-          >
-            {@database.group.name}
-          </span>
-        </div>
-        <div class="flex items-center gap-3" style="color: var(--text-tertiary);">
-          <span><span class="kbd-chip">&#8984;/</span> comment</span>
-          <span><span class="kbd-chip">&#8984;&#8679;F</span> format</span>
-          <span><span class="kbd-chip">&#8984;&#8629;</span> run</span>
-        </div>
-      </div>
-
-      <%!-- Editor Area --%>
-      <div class="flex-1 flex flex-col overflow-hidden">
-        <%!-- SQL Editor --%>
-        <.live_component
-          module={MelocotonWeb.SqlLive.SqlEditorComponent}
-          id="sql-editor"
-          database={@database}
-          session={@current_session}
-        />
-
-        <%!-- Results Panel --%>
-        <div
-          class="flex flex-col h-2/5 overflow-hidden"
-          style="border-top: 1px solid var(--border-medium);"
-        >
-          <%!-- Results tab bar with metadata --%>
+      <%= case Enum.at(@tabs, @active_tab_index) do %>
+        <% %{type: :query, session: active_session} -> %>
+          <%!-- Editor toolbar with env label and keyboard shortcuts --%>
           <div
-            class="flex items-center justify-between text-xs"
-            style="border-bottom: 1px solid var(--border-medium);"
+            class="flex items-center justify-between px-3 py-1 text-[11px]"
+            style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-subtle);"
           >
-            <div class="flex">
-              <div
-                class={["px-3 py-1.5 font-medium", @result != [] && "border-b-2"]}
-                style={
-                  if @result != [] do
-                    "border-bottom-color: #{@database.group.color}; background: var(--bg-primary);"
-                  else
-                    "background: var(--bg-primary);"
-                  end
-                }
-              >
-                {gettext("Results")}
-              </div>
-              <button
-                class="px-3 py-1.5 font-medium hover:bg-black/5 dark:hover:bg-white/5"
-                style="color: var(--text-tertiary);"
-              >
-                Messages
-              </button>
-              <button
-                class="px-3 py-1.5 font-medium hover:bg-black/5 dark:hover:bg-white/5"
-                style="color: var(--text-tertiary);"
-              >
-                Explain
-              </button>
-            </div>
-
-            <div class="flex items-center gap-3 px-3">
-              <%!-- Row count and query time in tab bar --%>
-              <span class="text-[10px]" style="color: var(--text-tertiary);">
-                {@result.num_rows} rows · {@query_time} ms
+            <div class="flex items-center">
+              <span style="color: var(--text-secondary);">
+                query_{Enum.count(Enum.take(@tabs, @active_tab_index + 1), &(&1.type == :query))}.sql
               </span>
-
-              <div class="relative">
-                <.form
-                  for={@filter_results_form}
-                  phx-change="validate-filter-results"
-                  phx-submit="do-nothing"
-                >
-                  <.input
-                    type="text"
-                    field={@filter_results_form[:term]}
-                    id="filter-results-term"
-                    placeholder="Filter..."
-                    class="w-36 px-2 py-0.5 text-xs rounded pr-12"
-                  />
-                </.form>
-
-                <div class="absolute inset-y-0 right-0 flex items-center px-2">
-                  <span
-                    id="search-match-count"
-                    class="text-[10px] mr-1"
-                    style="color: var(--text-tertiary);"
-                  >
-                  </span>
-                  <.icon
-                    name="lucide-search"
-                    class="size-3"
-                    style="color: var(--text-tertiary);"
-                  />
-                </div>
-              </div>
-              <button
-                id="clear-results-search"
-                class="text-xs p-1 hover:bg-black/5 dark:hover:bg-white/5 rounded"
-                style="color: var(--text-tertiary);"
-                title="Clear search"
-              >
-                <.icon name="lucide-x" class="size-3" />
-              </button>
-              <button
-                :if={explain_query?(@last_query)}
-                phx-click="explain-with-ai"
-                class="text-xs px-2 py-0.5 rounded flex items-center gap-1 hover:bg-black/5 dark:hover:bg-white/5"
-                style="color: var(--text-tertiary);"
-                title="Analyze query plan with AI"
-              >
-                <.icon name="lucide-bot" class="size-3" /> Analyze with AI
-              </button>
-            </div>
-          </div>
-
-          <%!-- Results table --%>
-          <div
-            :if={@result != [] and is_nil(@error_message)}
-            class="overflow-auto overscroll-none flex-1 p-0"
-          >
-            <div class="overflow-x-auto">
-              <table class="w-full border-collapse text-xs result-table">
-                <thead>
-                  <tr>
-                    <th :for={col <- @result.cols}>{col}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr :for={
-                    row <- if(@filter_term != "", do: @filter_result.rows, else: @result.rows)
-                  }>
-                    <td :for={col <- @result.cols}>
-                      <.data_cell value={Map.get(row, col)} filter={@filter_term} />
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <%!-- Empty state --%>
-          <div
-            :if={@result == [] or (@result.rows == [] and is_nil(@error_message))}
-            class="flex-1 flex items-center justify-center"
-            style="color: var(--text-tertiary);"
-          >
-            <div class="text-center text-xs space-y-2">
-              <.icon name="lucide-terminal" class={["size-5", "opacity-30"]} />
-              <p>Write a query above or select a table from the sidebar</p>
-              <div class="flex items-center justify-center gap-4 text-[10px]">
-                <span><span class="kbd-chip">&#8984;&#8629;</span> run query</span>
-                <span><span class="kbd-chip">&#8984;K</span> jump to database</span>
-              </div>
-            </div>
-          </div>
-
-          <%!-- Error message --%>
-          <div :if={!is_nil(@error_message)} class="error-banner">
-            <div class="flex items-center gap-2">
-              <.icon name="lucide-alert-circle" class="size-4 flex-shrink-0" />
-              <span class="font-medium">{@error_message}</span>
-            </div>
-          </div>
-
-          <%!-- Status bar --%>
-          <div class="flex items-center justify-between px-3 h-6 text-[10px] app-status-bar">
-            <div class="flex items-center gap-3">
-              <%!-- Env chip --%>
+              <span class="mx-1.5" style="color: var(--text-tertiary);">·</span>
               <span
-                class="uppercase font-medium px-1.5 py-0.5 rounded-lg tracking-wide"
-                style={"background: #{@database.group.color}22; color: #{@database.group.color};"}
+                class="text-[10px] uppercase tracking-wide font-medium"
+                style={"color: #{@database.group.color};"}
               >
                 {@database.group.name}
               </span>
-              <span style="color: var(--text-secondary);">{@database.name}</span>
-              <span style="color: var(--text-tertiary);">|</span>
-              <span style="color: var(--text-tertiary);">{@database.type}</span>
             </div>
-            <div class="flex items-center">
-              <span style="color: var(--text-tertiary);" class="mr-1.5">connected</span>
-              <div class="indicator-connected"></div>
+            <div class="flex items-center gap-3" style="color: var(--text-tertiary);">
+              <span><span class="kbd-chip">&#8984;/</span> comment</span>
+              <span><span class="kbd-chip">&#8984;&#8679;F</span> format</span>
+              <span><span class="kbd-chip">&#8984;&#8629;</span> run</span>
             </div>
           </div>
-        </div>
-      </div>
-    </main>
 
-    <.live_component
-      :if={!is_nil(@table_explorer)}
-      module={MelocotonWeb.SqlLive.TableExplorerComponent}
-      id="table-explorer"
-      repo={@conn}
-      table_name={@table_explorer}
-      database={@database}
-    />
+          <%!-- Editor Area --%>
+          <div class="flex-1 flex flex-col overflow-hidden">
+            <%!-- SQL Editor --%>
+            <.live_component
+              module={MelocotonWeb.SqlLive.SqlEditorComponent}
+              id="sql-editor"
+              database={@database}
+              session={active_session}
+            />
+
+            <%!-- Results Panel --%>
+            <div
+              class="flex flex-col h-2/5 overflow-hidden"
+              style="border-top: 1px solid var(--border-medium);"
+            >
+              <%!-- Results tab bar with metadata --%>
+              <div
+                class="flex items-center justify-between text-xs"
+                style="border-bottom: 1px solid var(--border-medium);"
+              >
+                <div class="flex">
+                  <div
+                    class={["px-3 py-1.5 font-medium", @result != [] && "border-b-2"]}
+                    style={
+                      if @result != [] do
+                        "border-bottom-color: #{@database.group.color}; background: var(--bg-primary);"
+                      else
+                        "background: var(--bg-primary);"
+                      end
+                    }
+                  >
+                    {gettext("Results")}
+                  </div>
+                  <button
+                    class="px-3 py-1.5 font-medium hover:bg-black/5 dark:hover:bg-white/5"
+                    style="color: var(--text-tertiary);"
+                  >
+                    Messages
+                  </button>
+                  <button
+                    class="px-3 py-1.5 font-medium hover:bg-black/5 dark:hover:bg-white/5"
+                    style="color: var(--text-tertiary);"
+                  >
+                    Explain
+                  </button>
+                </div>
+
+                <div class="flex items-center gap-3 px-3">
+                  <%!-- Row count and query time in tab bar --%>
+                  <span class="text-[10px]" style="color: var(--text-tertiary);">
+                    {@result.num_rows} rows · {@query_time} ms
+                  </span>
+
+                  <div class="relative">
+                    <.form
+                      for={@filter_results_form}
+                      phx-change="validate-filter-results"
+                      phx-submit="do-nothing"
+                    >
+                      <.input
+                        type="text"
+                        field={@filter_results_form[:term]}
+                        id="filter-results-term"
+                        placeholder="Filter..."
+                        class="w-36 px-2 py-0.5 text-xs rounded pr-12"
+                      />
+                    </.form>
+
+                    <div class="absolute inset-y-0 right-0 flex items-center px-2">
+                      <span
+                        id="search-match-count"
+                        class="text-[10px] mr-1"
+                        style="color: var(--text-tertiary);"
+                      >
+                      </span>
+                      <.icon
+                        name="lucide-search"
+                        class="size-3"
+                        style="color: var(--text-tertiary);"
+                      />
+                    </div>
+                  </div>
+                  <button
+                    id="clear-results-search"
+                    class="text-xs p-1 hover:bg-black/5 dark:hover:bg-white/5 rounded"
+                    style="color: var(--text-tertiary);"
+                    title="Clear search"
+                  >
+                    <.icon name="lucide-x" class="size-3" />
+                  </button>
+                  <button
+                    :if={explain_query?(@last_query)}
+                    phx-click="explain-with-ai"
+                    class="text-xs px-2 py-0.5 rounded flex items-center gap-1 hover:bg-black/5 dark:hover:bg-white/5"
+                    style="color: var(--text-tertiary);"
+                    title="Analyze query plan with AI"
+                  >
+                    <.icon name="lucide-bot" class="size-3" /> Analyze with AI
+                  </button>
+                </div>
+              </div>
+
+              <%!-- Results table --%>
+              <div
+                :if={@result != [] and is_nil(@error_message)}
+                class="overflow-auto overscroll-none flex-1 p-0"
+              >
+                <div class="overflow-x-auto">
+                  <table class="w-full border-collapse text-xs result-table">
+                    <thead>
+                      <tr>
+                        <th :for={col <- @result.cols}>{col}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr :for={
+                        row <- if(@filter_term != "", do: @filter_result.rows, else: @result.rows)
+                      }>
+                        <td :for={col <- @result.cols}>
+                          <.data_cell value={Map.get(row, col)} filter={@filter_term} />
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <%!-- Empty state --%>
+              <div
+                :if={@result == [] or (@result.rows == [] and is_nil(@error_message))}
+                class="flex-1 flex items-center justify-center"
+                style="color: var(--text-tertiary);"
+              >
+                <div class="text-center text-xs space-y-2">
+                  <.icon name="lucide-terminal" class={["size-5", "opacity-30"]} />
+                  <p>Write a query above or select a table from the sidebar</p>
+                  <div class="flex items-center justify-center gap-4 text-[10px]">
+                    <span><span class="kbd-chip">&#8984;&#8629;</span> run query</span>
+                    <span><span class="kbd-chip">&#8984;K</span> jump to database</span>
+                  </div>
+                </div>
+              </div>
+
+              <%!-- Error message --%>
+              <div :if={!is_nil(@error_message)} class="error-banner">
+                <div class="flex items-center gap-2">
+                  <.icon name="lucide-alert-circle" class="size-4 flex-shrink-0" />
+                  <span class="font-medium">{@error_message}</span>
+                </div>
+              </div>
+
+              <%!-- Status bar --%>
+              <div class="flex items-center justify-between px-3 h-6 text-[10px] app-status-bar">
+                <div class="flex items-center gap-3">
+                  <%!-- Env chip --%>
+                  <span
+                    class="uppercase font-medium px-1.5 py-0.5 rounded-lg tracking-wide"
+                    style={"background: #{@database.group.color}22; color: #{@database.group.color};"}
+                  >
+                    {@database.group.name}
+                  </span>
+                  <span style="color: var(--text-secondary);">{@database.name}</span>
+                  <span style="color: var(--text-tertiary);">|</span>
+                  <span style="color: var(--text-tertiary);">{@database.type}</span>
+                </div>
+                <div class="flex items-center">
+                  <span style="color: var(--text-tertiary);" class="mr-1.5">connected</span>
+                  <div class="indicator-connected"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% %{type: :table, table_name: table_name} -> %>
+          <.live_component
+            module={MelocotonWeb.SqlLive.TableExplorerComponent}
+            id={"table-explorer-#{table_name}"}
+            repo={@conn}
+            table_name={table_name}
+            database={@database}
+          />
+        <% _ -> %>
+      <% end %>
+    </main>
 
     <%!-- Resize handle: main | AI panel --%>
     <div :if={@ai_panel_open} class="panel-resize-handle" data-resize="ai"></div>

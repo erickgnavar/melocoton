@@ -41,12 +41,6 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
   end
 
   @impl true
-  def handle_event("go-back", _params, socket) do
-    notify_parent(:reset_table_explorer)
-    {:noreply, socket}
-  end
-
-  @impl true
   def handle_event("switch-tab", %{"tab" => "data"}, socket) do
     socket
     |> assign(active_tab: "data")

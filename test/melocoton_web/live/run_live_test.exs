@@ -102,7 +102,7 @@ defmodule MelocotonWeb.SQLLive.RunTest do
       html =
         render_click(live_view, "set-table-explorer", %{"table" => "users"})
 
-      assert html =~ "table-name"
+      assert html =~ "phx-value-tab=\"data\""
       assert html =~ "users"
     end
   end
@@ -123,7 +123,7 @@ defmodule MelocotonWeb.SQLLive.RunTest do
       html = render_click(live_view, "set-table-explorer", %{"table" => "my table"})
 
       assert html =~ "my table"
-      assert html =~ "table-name"
+      assert html =~ "phx-value-tab=\"data\""
     end
 
     test "renders table explorer for a table name with double quotes", %{conn: conn} do
@@ -140,7 +140,7 @@ defmodule MelocotonWeb.SQLLive.RunTest do
 
       html = render_click(live_view, "set-table-explorer", %{"table" => ~s(my"quoted)})
 
-      assert html =~ "table-name"
+      assert html =~ "phx-value-tab=\"data\""
     end
 
     test "handles SQL injection attempt in table name safely", %{conn: conn, database: database} do
@@ -155,7 +155,7 @@ defmodule MelocotonWeb.SQLLive.RunTest do
         )
 
       # The table explorer renders but the async query will fail (table doesn't exist)
-      assert html =~ "table-name"
+      assert html =~ "phx-value-tab=\"data\""
     end
   end
 

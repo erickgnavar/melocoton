@@ -17,11 +17,14 @@ defmodule MelocotonWeb.SQLLive.Run do
     # PID
     liveview_pid = self()
 
-    current_session =
+    first_session =
       case database.sessions do
         [] -> create_session(database)
         [session | _rest] -> session
       end
+
+    tabs = Enum.map(database.sessions, fn s -> %{type: :query, session: s} end)
+    tabs = if tabs == [], do: [%{type: :query, session: first_session}], else: tabs
 
     socket
     |> assign(:filter_results_form, to_form(%{"term" => ""}))
@@ -32,14 +35,14 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> assign_async(:tables, fn -> get_tables(conn, liveview_pid) end)
     |> assign_async(:indexes, fn -> get_indexes(conn) end)
     |> assign(:database, database)
-    |> assign(:current_session, current_session)
+    |> assign(:tabs, tabs)
+    |> assign(:active_tab_index, 0)
     |> assign(:filter_result, empty_result())
     |> assign(:result, empty_result())
     |> assign(:error_message, nil)
     |> assign(:page_title, database.name)
     |> assign(:running_transaction?, false)
     |> assign(:transaction_session, nil)
-    |> assign(:table_explorer, nil)
     |> assign(:query_time, 0)
     |> assign(:last_query, nil)
     |> assign(:ai_panel_open, project_setting(database.id, "ai_panel_open") == "true")
@@ -58,13 +61,33 @@ defmodule MelocotonWeb.SQLLive.Run do
     %{cols: [], rows: [], num_rows: 0}
   end
 
+  defp active_tab(socket), do: Enum.at(socket.assigns.tabs, socket.assigns.active_tab_index)
+
+  defp current_session(socket) do
+    case active_tab(socket) do
+      %{type: :query, session: session} -> session
+      _ -> nil
+    end
+  end
+
   @impl true
   def handle_event("validate", %{"session" => params}, socket) do
-    {:ok, updated_session} = Databases.update_session(socket.assigns.current_session, params)
+    case current_session(socket) do
+      nil ->
+        noreply(socket)
 
-    socket
-    |> assign(:current_session, updated_session)
-    |> noreply()
+      session ->
+        {:ok, updated_session} = Databases.update_session(session, params)
+
+        tabs =
+          List.update_at(socket.assigns.tabs, socket.assigns.active_tab_index, fn tab ->
+            %{tab | session: updated_session}
+          end)
+
+        socket
+        |> assign(:tabs, tabs)
+        |> noreply()
+    end
   end
 
   def handle_event("validate-search", %{"term" => term}, socket) do
@@ -102,17 +125,61 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> noreply()
   end
 
-  def handle_event("next-session", _params, socket), do: cycle_session(socket, 1)
-  def handle_event("prev-session", _params, socket), do: cycle_session(socket, -1)
+  def handle_event("next-session", _params, socket), do: cycle_tab(socket, 1)
+  def handle_event("prev-session", _params, socket), do: cycle_tab(socket, -1)
+
+  def handle_event("set-table-explorer", %{"table" => ""}, socket), do: noreply(socket)
 
   def handle_event("set-table-explorer", %{"table" => table_name}, socket) do
-    # we translate empty value at HTML level to nil value inside the
-    # live view
-    table_name = (table_name == "" && nil) || table_name
+    tabs = socket.assigns.tabs
+
+    case Enum.find_index(tabs, &(&1.type == :table and &1.table_name == table_name)) do
+      nil ->
+        new_tab = %{type: :table, table_name: table_name}
+        tabs = tabs ++ [new_tab]
+
+        socket
+        |> assign(:tabs, tabs)
+        |> assign(:active_tab_index, length(tabs) - 1)
+        |> noreply()
+
+      existing_index ->
+        socket
+        |> assign(:active_tab_index, existing_index)
+        |> noreply()
+    end
+  end
+
+  def handle_event("activate-tab", %{"index" => index}, socket) do
+    index = String.to_integer(index)
 
     socket
-    |> assign(:table_explorer, table_name)
+    |> activate_tab(index)
     |> noreply()
+  end
+
+  def handle_event("close-tab", %{"index" => index}, socket) do
+    index = String.to_integer(index)
+    tabs = socket.assigns.tabs
+    tab = Enum.at(tabs, index)
+
+    if tab.type == :query && Enum.count(tabs, &(&1.type == :query)) <= 1 do
+      noreply(socket)
+    else
+      tabs = List.delete_at(tabs, index)
+
+      active_index =
+        cond do
+          index < socket.assigns.active_tab_index -> socket.assigns.active_tab_index - 1
+          index == socket.assigns.active_tab_index -> min(index, length(tabs) - 1)
+          true -> socket.assigns.active_tab_index
+        end
+
+      socket
+      |> assign(:tabs, tabs)
+      |> activate_tab(active_index)
+      |> noreply()
+    end
   end
 
   @impl Phoenix.LiveView
@@ -120,20 +187,14 @@ defmodule MelocotonWeb.SQLLive.Run do
     session = create_session(socket.assigns.database)
     updated_database = Databases.get_database!(socket.assigns.database.id)
 
+    new_tab = %{type: :query, session: session}
+    tabs = socket.assigns.tabs ++ [new_tab]
+
     socket
     |> assign(:database, updated_database)
-    |> load_session(session)
+    |> assign(:tabs, tabs)
+    |> activate_tab(length(tabs) - 1)
     |> noreply()
-  end
-
-  @impl Phoenix.LiveView
-  def handle_event("change-session", %{"session-id" => session_id}, socket) do
-    session =
-      Enum.find(socket.assigns.database.sessions, fn session ->
-        to_string(session.id) == session_id
-      end)
-
-    socket |> load_session(session) |> noreply()
   end
 
   @impl Phoenix.LiveView
@@ -165,15 +226,21 @@ defmodule MelocotonWeb.SQLLive.Run do
   end
 
   def handle_event("save-query", _params, socket) do
-    token =
-      Melocoton.ExportStore.put(%{
-        query: socket.assigns.current_session.query,
-        database_name: socket.assigns.database.name
-      })
+    case current_session(socket) do
+      nil ->
+        noreply(socket)
 
-    socket
-    |> push_event("open-url", %{url: ~p"/export/sql/#{token}"})
-    |> noreply()
+      session ->
+        token =
+          Melocoton.ExportStore.put(%{
+            query: session.query,
+            database_name: socket.assigns.database.name
+          })
+
+        socket
+        |> push_event("open-url", %{url: ~p"/export/sql/#{token}"})
+        |> noreply()
+    end
   end
 
   def handle_event("export", %{"format" => format}, socket) do
@@ -213,13 +280,6 @@ defmodule MelocotonWeb.SQLLive.Run do
     socket
     |> assign(:sidebar_width, sidebar)
     |> assign(:ai_panel_width, ai)
-    |> noreply()
-  end
-
-  @impl true
-  def handle_info({MelocotonWeb.SqlLive.TableExplorerComponent, :reset_table_explorer}, socket) do
-    socket
-    |> assign(:table_explorer, nil)
     |> noreply()
   end
 
@@ -454,10 +514,17 @@ defmodule MelocotonWeb.SQLLive.Run do
     Regex.match?(~r/^(insert|update|delete|drop|alter|create|truncate|replace)\b/, normalized)
   end
 
-  defp load_session(socket, session) do
-    socket
-    |> assign(:current_session, session)
-    |> push_event("load-query", %{"query" => session.query})
+  defp activate_tab(socket, index) do
+    socket.assigns.tabs
+    |> Enum.at(index)
+    |> case do
+      %{type: :query, session: session} ->
+        push_event(socket, "load-query", %{"query" => session.query})
+
+      _ ->
+        socket
+    end
+    |> assign(:active_tab_index, index)
   end
 
   defp clear_transaction(socket) do
@@ -467,17 +534,13 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> assign(:error_message, nil)
   end
 
-  defp cycle_session(socket, direction) do
-    sessions = socket.assigns.database.sessions
-    count = length(sessions)
+  defp cycle_tab(socket, direction) do
+    count = length(socket.assigns.tabs)
+    new_index = rem(socket.assigns.active_tab_index + direction + count, count)
 
-    current_index =
-      Enum.find_index(sessions, &(&1.id == socket.assigns.current_session.id))
-
-    new_index = rem(current_index + direction + count, count)
-    session = Enum.at(sessions, new_index)
-
-    socket |> load_session(session) |> noreply()
+    socket
+    |> activate_tab(new_index)
+    |> noreply()
   end
 
   defp parse_panel_width(nil, default), do: default
