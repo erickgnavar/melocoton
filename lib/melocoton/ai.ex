@@ -78,7 +78,13 @@ defmodule Melocoton.AI do
   Builds a system prompt with the full database schema for LLM context.
   """
   def build_system_prompt(conn) do
-    db_type = if conn.type == :postgres, do: "PostgreSQL", else: "SQLite"
+    db_type =
+      case conn.type do
+        :postgres -> "PostgreSQL"
+        :mysql -> "MySQL"
+        :sqlite -> "SQLite"
+      end
+
     schema_text = build_schema_text(conn)
 
     """
