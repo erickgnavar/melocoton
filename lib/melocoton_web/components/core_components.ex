@@ -96,6 +96,91 @@ defmodule MelocotonWeb.CoreComponents do
   end
 
   @doc """
+  Renders a modal for viewing full cell content. Populated via JS.
+  """
+  def cell_detail_modal(assigns) do
+    ~H"""
+    <div
+      id="cell-detail-modal"
+      class="relative z-50 hidden"
+      data-cancel={hide_modal("cell-detail-modal")}
+      data-show-modal={show_modal("cell-detail-modal")}
+    >
+      <div class="fixed inset-0 z-50 flex items-center justify-center">
+        <div
+          id="cell-detail-modal-bg"
+          class="absolute inset-0 bg-black/40"
+          aria-hidden="true"
+        />
+        <div
+          id="cell-detail-modal-container"
+          phx-window-keydown={JS.exec("data-cancel", to: "#cell-detail-modal")}
+          phx-key="escape"
+          phx-click-away={JS.exec("data-cancel", to: "#cell-detail-modal")}
+          class="relative w-full max-w-2xl mx-auto rounded-lg shadow-xl overflow-hidden z-10"
+          style="background: var(--bg-primary); border: 1px solid var(--border-medium);"
+        >
+          <div
+            class="px-4 py-3 flex items-center justify-between"
+            style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-medium);"
+          >
+            <div class="flex items-center gap-2 text-sm font-medium">
+              <.icon name="lucide-file-text" class="size-4" style="color: var(--text-tertiary);" />
+              <span>Cell content</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <div
+                id="cell-detail-format-toggle"
+                class="hidden items-center gap-0.5 mr-1"
+              >
+                <button
+                  id="cell-detail-formatted-btn"
+                  class="px-2 py-1 text-xs rounded font-medium"
+                  style="background: var(--focus-color); color: white;"
+                >
+                  Formatted
+                </button>
+                <button
+                  id="cell-detail-raw-btn"
+                  class="px-2 py-1 text-xs rounded font-medium"
+                  style="background: var(--bg-tertiary); color: var(--text-secondary); border: 0.5px solid var(--border-medium);"
+                >
+                  Raw
+                </button>
+              </div>
+              <button
+                id="cell-detail-copy-btn"
+                class="p-1.5 rounded hover:bg-black/10 dark:hover:bg-white/10 flex items-center gap-1 text-xs"
+                style="color: var(--text-tertiary);"
+                title="Copy to clipboard"
+              >
+                <.icon name="lucide-copy" class="size-3.5" />
+                <span>Copy</span>
+              </button>
+              <button
+                phx-click={JS.exec("data-cancel", to: "#cell-detail-modal")}
+                aria-label="close"
+                class="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10"
+                style="color: var(--text-tertiary);"
+              >
+                <.icon name="lucide-x" class="size-4" />
+              </button>
+            </div>
+          </div>
+          <div class="p-4 max-h-[70vh] overflow-auto">
+            <pre
+              id="cell-detail-content"
+              class="text-xs whitespace-pre-wrap break-all"
+              style="color: var(--text-primary); font-family: var(--font-mono, monospace);"
+            ></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  @doc """
   Renders flash notices.
 
   ## Examples
@@ -767,12 +852,12 @@ defmodule MelocotonWeb.CoreComponents do
           <span :if={@filter != ""}><.put_mark value={@value} term={@filter} /></span>
         </span>
       <% :json -> %>
-        <span class="cell-json" title={format_cell_value(@value, :json)}>
+        <span class="cell-json cell-expandable" data-full-value={raw_cell_value(@value)}>
           <span :if={@filter == ""}>{format_cell_value(@value, :long_text)}</span>
           <span :if={@filter != ""}><.put_mark value={@value} term={@filter} /></span>
         </span>
       <% :long_text -> %>
-        <span class="cell-long-text" title={@value}>
+        <span class="cell-long-text cell-expandable" data-full-value={@value}>
           <span :if={@filter == ""}>{format_cell_value(@value, :long_text)}…</span>
           <span :if={@filter != ""}><.put_mark value={@value} term={@filter} /></span>
         </span>
@@ -838,6 +923,10 @@ defmodule MelocotonWeb.CoreComponents do
     do: String.slice(to_display_string(value), 0, @max_cell_length)
 
   defp format_cell_value(value, _type), do: value
+
+  defp raw_cell_value(value) when is_binary(value), do: value
+  defp raw_cell_value(value) when is_list(value) or is_map(value), do: Jason.encode!(value)
+  defp raw_cell_value(value), do: inspect(value, structs: false)
 
   defp to_display_string(value) when is_binary(value), do: value
   defp to_display_string(value) when is_list(value) or is_map(value), do: Jason.encode!(value)

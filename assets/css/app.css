@@ -388,7 +388,7 @@ input:focus, button:active, textarea:focus, select:focus,
 .cell-json {
   font-family: var(--font-mono, monospace);
   color: #fb923c;
-  cursor: help;
+  cursor: pointer;
   max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -400,12 +400,16 @@ input:focus, button:active, textarea:focus, select:focus,
 }
 
 .cell-long-text {
-  cursor: help;
+  cursor: pointer;
   max-width: 300px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   display: inline-block;
+}
+
+.cell-expandable:hover {
+  opacity: 0.8;
 }
 
 .cell-number {

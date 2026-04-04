@@ -431,6 +431,100 @@ window.addEventListener("phx:copy", (event) => {
   }
 });
 
+// Cell detail modal
+(() => {
+  let cellDetailState = { raw: "", isJson: false, showFormatted: true };
+
+  function tryFormatJson(str) {
+    try {
+      return JSON.stringify(JSON.parse(str), null, 2);
+    } catch {
+      return null;
+    }
+  }
+
+  function updateToggleButtons() {
+    const fmtBtn = document.getElementById("cell-detail-formatted-btn");
+    const rawBtn = document.getElementById("cell-detail-raw-btn");
+    if (!fmtBtn || !rawBtn) return;
+
+    const activeStyle = "background: var(--focus-color); color: white;";
+    const inactiveStyle =
+      "background: var(--bg-tertiary); color: var(--text-secondary); border: 0.5px solid var(--border-medium);";
+    fmtBtn.style.cssText = cellDetailState.showFormatted
+      ? activeStyle
+      : inactiveStyle;
+    rawBtn.style.cssText = cellDetailState.showFormatted
+      ? inactiveStyle
+      : activeStyle;
+  }
+
+  function updateContent() {
+    const content = document.getElementById("cell-detail-content");
+    if (!content) return;
+    content.textContent =
+      cellDetailState.showFormatted && cellDetailState.isJson
+        ? tryFormatJson(cellDetailState.raw) || cellDetailState.raw
+        : cellDetailState.raw;
+  }
+
+  // Show modal on cell click
+  document.addEventListener("click", (event) => {
+    const cell = event.target.closest(".cell-expandable[data-full-value]");
+    if (!cell) return;
+
+    event.stopPropagation();
+
+    const raw = cell.getAttribute("data-full-value");
+    const isJson = cell.classList.contains("cell-json");
+    const toggle = document.getElementById("cell-detail-format-toggle");
+    const modal = document.getElementById("cell-detail-modal");
+    if (!modal) return;
+
+    cellDetailState = { raw, isJson, showFormatted: true };
+
+    if (toggle) {
+      toggle.style.display = isJson ? "flex" : "none";
+    }
+
+    updateToggleButtons();
+    updateContent();
+    liveSocket.execJS(modal, modal.getAttribute("data-show-modal"));
+  });
+
+  // Toggle buttons
+  document.addEventListener("click", (event) => {
+    if (event.target.closest("#cell-detail-formatted-btn")) {
+      cellDetailState.showFormatted = true;
+      updateToggleButtons();
+      updateContent();
+    } else if (event.target.closest("#cell-detail-raw-btn")) {
+      cellDetailState.showFormatted = false;
+      updateToggleButtons();
+      updateContent();
+    }
+  });
+
+  // Copy button
+  document.addEventListener("click", (event) => {
+    const btn = event.target.closest("#cell-detail-copy-btn");
+    if (!btn) return;
+
+    const content = document.getElementById("cell-detail-content");
+    if (!content) return;
+
+    navigator.clipboard.writeText(content.textContent).then(() => {
+      const label = btn.querySelector("span");
+      if (label) {
+        label.textContent = "Copied!";
+        setTimeout(() => {
+          label.textContent = "Copy";
+        }, 1500);
+      }
+    });
+  });
+})();
+
 // Open settings modal from command palette
 window.addEventListener("phx:open-settings-modal", () => {
   const modal = document.getElementById("settings-modal");
