@@ -757,13 +757,12 @@ defmodule MelocotonWeb.SQLLive.RunTest do
       assert html =~ "value"
     end
 
-    test "truncates long text values with ellipsis", %{conn: conn, database: database} do
+    test "truncates json text values with ellipsis", %{conn: conn, database: database} do
       {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
       html = open_table_explorer(live_view, "cell_types")
 
-      assert html =~ "cell-long-text"
-      # Ellipsis indicates truncation in the visible text
-      assert html =~ "…"
+      assert html =~ "cell-json"
+      assert html =~ "cell-expandable"
     end
 
     test "renders URLs with cell-url class", %{conn: conn, database: database} do
