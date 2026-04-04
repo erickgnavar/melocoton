@@ -336,6 +336,321 @@ defmodule MelocotonWeb.SQLLive.RunTest do
     end
   end
 
+  describe "table explorer column filters" do
+    defp toggle_filter_panel(live_view) do
+      live_view
+      |> element("[phx-click='toggle-filter-panel']")
+      |> render_click()
+    end
+
+    defp add_column_filter(live_view) do
+      live_view
+      |> element("[phx-click='add-filter']")
+      |> render_click()
+    end
+
+    defp update_filter(live_view, filter_id, params) do
+      live_view
+      |> form("#filter-#{filter_id}", Map.put(params, "filter_id", filter_id))
+      |> render_change()
+
+      flush_async(live_view)
+    end
+
+    defp get_filter_ids(html) do
+      ~r/name="filter_id" value="(\d+)"/
+      |> Regex.scan(html)
+      |> Enum.map(fn [_, id] -> id end)
+    end
+
+    test "toggle filter panel opens and shows initial filter row", %{
+      conn: conn,
+      database: database
+    } do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "users")
+
+      html = toggle_filter_panel(live_view)
+
+      assert html =~ "Where"
+      assert html =~ "contains"
+      assert html =~ ~s(name="column")
+      assert html =~ ~s(name="operator")
+    end
+
+    test "toggle filter panel closed hides it", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "users")
+
+      toggle_filter_panel(live_view)
+      html = toggle_filter_panel(live_view)
+
+      refute html =~ ~s(name="operator")
+    end
+
+    test "add-filter adds another filter row", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "users")
+      toggle_filter_panel(live_view)
+
+      html = add_column_filter(live_view)
+
+      assert html =~ "and"
+      ids = get_filter_ids(html)
+      assert length(ids) == 2
+    end
+
+    test "remove-filter removes a filter row", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "users")
+
+      html = toggle_filter_panel(live_view)
+      [filter_id] = get_filter_ids(html)
+
+      html =
+        live_view
+        |> element("[phx-click='remove-filter'][phx-value-id='#{filter_id}']")
+        |> render_click()
+
+      flush_async(live_view)
+      assert get_filter_ids(html) == []
+    end
+
+    test "contains filter narrows results", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "users")
+
+      html = toggle_filter_panel(live_view)
+      [filter_id] = get_filter_ids(html)
+
+      html =
+        update_filter(live_view, filter_id, %{
+          "column" => "name",
+          "operator" => "contains",
+          "value" => "alice"
+        })
+
+      assert html =~ "alice"
+      refute html =~ "bob"
+    end
+
+    test "equals filter matches exact value", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "users")
+
+      html = toggle_filter_panel(live_view)
+      [filter_id] = get_filter_ids(html)
+
+      html =
+        update_filter(live_view, filter_id, %{
+          "column" => "name",
+          "operator" => "equals",
+          "value" => "bob"
+        })
+
+      assert html =~ "bob"
+      refute html =~ "alice"
+    end
+
+    test "not equals filter excludes matching rows", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "users")
+
+      html = toggle_filter_panel(live_view)
+      [filter_id] = get_filter_ids(html)
+
+      html =
+        update_filter(live_view, filter_id, %{
+          "column" => "name",
+          "operator" => "not equals",
+          "value" => "alice"
+        })
+
+      # "alice" appears in the filter input value, so check table rows specifically
+      assert html =~ "bob"
+      refute has_element?(live_view, "tbody td", "alice")
+    end
+
+    test "is null filter shows rows with null values", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "posts")
+
+      html = toggle_filter_panel(live_view)
+      [filter_id] = get_filter_ids(html)
+
+      # posts table has only one row with user_id=1, so "is null" on user_id should return nothing
+      html =
+        update_filter(live_view, filter_id, %{"column" => "user_id", "operator" => "is null"})
+
+      refute html =~ "hello"
+    end
+
+    test "is not null filter shows rows with values", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "posts")
+
+      html = toggle_filter_panel(live_view)
+      [filter_id] = get_filter_ids(html)
+
+      html =
+        update_filter(live_view, filter_id, %{"column" => "user_id", "operator" => "is not null"})
+
+      assert html =~ "hello"
+    end
+
+    test "greater than filter works on numeric column", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "users")
+
+      html = toggle_filter_panel(live_view)
+      [filter_id] = get_filter_ids(html)
+
+      html =
+        update_filter(live_view, filter_id, %{
+          "column" => "id",
+          "operator" => "greater than",
+          "value" => "1"
+        })
+
+      assert html =~ "bob"
+      refute html =~ "alice"
+    end
+
+    test "less than filter works on numeric column", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "users")
+
+      html = toggle_filter_panel(live_view)
+      [filter_id] = get_filter_ids(html)
+
+      html =
+        update_filter(live_view, filter_id, %{
+          "column" => "id",
+          "operator" => "less than",
+          "value" => "2"
+        })
+
+      assert html =~ "alice"
+      refute html =~ "bob"
+    end
+
+    test "clear-filters removes all filters and closes panel", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "users")
+
+      html = toggle_filter_panel(live_view)
+      [filter_id] = get_filter_ids(html)
+
+      update_filter(live_view, filter_id, %{
+        "column" => "name",
+        "operator" => "equals",
+        "value" => "alice"
+      })
+
+      live_view
+      |> element("[phx-click='clear-filters']")
+      |> render_click()
+
+      html = flush_async(live_view)
+
+      assert html =~ "alice"
+      assert html =~ "bob"
+      refute html =~ ~s(name="operator")
+    end
+
+    test "multiple filters combine with AND", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "users")
+
+      toggle_filter_panel(live_view)
+      html = render(live_view)
+      [id1] = get_filter_ids(html)
+
+      # First filter: id > 0 (matches both)
+      update_filter(live_view, id1, %{
+        "column" => "id",
+        "operator" => "greater than",
+        "value" => "0"
+      })
+
+      add_column_filter(live_view)
+      html = render(live_view)
+      [_, id2] = get_filter_ids(html)
+
+      # Second filter: name = bob (matches only bob)
+      html =
+        update_filter(live_view, id2, %{
+          "column" => "name",
+          "operator" => "equals",
+          "value" => "bob"
+        })
+
+      assert html =~ "bob"
+      refute html =~ "alice"
+    end
+
+    test "sql expression mode toggle changes input style", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "users")
+
+      html = toggle_filter_panel(live_view)
+      [filter_id] = get_filter_ids(html)
+
+      html =
+        live_view
+        |> element("[phx-click='toggle-filter-sql'][phx-value-id='#{filter_id}']")
+        |> render_click()
+
+      assert html =~ "e.g. now()"
+      assert html =~ "font-family"
+    end
+
+    test "sql expression mode uses raw value in query", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "users")
+
+      html = toggle_filter_panel(live_view)
+      [filter_id] = get_filter_ids(html)
+
+      # Enable SQL mode
+      live_view
+      |> element("[phx-click='toggle-filter-sql'][phx-value-id='#{filter_id}']")
+      |> render_click()
+
+      # Use SQL expression: equals lower('BOB')
+      html =
+        update_filter(live_view, filter_id, %{
+          "column" => "name",
+          "operator" => "equals",
+          "value" => "lower('BOB')"
+        })
+
+      assert html =~ "bob"
+      refute html =~ "alice"
+    end
+
+    test "filter badge shows active filter count", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "users")
+
+      html = toggle_filter_panel(live_view)
+      [filter_id] = get_filter_ids(html)
+
+      # Empty value filter should not count
+      refute html =~ ~r/Filter.*<span[^>]*rounded-full/s
+
+      html =
+        update_filter(live_view, filter_id, %{
+          "column" => "name",
+          "operator" => "contains",
+          "value" => "alice"
+        })
+
+      # Now should show badge with count
+      assert html =~ ~r/>\s*1\s*<\/span>/
+    end
+  end
+
   describe "table explorer column visibility" do
     test "columns dropdown opens and shows all columns", %{conn: conn, database: database} do
       {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")

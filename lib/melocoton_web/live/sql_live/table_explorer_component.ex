@@ -27,6 +27,7 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
     |> assign(pk_columns: pk_columns)
     |> assign(column_types: column_types)
     |> assign(visible_columns: MapSet.new(columns), columns_dropdown_open: false)
+    |> assign(filters: [], filter_panel_open: false)
     |> assign(
       editing_cell: nil,
       pending_changes: %{},
@@ -136,6 +137,84 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
   def handle_event("filter-rows", %{"filter" => filter}, socket) do
     socket
     |> assign(filter: filter, page: 1)
+    |> load_data()
+    |> noreply()
+  end
+
+  @impl true
+  def handle_event("toggle-filter-panel", _params, socket) do
+    opening = !socket.assigns.filter_panel_open
+
+    filters =
+      if opening and socket.assigns.filters == [] do
+        [new_filter(socket.assigns.columns)]
+      else
+        socket.assigns.filters
+      end
+
+    socket
+    |> assign(filter_panel_open: opening, filters: filters)
+    |> noreply()
+  end
+
+  @impl true
+  def handle_event("add-filter", _params, socket) do
+    socket
+    |> assign(filters: socket.assigns.filters ++ [new_filter(socket.assigns.columns)])
+    |> noreply()
+  end
+
+  @impl true
+  def handle_event("remove-filter", %{"id" => id}, socket) do
+    filters = Enum.reject(socket.assigns.filters, &(&1.id == id))
+
+    socket
+    |> assign(filters: filters, page: 1)
+    |> load_data()
+    |> noreply()
+  end
+
+  @impl true
+  def handle_event("update-filter", params, socket) do
+    id = params["filter_id"]
+
+    filters =
+      Enum.map(socket.assigns.filters, fn filter ->
+        if filter.id == id do
+          %{
+            filter
+            | column: params["column"] || filter.column,
+              operator: params["operator"] || filter.operator,
+              value: params["value"] || filter.value
+          }
+        else
+          filter
+        end
+      end)
+
+    socket
+    |> assign(filters: filters, page: 1)
+    |> load_data()
+    |> noreply()
+  end
+
+  @impl true
+  def handle_event("clear-filters", _params, socket) do
+    socket
+    |> assign(filters: [], filter_panel_open: false, page: 1)
+    |> load_data()
+    |> noreply()
+  end
+
+  @impl true
+  def handle_event("toggle-filter-sql", %{"id" => id}, socket) do
+    filters =
+      Enum.map(socket.assigns.filters, fn filter ->
+        if filter.id == id, do: %{filter | sql: !filter.sql}, else: filter
+      end)
+
+    socket
+    |> assign(filters: filters, page: 1)
     |> load_data()
     |> noreply()
   end
@@ -470,6 +549,7 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
       sort_column: sort_column,
       sort_direction: sort_direction,
       filter: filter,
+      filters: filters,
       columns: columns,
       column_types: column_types
     } = socket.assigns
@@ -481,6 +561,7 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
         sort_column: sort_column,
         sort_direction: sort_direction,
         filter: filter,
+        filters: filters,
         columns: columns,
         column_types: column_types
       })
@@ -508,7 +589,13 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
 
   defp get_result(repo, table_name, opts) do
     offset = (opts.page - 1) * opts.limit
-    where_clause = build_where_clause(opts.filter, opts.columns, repo.type)
+    text_conditions = build_text_filter_conditions(opts.filter, opts.columns, repo.type)
+    column_conditions = build_column_filter_conditions(opts.filters, repo.type)
+    all_conditions = Enum.reject(text_conditions ++ column_conditions, &is_nil/1)
+
+    where_clause =
+      if all_conditions == [], do: "", else: " WHERE #{Enum.join(all_conditions, " AND ")}"
+
     order_clause = build_order_clause(opts.sort_column, opts.sort_direction)
 
     sql =
@@ -523,13 +610,13 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
     end
   end
 
-  defp build_where_clause("", _columns, _type), do: ""
-  defp build_where_clause(_filter, [], _type), do: ""
+  defp build_text_filter_conditions("", _columns, _type), do: []
+  defp build_text_filter_conditions(_filter, [], _type), do: []
 
-  defp build_where_clause(filter, columns, type) do
+  defp build_text_filter_conditions(filter, columns, type) do
     escaped = escape_like(filter)
 
-    conditions =
+    condition =
       Enum.map_join(columns, " OR ", fn col ->
         case type do
           :postgres -> "CAST(#{quote_identifier(col)} AS TEXT) ILIKE '%#{escaped}%'"
@@ -538,7 +625,49 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
         end
       end)
 
-    " WHERE #{conditions}"
+    ["(#{condition})"]
+  end
+
+  defp build_column_filter_conditions(filters, type) do
+    filters
+    |> Enum.reject(&(&1.value == "" and &1.operator not in ["is null", "is not null"]))
+    |> Enum.map(&build_filter_condition(&1, type))
+  end
+
+  defp build_filter_condition(%{column: col, operator: "contains"} = filter, type) do
+    build_contains_condition(quote_identifier(col), filter.value, filter.sql, type)
+  end
+
+  defp build_filter_condition(%{column: col, operator: op}, _type)
+       when op in ["is null", "is not null"] do
+    sql_op = if op == "is null", do: "IS NULL", else: "IS NOT NULL"
+    "#{quote_identifier(col)} #{sql_op}"
+  end
+
+  defp build_filter_condition(%{column: col, operator: op, value: val, sql: sql}, _type) do
+    quoted_col = quote_identifier(col)
+    rhs = if sql, do: val, else: "'#{escape_value(val)}'"
+
+    case op do
+      "equals" -> "#{quoted_col} = #{rhs}"
+      "not equals" -> "#{quoted_col} != #{rhs}"
+      "greater than" -> "#{quoted_col} > #{rhs}"
+      "less than" -> "#{quoted_col} < #{rhs}"
+      _ -> nil
+    end
+  end
+
+  defp build_contains_condition(quoted_col, val, true = _sql, type) do
+    like_fn = if type == :postgres, do: "ILIKE", else: "LIKE"
+    cast = if type == :mysql, do: "CHAR", else: "TEXT"
+    "CAST(#{quoted_col} AS #{cast}) #{like_fn} #{val}"
+  end
+
+  defp build_contains_condition(quoted_col, val, false = _sql, type) do
+    like_val = escape_like(val)
+    like_fn = if type == :postgres, do: "ILIKE", else: "LIKE"
+    cast = if type == :mysql, do: "CHAR", else: "TEXT"
+    "CAST(#{quoted_col} AS #{cast}) #{like_fn} '%#{like_val}%'"
   end
 
   defp escape_like(term) do
@@ -733,6 +862,22 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
       true ->
         base
     end
+  end
+
+  defp new_filter(columns) do
+    %{
+      id: System.unique_integer([:positive]) |> to_string(),
+      column: List.first(columns, ""),
+      operator: "contains",
+      value: "",
+      sql: false
+    }
+  end
+
+  defp active_filter_count(filters) do
+    Enum.count(filters, fn f ->
+      f.operator in ["is null", "is not null"] or f.value != ""
+    end)
   end
 
   defp notify_parent(msg), do: send(self(), {__MODULE__, msg})

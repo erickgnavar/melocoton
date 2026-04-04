@@ -112,9 +112,25 @@
       </div>
       <button
         class="px-2 py-1 rounded flex items-center"
-        style="background: var(--bg-tertiary); color: var(--text-secondary);"
+        style={
+          if @filter_panel_open do
+            "background: #{@database.group.color}22; color: #{@database.group.color};"
+          else
+            "background: var(--bg-tertiary); color: var(--text-secondary);"
+          end
+        }
+        phx-click="toggle-filter-panel"
+        phx-target={@myself}
       >
         <.icon name="lucide-filter" class="size-3 mr-1.5" /> Filter
+        <%= if active_filter_count(@filters) > 0 do %>
+          <span
+            class="ml-1 px-1 rounded-full text-[9px] font-medium"
+            style={"background: #{@database.group.color}; color: white;"}
+          >
+            {active_filter_count(@filters)}
+          </span>
+        <% end %>
       </button>
       <button
         class="px-2 py-1 rounded flex items-center"
@@ -164,6 +180,129 @@
         </div>
       </form>
     </div>
+
+    <%!-- Filter panel --%>
+    <%= if @filter_panel_open do %>
+      <div
+        class="px-3 py-2 text-xs space-y-1.5"
+        style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-medium);"
+      >
+        <form
+          :for={filter <- @filters}
+          id={"filter-#{filter.id}"}
+          phx-change="update-filter"
+          phx-value-id={filter.id}
+          phx-target={@myself}
+          phx-submit="update-filter"
+          class="flex items-center gap-1.5"
+        >
+          <input type="hidden" name="filter_id" value={filter.id} />
+          <span class="text-[10px] shrink-0" style="color: var(--text-tertiary); width: 40px;">
+            {if filter == List.first(@filters), do: "Where", else: "and"}
+          </span>
+          <select
+            name="column"
+            class="px-1.5 py-1 rounded text-xs"
+            style="background: var(--bg-primary); border: 0.5px solid var(--border-medium); color: var(--text-primary); max-width: 140px;"
+          >
+            <option
+              :for={col <- @columns}
+              value={col}
+              selected={col == filter.column}
+            >
+              {col}
+            </option>
+          </select>
+          <select
+            name="operator"
+            class="px-1.5 py-1 rounded text-xs"
+            style="background: var(--bg-primary); border: 0.5px solid var(--border-medium); color: var(--text-primary);"
+          >
+            <option
+              :for={
+                op <-
+                  [
+                    "contains",
+                    "equals",
+                    "not equals",
+                    "greater than",
+                    "less than",
+                    "is null",
+                    "is not null"
+                  ]
+              }
+              value={op}
+              selected={op == filter.operator}
+            >
+              {op}
+            </option>
+          </select>
+          <input
+            :if={filter.operator not in ["is null", "is not null"]}
+            type="text"
+            name="value"
+            value={filter.value}
+            phx-debounce="300"
+            placeholder={if filter.sql, do: "e.g. now()", else: "value..."}
+            class="flex-1 px-1.5 py-1 text-xs rounded min-w-[80px]"
+            style={
+              if filter.sql,
+                do:
+                  "background: var(--bg-primary); border: 0.5px solid #{@database.group.color}; color: var(--syntax-keyword); font-family: var(--font-mono, monospace);",
+                else:
+                  "background: var(--bg-primary); border: 0.5px solid var(--border-medium); color: var(--text-primary);"
+            }
+          />
+          <button
+            :if={filter.operator not in ["is null", "is not null"]}
+            type="button"
+            phx-click="toggle-filter-sql"
+            phx-value-id={filter.id}
+            phx-target={@myself}
+            class="shrink-0 p-0.5 rounded hover:bg-black/5 dark:hover:bg-white/5"
+            style={
+              if filter.sql,
+                do: "color: #{@database.group.color};",
+                else: "color: var(--text-tertiary);"
+            }
+            title="Toggle SQL expression mode"
+          >
+            <.icon name="lucide-code" class="size-3" />
+          </button>
+          <button
+            type="button"
+            phx-click="remove-filter"
+            phx-value-id={filter.id}
+            phx-target={@myself}
+            class="shrink-0 p-0.5 rounded hover:bg-black/5 dark:hover:bg-white/5"
+            style="color: var(--text-tertiary);"
+            title="Remove filter"
+          >
+            <.icon name="lucide-x" class="size-3" />
+          </button>
+        </form>
+        <div class="flex items-center gap-2 pt-0.5">
+          <button
+            phx-click="add-filter"
+            phx-target={@myself}
+            class="flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-black/5 dark:hover:bg-white/5"
+            style="color: var(--text-tertiary);"
+          >
+            <.icon name="lucide-plus" class="size-3" /> Add filter
+          </button>
+          <%= if active_filter_count(@filters) > 0 do %>
+            <button
+              phx-click="clear-filters"
+              phx-target={@myself}
+              class="flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-black/5 dark:hover:bg-white/5"
+              style="color: var(--text-tertiary);"
+            >
+              <.icon name="lucide-x" class="size-3" /> Clear all
+            </button>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
 
     <%!-- Apply error banner --%>
     <%= if @apply_error do %>
