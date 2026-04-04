@@ -30,7 +30,7 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Berkeley+Mono:wght@400;700&family=Space+Mono:wght@400;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
-    <script defer data-domain="melocoton.app" src="https://plausible.io/js/script.js"></script>
+    <script defer data-domain="melocoton.app" src="https://plausible.io/js/script.tagged-events.js"></script>
     <style>
       :root {
         --bg: #e8e0d4;
@@ -1140,7 +1140,7 @@
             <span class="feature-icon">🤖</span>
             <div class="feature-title">AI agent chat</div>
             <p class="feature-desc">Ask questions about your data in plain language. The AI agent understands your schema, writes queries on your behalf, and explains results — without leaving the app.</p>
-            <span class="feature-tag">Anthropic · OpenAI · MiniMax · OpenRouter</span>
+            <span class="feature-tag">Claude · OpenAI · MiniMax · OpenRouter · Ollama</span>
           </div>
         </div>
 
@@ -1150,7 +1150,7 @@
             <div class="ai-badge">New</div>
             <div class="ai-content">
               <h3 class="ai-heading">Talk to your database.<br>In plain English.</h3>
-              <p class="ai-sub">Melocoton's built-in AI agent knows your schema. Ask it anything — it'll write the query, run it, and explain what it found. No tab-switching, no copy-pasting into ChatGPT. Works with Anthropic, OpenAI, MiniMax, and OpenRouter.</p>
+              <p class="ai-sub">Melocoton's built-in AI agent knows your schema. Ask it anything — it'll write the query, run it, and explain what it found. No tab-switching, no copy-pasting into ChatGPT. Works with Claude, OpenAI, MiniMax, OpenRouter, and Ollama.</p>
               <div class="ai-examples">
                 <div class="ai-bubble">"Which users signed up this week but haven't activated yet?"</div>
                 <div class="ai-bubble">"Show me the top 5 tables by row count"</div>
@@ -1302,7 +1302,7 @@
           <div class="download-platform">
             <div class="platform-header">macOS</div>
             <div class="platform-links">
-              <a href="https://github.com/erickgnavar/melocoton/releases/latest/download/melocoton.dmg" class="platform-link">
+              <a href="https://github.com/erickgnavar/melocoton/releases/latest/download/melocoton.dmg" class="platform-link plausible-event-name=download plausible-event-platform=macos">
                 <div class="platform-link-left">
                   <span class="pl-icon"></span>
                   <div>
@@ -1326,7 +1326,7 @@
           <div class="download-platform">
             <div class="platform-header">Linux</div>
             <div class="platform-links">
-              <a href="https://github.com/erickgnavar/melocoton/releases/latest/download/melocoton.deb" class="platform-link">
+              <a href="https://github.com/erickgnavar/melocoton/releases/latest/download/melocoton.deb" class="platform-link plausible-event-name=download plausible-event-platform=linux-deb">
                 <div class="platform-link-left">
                   <span class="pl-icon">🐧</span>
                   <div>
@@ -1336,7 +1336,7 @@
                 </div>
                 <span class="platform-link-arrow">→</span>
               </a>
-              <a href="https://github.com/erickgnavar/melocoton/releases/latest/download/melocoton.AppImage" class="platform-link">
+              <a href="https://github.com/erickgnavar/melocoton/releases/latest/download/melocoton.AppImage" class="platform-link plausible-event-name=download plausible-event-platform=linux-appimage">
                 <div class="platform-link-left">
                   <span class="pl-icon">📦</span>
                   <div>
@@ -1486,6 +1486,7 @@
           const btn = document.querySelector('.notarize-copy');
           btn.textContent = '✓';
           setTimeout(() => btn.textContent = '⎘', 1800);
+          plausible('copy xattr command');
         });
       }
     </script>
