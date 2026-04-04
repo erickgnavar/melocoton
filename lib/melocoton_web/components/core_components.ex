@@ -904,17 +904,6 @@ defmodule MelocotonWeb.CoreComponents do
       (String.starts_with?(trimmed, "[") and String.ends_with?(trimmed, "]"))
   end
 
-  defp format_cell_value(value, :json) when is_binary(value) do
-    case Jason.decode(value) do
-      {:ok, decoded} -> Jason.encode!(decoded, pretty: true)
-      _ -> value
-    end
-  end
-
-  defp format_cell_value(value, :json) when is_list(value) or is_map(value) do
-    Jason.encode!(value, pretty: true)
-  end
-
   defp format_cell_value(value, :long_text) when is_binary(value) do
     String.slice(value, 0, @max_cell_length)
   end
