@@ -143,6 +143,23 @@
       </div>
     </div>
 
+    <p
+      :if={@provider == "ollama" and @model_options == []}
+      class="mt-1 text-[10px]"
+      style="color: var(--text-tertiary);"
+    >
+      No models found. Make sure Ollama is running
+      (<code style="color: var(--syntax-keyword);">ollama serve</code>)
+    </p>
+    <p
+      :if={@provider == "ollama" and @model_options != []}
+      class="mt-1 text-[10px]"
+      style="color: var(--text-tertiary);"
+    >
+      Showing models installed locally. To download new models run:
+      <code style="color: var(--syntax-keyword);">ollama pull &lt;model-name&gt;</code>
+    </p>
+
     <div class="w-full h-px" style="background: var(--border-medium);"></div>
 
     <%= for {key_name, label, placeholder} <- [

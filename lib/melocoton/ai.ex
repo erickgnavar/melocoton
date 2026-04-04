@@ -32,6 +32,20 @@ defmodule Melocoton.AI do
       {:minimax, model_name} ->
         Melocoton.AI.MinimaxProvider.chat(llm_messages, model: model_name)
 
+      {:ollama, model_name} ->
+        model = Melocoton.AI.Ollama.model(model_name)
+
+        case ReqLLM.generate_text(model, llm_messages,
+               api_key: "ollama",
+               receive_timeout: 300_000
+             ) do
+          {:ok, %{message: %{content: content}}} ->
+            {:ok, extract_text(content)}
+
+          {:error, error} ->
+            {:error, "LLM error: #{inspect(error)}"}
+        end
+
       _ ->
         case ReqLLM.generate_text(model_str, llm_messages) do
           {:ok, %{message: %{content: content}}} ->
@@ -44,6 +58,7 @@ defmodule Melocoton.AI do
   end
 
   defp parse_provider("minimax:" <> model), do: {:minimax, model}
+  defp parse_provider("ollama:" <> model), do: {:ollama, model}
   defp parse_provider(_), do: :standard
 
   # Content can be a plain string, a list of ContentPart structs, or other formats

@@ -30,7 +30,8 @@ defmodule Melocoton.AI.Models do
        {"MiniMax-M2.5-highspeed", "MiniMax M2.5 Highspeed"},
        {"MiniMax-M2.1", "MiniMax M2.1"},
        {"MiniMax-M2", "MiniMax M2"}
-     ]}
+     ]},
+    {"ollama", "Ollama", :dynamic}
   ]
 
   def providers, do: @providers
@@ -39,10 +40,12 @@ defmodule Melocoton.AI.Models do
     Enum.map(@providers, fn {id, label, _} -> {label, id} end)
   end
 
+  def model_options("ollama"), do: Melocoton.AI.Ollama.list_models()
+
   def model_options(provider_id) do
     case Enum.find(@providers, fn {id, _, _} -> id == provider_id end) do
-      {_, _, models} -> Enum.map(models, fn {id, label} -> {label, id} end)
-      nil -> []
+      {_, _, models} when is_list(models) -> Enum.map(models, fn {id, label} -> {label, id} end)
+      _ -> []
     end
   end
 
@@ -60,6 +63,7 @@ defmodule Melocoton.AI.Models do
   def required_api_key("openai"), do: "openai_api_key"
   def required_api_key("openrouter"), do: "openrouter_api_key"
   def required_api_key("minimax"), do: "minimax_api_key"
+  def required_api_key("ollama"), do: nil
   def required_api_key(_), do: nil
 
   def build_model_string(nil, _), do: nil
