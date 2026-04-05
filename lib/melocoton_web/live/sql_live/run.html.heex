@@ -538,6 +538,13 @@
                   <span class="text-[10px]" style="color: var(--text-tertiary);">
                     {@result.num_rows} rows · {@query_time} ms
                   </span>
+                  <span
+                    :if={@result_truncated}
+                    class="text-[10px] px-1.5 py-0.5 rounded"
+                    style="background: rgba(234, 179, 8, 0.15); color: #ca8a04;"
+                  >
+                    Results limited to {@result.num_rows} rows
+                  </span>
 
                   <div class="relative">
                     <.form

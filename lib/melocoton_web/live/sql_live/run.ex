@@ -4,6 +4,8 @@ defmodule MelocotonWeb.SQLLive.Run do
   require Logger
   alias Melocoton.{DatabaseClient, Databases, Pool, TransactionSession}
 
+  @max_rows 1_000
+
   @impl Phoenix.LiveView
   def mount(%{"database_id" => database_id}, _session, socket) do
     Melocoton.Settings.apply_api_keys_to_runtime()
@@ -45,6 +47,7 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> assign(:transaction_session, nil)
     |> assign(:query_time, 0)
     |> assign(:last_query, nil)
+    |> assign(:result_truncated, false)
     |> assign(:ai_panel_open, project_setting(database.id, "ai_panel_open") == "true")
     |> assign(
       :sidebar_width,
@@ -410,11 +413,15 @@ defmodule MelocotonWeb.SQLLive.Run do
 
     case result do
       {:ok, raw_result} ->
+        response = DatabaseClient.handle_response(raw_result)
+        {response, truncated} = DatabaseClient.maybe_truncate(response, @max_rows)
+
         socket
-        |> assign(result: DatabaseClient.handle_response(raw_result))
+        |> assign(result: response)
         |> assign(query_time: total_time)
         |> assign(last_query: query)
         |> assign(:error_message, nil)
+        |> assign(:result_truncated, truncated)
         |> noreply()
 
       {:error, reason} ->
@@ -425,13 +432,14 @@ defmodule MelocotonWeb.SQLLive.Run do
   end
 
   defp handle_regular_query(socket, query) do
-    case DatabaseClient.query(socket.assigns.conn, query) do
-      {:ok, result, %{total_time: total_time}} ->
+    case DatabaseClient.query(socket.assigns.conn, query, %{}, max_rows: @max_rows) do
+      {:ok, result, %{total_time: total_time, truncated: truncated}} ->
         socket
         |> assign(result: result)
         |> assign(query_time: total_time)
         |> assign(last_query: query)
         |> assign(:error_message, nil)
+        |> assign(:result_truncated, truncated)
         |> noreply()
 
       {:error, reason} ->

@@ -5,7 +5,7 @@ defmodule Melocoton.DatabaseClient do
 
   alias Melocoton.Connection
 
-  def query(%Connection{} = conn, sql, column_types \\ %{}) do
+  def query(%Connection{} = conn, sql, column_types \\ %{}, opts \\ []) do
     init_time = System.monotonic_time(:nanosecond)
     result = Connection.query(conn, sql)
     end_time = System.monotonic_time(:nanosecond)
@@ -13,12 +13,23 @@ defmodule Melocoton.DatabaseClient do
 
     case result do
       {:ok, result} ->
-        {:ok, handle_response(result, column_types), %{total_time: total_time}}
+        max_rows = Keyword.get(opts, :max_rows)
+        {response, truncated} = maybe_truncate(handle_response(result, column_types), max_rows)
+        {:ok, response, %{total_time: total_time, truncated: truncated}}
 
       {:error, error} ->
         {:error, translate_query_error(error)}
     end
   end
+
+  def maybe_truncate(result, nil), do: {result, false}
+
+  def maybe_truncate(%{rows: rows, num_rows: num_rows} = result, max_rows)
+      when num_rows > max_rows do
+    {%{result | rows: Enum.take(rows, max_rows), num_rows: max_rows}, true}
+  end
+
+  def maybe_truncate(result, _max_rows), do: {result, false}
 
   # TODO: make specific structs for each database object
   @spec get_tables(Connection.t()) :: {:ok, [map]} | {:error, String.t()}
