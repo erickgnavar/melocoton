@@ -2,10 +2,16 @@ defmodule Melocoton.Pool do
   use GenServer
   alias Melocoton.Connection
 
+  # Check for dead connections every 60 seconds
+  @check_interval_ms :timer.seconds(60)
+
   def start_link(opts), do: GenServer.start_link(__MODULE__, opts, name: __MODULE__)
 
   @impl true
-  def init(_opts), do: {:ok, %{}}
+  def init(_opts) do
+    schedule_health_check()
+    {:ok, %{}}
+  end
 
   @impl true
   def handle_call({:get_conn, database}, _from, state) do
@@ -20,6 +26,21 @@ defmodule Melocoton.Pool do
           connect(database, Map.delete(state, database.id))
         end
     end
+  end
+
+  @impl true
+  def handle_info(:health_check, state) do
+    new_state =
+      state
+      |> Enum.filter(fn {_id, %Connection{pid: pid}} -> Process.alive?(pid) end)
+      |> Map.new()
+
+    schedule_health_check()
+    {:noreply, new_state}
+  end
+
+  defp schedule_health_check do
+    Process.send_after(self(), :health_check, @check_interval_ms)
   end
 
   defp connect(database, state) do
