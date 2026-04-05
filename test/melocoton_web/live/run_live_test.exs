@@ -649,6 +649,33 @@ defmodule MelocotonWeb.SQLLive.RunTest do
       # Now should show badge with count
       assert html =~ ~r/>\s*1\s*<\/span>/
     end
+
+    test "invalid sql expression in filter shows error instead of crashing", %{
+      conn: conn,
+      database: database
+    } do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "users")
+
+      html = toggle_filter_panel(live_view)
+      [filter_id] = get_filter_ids(html)
+
+      # Enable SQL mode
+      live_view
+      |> element("[phx-click='toggle-filter-sql'][phx-value-id='#{filter_id}']")
+      |> render_click()
+
+      # Use invalid SQL expression
+      update_filter(live_view, filter_id, %{
+        "column" => "name",
+        "operator" => "equals",
+        "value" => "INVALID((("
+      })
+
+      # Should show error banner, not crash the component
+      html = flush_async(live_view)
+      assert html =~ "syntax error"
+    end
   end
 
   describe "table explorer column visibility" do

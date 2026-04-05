@@ -603,10 +603,10 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
 
     case DatabaseClient.query(repo, sql, opts.column_types) do
       {:ok, result, _} ->
-        {:ok, %{result: result}}
+        {:ok, %{result: Map.put(result, :query_error, nil)}}
 
       {:error, error} ->
-        {:error, error}
+        {:ok, %{result: %{cols: [], rows: [], num_rows: 0, query_error: error}}}
     end
   end
 

@@ -343,6 +343,16 @@
           <div class="p-4 text-red-500 text-xs">{"#{inspect(failure)}"}</div>
         </:failed>
 
+        <%= if result[:query_error] do %>
+          <div
+            class="px-3 py-2 text-xs flex items-center gap-2"
+            style="background: rgba(239, 68, 68, 0.08); border-bottom: 1px solid rgba(239, 68, 68, 0.2); color: #ef4444;"
+          >
+            <.icon name="lucide-alert-circle" class="size-3 shrink-0" />
+            <span class="flex-1">{result.query_error}</span>
+          </div>
+        <% end %>
+
         <table class="w-full text-xs border-collapse">
           <thead>
             <tr class="sticky top-0 z-10" style="background: var(--bg-secondary);">
