@@ -345,7 +345,13 @@
               </button>
             </div>
           </div>
-          <button class="icon-btn" title="History" aria-label="History">
+          <button
+            class="icon-btn"
+            title="History"
+            aria-label="History"
+            phx-click="switch-result-tab"
+            phx-value-tab={if @active_result_tab == :history, do: "results", else: "history"}
+          >
             <.icon name="lucide-history" class="size-3.5" />
           </button>
         </div>
@@ -507,33 +513,40 @@
                 style="border-bottom: 1px solid var(--border-medium);"
               >
                 <div class="flex">
-                  <div
-                    class={["px-3 py-1.5 font-medium", @result != [] && "border-b-2"]}
+                  <button
+                    :for={
+                      {label, tab} <- [
+                        {gettext("Results"), :results},
+                        {"History", :history}
+                      ]
+                    }
+                    class="px-3 py-1.5 font-medium hover:bg-black/5 dark:hover:bg-white/5"
                     style={
-                      if @result != [] do
-                        "border-bottom-color: #{@database.group.color}; background: var(--bg-primary);"
+                      if @active_result_tab == tab do
+                        "border-bottom: 2px solid #{@database.group.color}; background: var(--bg-primary);"
                       else
-                        "background: var(--bg-primary);"
+                        "color: var(--text-tertiary);"
                       end
                     }
+                    phx-click="switch-result-tab"
+                    phx-value-tab={tab}
                   >
-                    {gettext("Results")}
-                  </div>
-                  <button
-                    class="px-3 py-1.5 font-medium hover:bg-black/5 dark:hover:bg-white/5"
-                    style="color: var(--text-tertiary);"
-                  >
-                    Messages
-                  </button>
-                  <button
-                    class="px-3 py-1.5 font-medium hover:bg-black/5 dark:hover:bg-white/5"
-                    style="color: var(--text-tertiary);"
-                  >
-                    Explain
+                    {label}
                   </button>
                 </div>
 
-                <div class="flex items-center gap-3 px-3">
+                <div :if={@active_result_tab == :history} class="flex items-center gap-2 px-3">
+                  <button
+                    :if={@query_history != []}
+                    phx-click="clear-history"
+                    class="text-[10px] px-1.5 py-0.5 rounded hover:bg-black/5 dark:hover:bg-white/5"
+                    style="color: var(--text-tertiary);"
+                  >
+                    Clear all
+                  </button>
+                </div>
+
+                <div :if={@active_result_tab == :results} class="flex items-center gap-3 px-3">
                   <%!-- Row count and query time in tab bar --%>
                   <span class="text-[10px]" style="color: var(--text-tertiary);">
                     {@result.num_rows} rows · {@query_time} ms
@@ -595,9 +608,101 @@
                 </div>
               </div>
 
+              <%!-- History tab content --%>
+              <div
+                :if={@active_result_tab == :history}
+                class="flex-1 overflow-auto"
+              >
+                <div
+                  :if={@query_history == []}
+                  class="flex-1 flex items-center justify-center p-8"
+                  style="color: var(--text-tertiary);"
+                >
+                  <div class="text-center text-xs space-y-2">
+                    <.icon name="lucide-history" class="size-5 opacity-30 mx-auto" />
+                    <p>No query history yet</p>
+                  </div>
+                </div>
+                <div
+                  :for={entry <- @query_history}
+                  class="flex items-start gap-2 px-3 py-2 text-xs hover:bg-black/5 dark:hover:bg-white/5 group"
+                  style="border-bottom: 0.5px solid var(--border-subtle);"
+                >
+                  <div class="shrink-0 mt-0.5">
+                    <.icon
+                      :if={entry.status == :success}
+                      name="lucide-check-circle"
+                      class="size-3.5"
+                      style="color: #22c55e;"
+                    />
+                    <.icon
+                      :if={entry.status == :error}
+                      name="lucide-x-circle"
+                      class="size-3.5"
+                      style="color: #ef4444;"
+                    />
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div
+                      class="truncate font-mono text-[11px] cell-expandable cursor-pointer"
+                      style="color: var(--text-primary);"
+                      data-full-value={entry.query}
+                    >
+                      {entry.query}
+                    </div>
+                    <div
+                      class="flex items-center gap-2 mt-0.5"
+                      style="color: var(--text-tertiary);"
+                    >
+                      <span :if={entry.status == :success}>
+                        {entry.row_count} rows · {entry.execution_time}ms
+                      </span>
+                      <span
+                        :if={entry.status == :error}
+                        class="truncate"
+                        style="color: #ef4444;"
+                        title={entry.error_message}
+                      >
+                        {entry.error_message}
+                      </span>
+                      <span>·</span>
+                      <span>{Calendar.strftime(entry.executed_at, "%H:%M:%S")}</span>
+                    </div>
+                  </div>
+                  <div class="shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100">
+                    <button
+                      phx-click="load-from-history"
+                      phx-value-id={entry.id}
+                      class="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10"
+                      style="color: var(--text-tertiary);"
+                      title="Load into editor"
+                    >
+                      <.icon name="lucide-arrow-up-left" class="size-3" />
+                    </button>
+                    <button
+                      phx-click={JS.dispatch("phx:copy", detail: %{text: entry.query})}
+                      class="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10"
+                      style="color: var(--text-tertiary);"
+                      title="Copy to clipboard"
+                    >
+                      <.icon name="lucide-copy" class="size-3" />
+                    </button>
+                    <button
+                      phx-click="delete-history-entry"
+                      phx-value-id={entry.id}
+                      class="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10"
+                      style="color: var(--text-tertiary);"
+                      title="Delete"
+                    >
+                      <.icon name="lucide-trash-2" class="size-3" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               <%!-- Results table --%>
               <div
-                :if={@result != [] and is_nil(@error_message)}
+                :if={@active_result_tab == :results and @result != [] and is_nil(@error_message)}
                 class="overflow-auto overscroll-none flex-1 p-0"
               >
                 <div class="overflow-x-auto">
@@ -623,8 +728,8 @@
               <%!-- Query executed with no result rows (INSERT, UPDATE, DELETE, etc.) --%>
               <div
                 :if={
-                  @result != [] and @result.rows == [] and @result.cols == [] and
-                    !is_nil(@last_query) and is_nil(@error_message)
+                  @active_result_tab == :results and @result != [] and @result.rows == [] and
+                    @result.cols == [] and !is_nil(@last_query) and is_nil(@error_message)
                 }
                 class="flex-1 flex items-center justify-center"
                 style="color: var(--text-tertiary);"
@@ -643,7 +748,10 @@
 
               <%!-- Empty state (no query run yet) --%>
               <div
-                :if={(@result == [] or is_nil(@last_query)) and is_nil(@error_message)}
+                :if={
+                  @active_result_tab == :results and (@result == [] or is_nil(@last_query)) and
+                    is_nil(@error_message)
+                }
                 class="flex-1 flex items-center justify-center"
                 style="color: var(--text-tertiary);"
               >
@@ -658,7 +766,10 @@
               </div>
 
               <%!-- Error message --%>
-              <div :if={!is_nil(@error_message)} class="error-banner">
+              <div
+                :if={@active_result_tab == :results and !is_nil(@error_message)}
+                class="error-banner"
+              >
                 <div class="flex items-center gap-2">
                   <.icon name="lucide-alert-circle" class="size-4 flex-shrink-0" />
                   <span class="font-medium">{@error_message}</span>

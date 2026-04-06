@@ -48,6 +48,8 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> assign(:query_time, 0)
     |> assign(:last_query, nil)
     |> assign(:result_truncated, false)
+    |> assign(:active_result_tab, :results)
+    |> assign(:query_history, [])
     |> assign(:ai_panel_open, project_setting(database.id, "ai_panel_open") == "true")
     |> assign(
       :sidebar_width,
@@ -275,6 +277,49 @@ defmodule MelocotonWeb.SQLLive.Run do
     socket |> explain_with_ai() |> noreply()
   end
 
+  def handle_event("switch-result-tab", %{"tab" => tab}, socket) do
+    tab = String.to_existing_atom(tab)
+
+    if tab == :history do
+      history = Databases.list_query_history(socket.assigns.database.id)
+      assign(socket, :query_history, history)
+    else
+      socket
+    end
+    |> assign(:active_result_tab, tab)
+    |> noreply()
+  end
+
+  def handle_event("load-from-history", %{"id" => id}, socket) do
+    case Enum.find(socket.assigns.query_history, &(to_string(&1.id) == id)) do
+      nil ->
+        noreply(socket)
+
+      entry ->
+        socket
+        |> assign(:active_result_tab, :results)
+        |> push_event("load-query", %{query: entry.query})
+        |> noreply()
+    end
+  end
+
+  def handle_event("delete-history-entry", %{"id" => id}, socket) do
+    Databases.delete_query_history_entry(id)
+    history = Databases.list_query_history(socket.assigns.database.id)
+
+    socket
+    |> assign(:query_history, history)
+    |> noreply()
+  end
+
+  def handle_event("clear-history", _params, socket) do
+    Databases.clear_query_history(socket.assigns.database.id)
+
+    socket
+    |> assign(:query_history, [])
+    |> noreply()
+  end
+
   def handle_event("save-panel-widths", %{"sidebar" => sidebar, "ai" => ai}, socket) do
     db_id = socket.assigns.database.id
     save_project_setting(db_id, "sidebar_width", to_string(sidebar))
@@ -406,6 +451,7 @@ defmodule MelocotonWeb.SQLLive.Run do
   end
 
   defp handle_transaction_query(socket, query) do
+    db_id = socket.assigns.database.id
     init_time = System.monotonic_time(:nanosecond)
     result = TransactionSession.query(socket.assigns.transaction_session, query)
     end_time = System.monotonic_time(:nanosecond)
@@ -415,6 +461,7 @@ defmodule MelocotonWeb.SQLLive.Run do
       {:ok, raw_result} ->
         response = DatabaseClient.handle_response(raw_result)
         {response, truncated} = DatabaseClient.maybe_truncate(response, @max_rows)
+        record_query_history(db_id, query, :success, total_time, response.num_rows)
 
         socket
         |> assign(result: response)
@@ -422,29 +469,42 @@ defmodule MelocotonWeb.SQLLive.Run do
         |> assign(last_query: query)
         |> assign(:error_message, nil)
         |> assign(:result_truncated, truncated)
+        |> maybe_refresh_history()
         |> noreply()
 
       {:error, reason} ->
+        error_msg = DatabaseClient.translate_query_error(reason)
+        record_query_history(db_id, query, :error, total_time, 0, error_msg)
+
         socket
-        |> assign(:error_message, DatabaseClient.translate_query_error(reason))
+        |> assign(:error_message, error_msg)
+        |> maybe_refresh_history()
         |> noreply()
     end
   end
 
   defp handle_regular_query(socket, query) do
+    db_id = socket.assigns.database.id
+
     case DatabaseClient.query(socket.assigns.conn, query, %{}, max_rows: @max_rows) do
       {:ok, result, %{total_time: total_time, truncated: truncated}} ->
+        record_query_history(db_id, query, :success, total_time, result.num_rows)
+
         socket
         |> assign(result: result)
         |> assign(query_time: total_time)
         |> assign(last_query: query)
         |> assign(:error_message, nil)
         |> assign(:result_truncated, truncated)
+        |> maybe_refresh_history()
         |> noreply()
 
       {:error, reason} ->
+        record_query_history(db_id, query, :error, 0, 0, reason)
+
         socket
         |> assign(:error_message, reason)
+        |> maybe_refresh_history()
         |> noreply()
     end
   end
@@ -566,5 +626,27 @@ defmodule MelocotonWeb.SQLLive.Run do
 
   defp save_project_setting(database_id, key, value) do
     Melocoton.Settings.set("project:#{database_id}:#{key}", value)
+  end
+
+  defp record_query_history(db_id, query, status, execution_time, row_count, error_message \\ nil) do
+    Task.start(fn ->
+      Databases.record_query(%{
+        query: query,
+        database_id: db_id,
+        status: status,
+        execution_time: execution_time,
+        row_count: row_count,
+        error_message: error_message,
+        executed_at: DateTime.utc_now()
+      })
+    end)
+  end
+
+  defp maybe_refresh_history(socket) do
+    if socket.assigns.active_result_tab == :history do
+      assign(socket, :query_history, Databases.list_query_history(socket.assigns.database.id))
+    else
+      socket
+    end
   end
 end

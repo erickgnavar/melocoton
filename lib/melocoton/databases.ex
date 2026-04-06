@@ -6,7 +6,7 @@ defmodule Melocoton.Databases do
   import Ecto.Query, warn: false
   alias Melocoton.Repo
 
-  alias Melocoton.Databases.{Chat, ChatMessage, Database, Session}
+  alias Melocoton.Databases.{Chat, ChatMessage, Database, QueryHistory, Session}
 
   @doc """
   Returns the list of databases.
@@ -333,4 +333,44 @@ defmodule Melocoton.Databases do
   def delete_chat_message(message_id) do
     Repo.get!(ChatMessage, message_id) |> Repo.delete()
   end
+
+  @max_history_entries 500
+
+  def record_query(attrs) do
+    %QueryHistory{}
+    |> QueryHistory.changeset(attrs)
+    |> Repo.insert()
+    |> tap(fn _ -> prune_query_history(attrs[:database_id] || attrs["database_id"]) end)
+  end
+
+  def list_query_history(database_id, limit \\ 100) do
+    QueryHistory
+    |> where(database_id: ^database_id)
+    |> order_by(desc: :executed_at)
+    |> limit(^limit)
+    |> Repo.all()
+  end
+
+  def delete_query_history_entry(id) do
+    QueryHistory |> Repo.get(id) |> Repo.delete()
+  end
+
+  def clear_query_history(database_id) do
+    QueryHistory |> where(database_id: ^database_id) |> Repo.delete_all()
+  end
+
+  defp prune_query_history(database_id) when is_integer(database_id) do
+    keep_ids =
+      QueryHistory
+      |> where(database_id: ^database_id)
+      |> order_by(desc: :executed_at)
+      |> limit(@max_history_entries)
+      |> select([q], q.id)
+
+    QueryHistory
+    |> where([q], q.database_id == ^database_id and q.id not in subquery(keep_ids))
+    |> Repo.delete_all()
+  end
+
+  defp prune_query_history(_), do: :ok
 end
