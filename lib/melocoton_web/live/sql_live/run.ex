@@ -50,6 +50,7 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> assign(:result_truncated, false)
     |> assign(:active_result_tab, :results)
     |> assign(:query_history, [])
+    |> assign(:running_query, false)
     |> assign(:ai_panel_open, project_setting(database.id, "ai_panel_open") == "true")
     |> assign(
       :sidebar_width,
@@ -403,6 +404,20 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> noreply()
   end
 
+  @impl true
+  def handle_info({:execute_query, query}, socket) do
+    result_socket =
+      if socket.assigns.running_transaction? do
+        handle_transaction_query(socket, query)
+      else
+        handle_regular_query(socket, query)
+      end
+
+    result_socket
+    |> assign(:running_query, false)
+    |> noreply()
+  end
+
   defp dispatch_query(socket, query, normalized) do
     cond do
       normalized =~ ~r/^begin\b/ ->
@@ -414,11 +429,13 @@ defmodule MelocotonWeb.SQLLive.Run do
       normalized =~ ~r/^rollback\b/ and socket.assigns.running_transaction? ->
         handle_rollback(socket)
 
-      socket.assigns.running_transaction? ->
-        handle_transaction_query(socket, query)
-
       true ->
-        handle_regular_query(socket, query)
+        # Defer execution so the loading state renders before the query blocks
+        send(self(), {:execute_query, query})
+
+        socket
+        |> assign(:running_query, true)
+        |> noreply()
     end
   end
 
@@ -470,7 +487,6 @@ defmodule MelocotonWeb.SQLLive.Run do
         |> assign(:error_message, nil)
         |> assign(:result_truncated, truncated)
         |> maybe_refresh_history()
-        |> noreply()
 
       {:error, reason} ->
         error_msg = DatabaseClient.translate_query_error(reason)
@@ -479,7 +495,6 @@ defmodule MelocotonWeb.SQLLive.Run do
         socket
         |> assign(:error_message, error_msg)
         |> maybe_refresh_history()
-        |> noreply()
     end
   end
 
@@ -497,7 +512,6 @@ defmodule MelocotonWeb.SQLLive.Run do
         |> assign(:error_message, nil)
         |> assign(:result_truncated, truncated)
         |> maybe_refresh_history()
-        |> noreply()
 
       {:error, reason} ->
         record_query_history(db_id, query, :error, 0, 0, reason)
@@ -505,7 +519,6 @@ defmodule MelocotonWeb.SQLLive.Run do
         socket
         |> assign(:error_message, reason)
         |> maybe_refresh_history()
-        |> noreply()
     end
   end
 

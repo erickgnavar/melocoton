@@ -369,9 +369,10 @@
 
         <%!-- Run button with inline shortcut --%>
         <button
-          class="px-3 py-1 text-xs text-white rounded hover:opacity-90 flex items-center font-medium"
+          class="px-3 py-1 text-xs text-white rounded hover:opacity-90 flex items-center font-medium disabled:opacity-50"
           style={"background: #{@database.group.color};"}
           phx-click="run-query"
+          disabled={@running_query}
           phx-value-query={
             case Enum.at(@tabs, @active_tab_index) do
               %{type: :query, session: s} -> s.query
@@ -379,7 +380,16 @@
             end
           }
         >
-          <.icon name="lucide-play" class="size-3 mr-1.5" /> Run
+          <.icon
+            :if={!@running_query}
+            name="lucide-play"
+            class="size-3 mr-1.5"
+          />
+          <.icon
+            :if={@running_query}
+            name="lucide-loader-2"
+            class="size-3 mr-1.5 animate-spin"
+          /> Run
           <span
             class="ml-2 text-[10px] px-1.5 py-0.5 rounded"
             style="background: rgba(255,255,255,0.15); border: 0.5px solid rgba(255,255,255,0.2);"
@@ -618,6 +628,18 @@
                 </div>
               </div>
 
+              <%!-- Query running indicator --%>
+              <div
+                :if={@running_query}
+                class="flex-1 flex items-center justify-center"
+                style="color: var(--text-tertiary);"
+              >
+                <div class="text-center text-xs space-y-2">
+                  <.icon name="lucide-loader-2" class="size-5 mx-auto animate-spin opacity-50" />
+                  <p>Running query...</p>
+                </div>
+              </div>
+
               <%!-- History tab content --%>
               <div
                 :if={@active_result_tab == :history}
@@ -712,7 +734,10 @@
 
               <%!-- Results table --%>
               <div
-                :if={@active_result_tab == :results and @result != [] and is_nil(@error_message)}
+                :if={
+                  @active_result_tab == :results and @result != [] and is_nil(@error_message) and
+                    !@running_query
+                }
                 class="overflow-auto overscroll-none flex-1 p-0"
               >
                 <div class="overflow-x-auto">
@@ -739,7 +764,8 @@
               <div
                 :if={
                   @active_result_tab == :results and @result != [] and @result.rows == [] and
-                    @result.cols == [] and !is_nil(@last_query) and is_nil(@error_message)
+                    @result.cols == [] and !is_nil(@last_query) and is_nil(@error_message) and
+                    !@running_query
                 }
                 class="flex-1 flex items-center justify-center"
                 style="color: var(--text-tertiary);"
@@ -760,7 +786,7 @@
               <div
                 :if={
                   @active_result_tab == :results and (@result == [] or is_nil(@last_query)) and
-                    is_nil(@error_message)
+                    is_nil(@error_message) and !@running_query
                 }
                 class="flex-1 flex items-center justify-center"
                 style="color: var(--text-tertiary);"
@@ -777,7 +803,9 @@
 
               <%!-- Error message --%>
               <div
-                :if={@active_result_tab == :results and !is_nil(@error_message)}
+                :if={
+                  @active_result_tab == :results and !is_nil(@error_message) and !@running_query
+                }
                 class="error-banner"
               >
                 <div class="flex items-center gap-2">

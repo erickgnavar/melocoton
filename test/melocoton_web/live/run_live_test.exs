@@ -1251,7 +1251,8 @@ defmodule MelocotonWeb.SQLLive.RunTest do
     test "allows SELECT queries", %{conn: conn, ro_database: database} do
       {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
 
-      html = render_click(live_view, "run-query", %{"query" => "SELECT * FROM users"})
+      render_click(live_view, "run-query", %{"query" => "SELECT * FROM users"})
+      html = render(live_view)
 
       refute html =~ "Read-only mode"
       assert html =~ "alice"
