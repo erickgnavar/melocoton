@@ -309,6 +309,39 @@ defmodule Melocoton.Engines.Mysql do
   end
 
   @impl true
+  def get_all_relations(conn) do
+    sql = """
+    SELECT
+      kcu.TABLE_NAME AS from_table,
+      kcu.COLUMN_NAME AS from_column,
+      kcu.REFERENCED_TABLE_NAME AS to_table,
+      kcu.REFERENCED_COLUMN_NAME AS to_column
+    FROM information_schema.KEY_COLUMN_USAGE kcu
+    WHERE kcu.REFERENCED_TABLE_NAME IS NOT NULL
+      AND kcu.TABLE_SCHEMA = DATABASE()
+    ORDER BY kcu.TABLE_NAME, kcu.COLUMN_NAME
+    """
+
+    case query_and_normalize(conn, sql) do
+      {:ok, %{rows: rows}} ->
+        relations =
+          Enum.map(rows, fn row ->
+            %{
+              from_table: row["from_table"],
+              from_column: row["from_column"],
+              to_table: row["to_table"],
+              to_column: row["to_column"]
+            }
+          end)
+
+        {:ok, relations}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  @impl true
   def test_connection(database) do
     conn = Pool.get_repo(database)
 

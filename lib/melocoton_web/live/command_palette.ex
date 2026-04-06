@@ -24,6 +24,7 @@ defmodule MelocotonWeb.CommandPalette do
       icon: "lucide-bot",
       action: "explain-with-ai"
     },
+    %{id: :diagram, name: "Schema Diagram", icon: "lucide-network", action: "show-diagram"},
     %{
       id: :shortcuts,
       name: "Keyboard Shortcuts",

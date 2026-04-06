@@ -213,6 +213,39 @@ defmodule Melocoton.Engines.Sqlite do
   end
 
   @impl true
+  def get_all_relations(conn) do
+    tables_sql = "SELECT name FROM sqlite_master WHERE type = 'table'"
+
+    case query_and_normalize(conn, tables_sql) do
+      {:ok, %{rows: rows}} ->
+        relations =
+          Enum.flat_map(rows, fn %{"name" => table_name} ->
+            fk_sql = "PRAGMA foreign_key_list(#{quote_identifier(table_name)})"
+
+            case query_and_normalize(conn, fk_sql) do
+              {:ok, %{rows: fk_rows}} ->
+                Enum.map(fk_rows, fn row ->
+                  %{
+                    from_table: table_name,
+                    from_column: row["from"],
+                    to_table: row["table"],
+                    to_column: row["to"]
+                  }
+                end)
+
+              _ ->
+                []
+            end
+          end)
+
+        {:ok, relations}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  @impl true
   def test_connection(database) do
     if File.exists?(database.url) do
       :ok

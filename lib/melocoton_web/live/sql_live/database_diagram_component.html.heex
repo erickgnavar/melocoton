@@ -1,0 +1,38 @@
+<div class="p-2" style="background: var(--bg-primary);">
+  <.async_result :let={mermaid} assign={@diagram_data}>
+    <:loading>
+      <div class="flex items-center justify-center p-12" style="color: var(--text-tertiary);">
+        <.icon name="lucide-loader-2" class="size-4 animate-spin mr-2" /> Loading schema...
+      </div>
+    </:loading>
+    <:failed :let={_failure}>
+      <div
+        class="flex items-center justify-center p-12 text-xs"
+        style="color: var(--text-tertiary);"
+      >
+        Failed to load schema diagram.
+      </div>
+    </:failed>
+
+    <%= if mermaid == "" do %>
+      <div class="flex items-center justify-center p-12" style="color: var(--text-tertiary);">
+        <div class="text-center text-xs space-y-2">
+          <.icon name="lucide-network" class="size-5 opacity-30 mx-auto" />
+          <p>No tables found</p>
+        </div>
+      </div>
+    <% else %>
+      <div
+        id="mermaid-diagram"
+        phx-hook="MermaidDiagram"
+        data-definition={mermaid}
+        class="overflow-auto"
+        style="max-height: 70vh;"
+      >
+        <div class="flex items-center justify-center p-12" style="color: var(--text-tertiary);">
+          <.icon name="lucide-loader-2" class="size-4 animate-spin mr-2" /> Rendering diagram...
+        </div>
+      </div>
+    <% end %>
+  </.async_result>
+</div>

@@ -38,6 +38,11 @@ defmodule Melocoton.Behaviours.Engine do
   @callback get_estimated_count(repo, String.t()) :: non_neg_integer()
 
   @doc """
+  Return all foreign key relations across the entire database.
+  """
+  @callback get_all_relations(repo) :: {:ok, [map]} | {:error, String.t()}
+
+  @doc """
   Validate if we can connect with the received database
   """
   @callback test_connection(Database.t()) :: :ok | {:error, String.t()}

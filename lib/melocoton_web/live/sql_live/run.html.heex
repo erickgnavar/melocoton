@@ -392,6 +392,14 @@
         <div class="flex items-center gap-0.5">
           <button
             class="icon-btn"
+            phx-click={show_modal("diagram-modal")}
+            title="Schema Diagram"
+            aria-label="Schema Diagram"
+          >
+            <.icon name="lucide-network" class="size-3.5" />
+          </button>
+          <button
+            class="icon-btn"
             phx-click={show_modal("settings-modal")}
             title="Settings"
             aria-label="Settings"
@@ -850,4 +858,14 @@
   </.modal>
 
   <.cell_detail_modal />
+
+  <.modal id="diagram-modal" title="Schema Diagram" icon="lucide-network" max_width="max-w-6xl">
+    <.live_component
+      module={MelocotonWeb.SqlLive.DatabaseDiagramComponent}
+      id="database-diagram"
+      conn={@conn}
+      tables={@tables}
+      color={@database.group.color}
+    />
+  </.modal>
 </div>

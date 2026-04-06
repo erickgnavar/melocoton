@@ -21,6 +21,7 @@ import "phoenix_html";
 import { Socket } from "phoenix";
 import { LiveSocket } from "phoenix_live_view";
 import topbar from "../vendor/topbar";
+import mermaid from "mermaid";
 
 import { EditorView, basicSetup } from "codemirror";
 import { toggleComment } from "@codemirror/commands";
@@ -375,6 +376,30 @@ const liveSocket = new LiveSocket("/live", Socket, {
         }
       },
     },
+    MermaidDiagram: {
+      mounted() {
+        const isDark =
+          document.documentElement.getAttribute("data-theme") === "dark";
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: isDark ? "dark" : "default",
+        });
+        this.renderDiagram();
+      },
+      updated() {
+        this.renderDiagram();
+      },
+      async renderDiagram() {
+        const definition = this.el.getAttribute("data-definition");
+        if (!definition) return;
+        try {
+          const { svg } = await mermaid.render("mermaid-svg", definition);
+          this.el.innerHTML = svg;
+        } catch (e) {
+          this.el.innerHTML = `<div class="p-4 text-xs" style="color: var(--text-tertiary);">Failed to render diagram.</div>`;
+        }
+      },
+    },
   },
   metadata: {
     keydown: (e, _el) => {
@@ -552,6 +577,13 @@ window.addEventListener("phx:hide-settings-modal", () => {
 // Open shortcuts modal
 window.addEventListener("phx:open-shortcuts-modal", () => {
   const modal = document.getElementById("shortcuts-modal");
+  if (modal) {
+    liveSocket.execJS(modal, modal.getAttribute("data-show-modal"));
+  }
+});
+
+window.addEventListener("phx:open-diagram-modal", () => {
+  const modal = document.getElementById("diagram-modal");
   if (modal) {
     liveSocket.execJS(modal, modal.getAttribute("data-show-modal"));
   }

@@ -4,6 +4,7 @@
     "@codemirror/theme-one-dark": "^6.1.2",
     "@replit/codemirror-vim": "^6.3.0",
     "codemirror": "^6.0.1",
+    "mermaid": "^10.9.5",
     "sql-formatter": "^15.6.6"
   }
 }

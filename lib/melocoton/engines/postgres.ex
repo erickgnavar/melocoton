@@ -317,6 +317,45 @@ defmodule Melocoton.Engines.Postgres do
   end
 
   @impl true
+  def get_all_relations(conn) do
+    sql = """
+    SELECT
+      kcu.table_name AS from_table,
+      kcu.column_name AS from_column,
+      ccu.table_name AS to_table,
+      ccu.column_name AS to_column
+    FROM information_schema.table_constraints tc
+    JOIN information_schema.key_column_usage kcu
+      ON tc.constraint_name = kcu.constraint_name
+      AND tc.table_schema = kcu.table_schema
+    JOIN information_schema.constraint_column_usage ccu
+      ON tc.constraint_name = ccu.constraint_name
+      AND tc.table_schema = ccu.table_schema
+    WHERE tc.constraint_type = 'FOREIGN KEY'
+      AND tc.table_schema = 'public'
+    ORDER BY kcu.table_name, kcu.column_name
+    """
+
+    case query_and_normalize(conn, sql) do
+      {:ok, %{rows: rows}} ->
+        relations =
+          Enum.map(rows, fn row ->
+            %{
+              from_table: row["from_table"],
+              from_column: row["from_column"],
+              to_table: row["to_table"],
+              to_column: row["to_column"]
+            }
+          end)
+
+        {:ok, relations}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  @impl true
   def test_connection(database) do
     conn = Pool.get_repo(database)
 

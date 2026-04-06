@@ -103,6 +103,15 @@ defmodule Melocoton.DatabaseClient do
   defp do_get_table_structure(conn, table_name, :sqlite),
     do: Melocoton.Engines.Sqlite.get_table_structure(conn, table_name)
 
+  def get_all_relations(%Connection{type: :postgres} = conn),
+    do: Melocoton.Engines.Postgres.get_all_relations(conn)
+
+  def get_all_relations(%Connection{type: :mysql} = conn),
+    do: Melocoton.Engines.Mysql.get_all_relations(conn)
+
+  def get_all_relations(%Connection{type: :sqlite} = conn),
+    do: Melocoton.Engines.Sqlite.get_all_relations(conn)
+
   @doc """
   Normalizes a query result into a map with `cols`, `rows`, and `num_rows`.
 
