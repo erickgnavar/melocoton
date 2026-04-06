@@ -550,6 +550,41 @@ window.addEventListener("phx:copy", (event) => {
   });
 })();
 
+// Download diagram as PNG
+document.addEventListener("click", (event) => {
+  const btn = event.target.closest("#download-diagram-btn");
+  if (!btn) return;
+
+  const svg = document.querySelector("#mermaid-diagram svg");
+  if (!svg) return;
+
+  const svgData = new XMLSerializer().serializeToString(svg);
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  const img = new Image();
+
+  img.onload = () => {
+    const scale = 2;
+    canvas.width = img.width * scale;
+    canvas.height = img.height * scale;
+    ctx.scale(scale, scale);
+    ctx.fillStyle =
+      getComputedStyle(document.documentElement).getPropertyValue(
+        "--bg-primary",
+      ) || "#fff";
+    ctx.fillRect(0, 0, img.width, img.height);
+    ctx.drawImage(img, 0, 0);
+
+    const a = document.createElement("a");
+    const dbName = btn.getAttribute("data-database-name") || "schema";
+    a.download = `${dbName}-diagram.png`;
+    a.href = canvas.toDataURL("image/png");
+    a.click();
+  };
+
+  img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgData)}`;
+});
+
 // Open settings modal from command palette
 window.addEventListener("phx:open-settings-modal", () => {
   const modal = document.getElementById("settings-modal");

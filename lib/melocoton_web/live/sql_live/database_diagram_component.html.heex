@@ -22,6 +22,17 @@
         </div>
       </div>
     <% else %>
+      <div class="flex justify-end px-2 pb-1">
+        <button
+          id="download-diagram-btn"
+          data-database-name={@database_name}
+          class="flex items-center gap-1 px-2 py-1 text-xs rounded hover:bg-black/5 dark:hover:bg-white/5"
+          style="color: var(--text-tertiary);"
+          title="Download as PNG"
+        >
+          <.icon name="lucide-download" class="size-3" /> Download PNG
+        </button>
+      </div>
       <div
         id="mermaid-diagram"
         phx-hook="MermaidDiagram"
