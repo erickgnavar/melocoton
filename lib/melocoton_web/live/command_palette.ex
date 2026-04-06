@@ -5,26 +5,7 @@ defmodule MelocotonWeb.CommandPalette do
 
   @actions [
     %{id: :home, name: "Home", icon: "lucide-home", action: "navigate-home"},
-    %{
-      id: :export_csv,
-      name: "Export to CSV",
-      icon: "lucide-file-spreadsheet",
-      action: "export-csv"
-    },
-    %{
-      id: :export_xlsx,
-      name: "Export to Excel",
-      icon: "lucide-file-spreadsheet",
-      action: "export-xlsx"
-    },
     %{id: :settings, name: "Settings", icon: "lucide-settings", action: "open-settings"},
-    %{
-      id: :explain_ai,
-      name: "Analyze Query Plan with AI",
-      icon: "lucide-bot",
-      action: "explain-with-ai"
-    },
-    %{id: :diagram, name: "Schema Diagram", icon: "lucide-network", action: "show-diagram"},
     %{
       id: :shortcuts,
       name: "Keyboard Shortcuts",
@@ -39,9 +20,55 @@ defmodule MelocotonWeb.CommandPalette do
     }
   ]
 
+  @contextual_actions [
+    %{
+      id: :export_csv,
+      name: "Export Results to CSV",
+      icon: "lucide-file-spreadsheet",
+      action: "export-csv",
+      when: :has_results
+    },
+    %{
+      id: :export_xlsx,
+      name: "Export Results to Excel",
+      icon: "lucide-file-spreadsheet",
+      action: "export-xlsx",
+      when: :has_results
+    },
+    %{
+      id: :explain_ai,
+      name: "Analyze Query Plan with AI",
+      icon: "lucide-bot",
+      action: "explain-with-ai",
+      when: :has_explain
+    },
+    %{
+      id: :diagram,
+      name: "Schema Diagram",
+      icon: "lucide-network",
+      action: "show-diagram",
+      when: :on_run_page
+    },
+    %{
+      id: :toggle_ai,
+      name: "Toggle AI Assistant",
+      icon: "lucide-bot",
+      action: "toggle-ai-panel",
+      when: :on_run_page
+    },
+    %{
+      id: :history,
+      name: "Query History",
+      icon: "lucide-history",
+      action: "show-history",
+      when: :on_run_page
+    }
+  ]
+
   @impl true
-  def update(%{action: :open}, socket) do
-    items = build_items()
+  def update(%{action: :open} = assigns, socket) do
+    context = Map.get(assigns, :context, %{})
+    items = build_items(context)
 
     socket
     |> assign(open: true, query: "", filtered: items, selected_index: 0, items: items)
@@ -52,7 +79,7 @@ defmodule MelocotonWeb.CommandPalette do
     if socket.assigns[:items] do
       socket |> assign(assigns) |> ok()
     else
-      items = build_items()
+      items = build_items(%{})
 
       socket
       |> assign(assigns)
@@ -61,10 +88,16 @@ defmodule MelocotonWeb.CommandPalette do
     end
   end
 
-  defp build_items do
+  defp build_items(context) do
     databases = Databases.list_databases() |> Enum.map(&Map.put(&1, :kind, :database))
-    actions = Enum.map(@actions, &Map.put(&1, :kind, :action))
-    databases ++ actions
+    always = Enum.map(@actions, &Map.put(&1, :kind, :action))
+
+    contextual =
+      @contextual_actions
+      |> Enum.filter(fn action -> Map.get(context, action.when, false) end)
+      |> Enum.map(&Map.put(&1, :kind, :action))
+
+    databases ++ contextual ++ always
   end
 
   @impl true

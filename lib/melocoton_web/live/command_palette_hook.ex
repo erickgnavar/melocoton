@@ -19,7 +19,26 @@ defmodule MelocotonWeb.CommandPaletteHook do
   end
 
   defp handle_event("open-command-palette", _params, socket) do
-    send_update(MelocotonWeb.CommandPalette, id: "command-palette", action: :open)
+    context = %{
+      has_results: match?(%{rows: [_ | _]}, socket.assigns[:result]),
+      has_query: socket.assigns[:last_query] != nil,
+      has_explain:
+        is_binary(socket.assigns[:last_query]) and
+          socket.assigns[:last_query]
+          |> String.trim()
+          |> String.downcase()
+          |> String.starts_with?("explain"),
+      running_transaction: socket.assigns[:running_transaction?] == true,
+      ai_panel_open: socket.assigns[:ai_panel_open] == true,
+      on_run_page: Map.has_key?(socket.assigns, :conn)
+    }
+
+    send_update(MelocotonWeb.CommandPalette,
+      id: "command-palette",
+      action: :open,
+      context: context
+    )
+
     {:halt, socket}
   end
 
@@ -46,6 +65,17 @@ defmodule MelocotonWeb.CommandPaletteHook do
 
   defp handle_info({MelocotonWeb.CommandPalette, {:palette_action, "show-diagram"}}, socket) do
     {:halt, push_event(socket, "open-diagram-modal", %{})}
+  end
+
+  defp handle_info(
+         {MelocotonWeb.CommandPalette, {:palette_action, "toggle-ai-panel"}},
+         socket
+       ) do
+    {:halt, push_event(socket, "palette-exec", %{event: "toggle-ai-panel"})}
+  end
+
+  defp handle_info({MelocotonWeb.CommandPalette, {:palette_action, "show-history"}}, socket) do
+    {:halt, push_event(socket, "palette-exec", %{event: "switch-result-tab", value: "history"})}
   end
 
   defp handle_info({MelocotonWeb.CommandPalette, {:palette_action, "show-onboarding"}}, socket) do

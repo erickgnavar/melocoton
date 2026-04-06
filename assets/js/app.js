@@ -589,6 +589,15 @@ window.addEventListener("phx:open-diagram-modal", () => {
   }
 });
 
+// Forward palette actions by clicking existing buttons
+window.addEventListener("phx:palette-exec", (event) => {
+  const { event: name, value } = event.detail;
+  const btn = document.querySelector(
+    `[phx-click='${name}']${value ? `[phx-value-tab='${value}']` : ""}`,
+  );
+  if (btn) btn.click();
+});
+
 // Show progress bar on live navigation and form submits
 topbar.config({ barColors: { 0: "#29d" }, shadowColor: "rgba(0, 0, 0, .3)" });
 window.addEventListener("phx:page-loading-start", (_info) => topbar.show(300));
