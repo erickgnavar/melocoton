@@ -513,7 +513,11 @@
           {(@page - 1) * @limit + 1}-{min(@page * @limit, @total_count)}
         </span>
         of
-        <span class="font-medium" style="color: var(--text-secondary);">
+        <span
+          class="font-medium"
+          style="color: var(--text-secondary);"
+          title="Estimated by the database engine. May not be exact."
+        >
           ~{@total_count}
         </span>
         rows
