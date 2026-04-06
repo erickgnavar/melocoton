@@ -65,7 +65,7 @@
               class="text-[11px] font-medium uppercase tracking-wide"
               style="color: var(--text-secondary);"
             >
-              Tables
+              Tables & Views
             </div>
             <div class="flex items-center gap-1.5">
               <.async_result :let={tables} assign={@tables}>
@@ -134,7 +134,9 @@
                     <.icon name="lucide-chevron-down" class="size-3 mr-1" />
                   </span>
                   <.icon
-                    name="lucide-table-2"
+                    name={
+                      if Map.get(table, :type) == :view, do: "lucide-eye", else: "lucide-table-2"
+                    }
                     class="size-3 mr-1.5"
                     style="color: var(--text-tertiary);"
                   />

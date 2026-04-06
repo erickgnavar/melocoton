@@ -7,11 +7,11 @@ defmodule Melocoton.Engines.Postgres do
   @impl true
   def get_tables(conn) do
     sql = """
-    SELECT t.table_name, c.column_name, c.data_type
+    SELECT t.table_name, t.table_type, c.column_name, c.data_type
     FROM information_schema.tables t
     LEFT JOIN information_schema.columns c
       ON c.table_schema = t.table_schema AND c.table_name = t.table_name
-    WHERE t.table_type = 'BASE TABLE'
+    WHERE t.table_type IN ('BASE TABLE', 'VIEW')
       AND t.table_schema NOT IN ('pg_catalog', 'information_schema')
     ORDER BY t.table_name, c.ordinal_position;
     """
@@ -21,14 +21,16 @@ defmodule Melocoton.Engines.Postgres do
         rows
         |> Enum.group_by(fn [table_name | _] -> table_name end)
         |> Enum.map(fn {name, col_rows} ->
+          table_type = col_rows |> List.first() |> Enum.at(1)
+
           cols =
             col_rows
-            |> Enum.reject(fn [_, col_name, _] -> is_nil(col_name) end)
-            |> Enum.map(fn [_, col_name, data_type] ->
+            |> Enum.reject(fn [_, _, col_name, _] -> is_nil(col_name) end)
+            |> Enum.map(fn [_, _, col_name, data_type] ->
               %{name: col_name, type: data_type}
             end)
 
-          %{name: name, cols: cols}
+          %{name: name, type: if(table_type == "VIEW", do: :view, else: :table), cols: cols}
         end)
         |> Enum.sort_by(& &1.name)
         |> then(&{:ok, &1})

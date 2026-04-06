@@ -9,19 +9,18 @@ defmodule Melocoton.Engines.Sqlite do
   def get_tables(conn) do
     sql = """
     SELECT
-      name
+      name, type
     FROM
       sqlite_schema
     WHERE
-      type = 'table' AND
+      type IN ('table', 'view') AND
       name NOT LIKE 'sqlite_%';
     """
 
     case Connection.query(conn, sql) do
       {:ok, %{rows: rows}} ->
         rows
-        |> Enum.map(&Enum.at(&1, 0))
-        |> Enum.map(fn name ->
+        |> Enum.map(fn [name, schema_type] ->
           cols =
             case Connection.query(conn, "PRAGMA table_info(#{quote_identifier(name)});") do
               {:ok, result} ->
@@ -36,7 +35,7 @@ defmodule Melocoton.Engines.Sqlite do
                 []
             end
 
-          %{name: name, cols: cols}
+          %{name: name, type: if(schema_type == "view", do: :view, else: :table), cols: cols}
         end)
         |> then(&{:ok, &1})
 

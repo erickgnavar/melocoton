@@ -7,11 +7,11 @@ defmodule Melocoton.Engines.Mysql do
   @impl true
   def get_tables(conn) do
     sql = """
-    SELECT t.TABLE_NAME, c.COLUMN_NAME, c.DATA_TYPE
+    SELECT t.TABLE_NAME, t.TABLE_TYPE, c.COLUMN_NAME, c.DATA_TYPE
     FROM information_schema.TABLES t
     LEFT JOIN information_schema.COLUMNS c
       ON c.TABLE_SCHEMA = t.TABLE_SCHEMA AND c.TABLE_NAME = t.TABLE_NAME
-    WHERE t.TABLE_TYPE = 'BASE TABLE'
+    WHERE t.TABLE_TYPE IN ('BASE TABLE', 'VIEW')
       AND t.TABLE_SCHEMA = DATABASE()
     ORDER BY t.TABLE_NAME, c.ORDINAL_POSITION;
     """
@@ -21,14 +21,16 @@ defmodule Melocoton.Engines.Mysql do
         rows
         |> Enum.group_by(fn [table_name | _] -> table_name end)
         |> Enum.map(fn {name, col_rows} ->
+          table_type = col_rows |> List.first() |> Enum.at(1)
+
           cols =
             col_rows
-            |> Enum.reject(fn [_, col_name, _] -> is_nil(col_name) end)
-            |> Enum.map(fn [_, col_name, data_type] ->
+            |> Enum.reject(fn [_, _, col_name, _] -> is_nil(col_name) end)
+            |> Enum.map(fn [_, _, col_name, data_type] ->
               %{name: col_name, type: data_type}
             end)
 
-          %{name: name, cols: cols}
+          %{name: name, type: if(table_type == "VIEW", do: :view, else: :table), cols: cols}
         end)
         |> Enum.sort_by(& &1.name)
         |> then(&{:ok, &1})
