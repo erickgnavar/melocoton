@@ -180,6 +180,48 @@ defmodule Melocoton.Engines.SqliteTest do
 
       assert structure.create_statement =~ "CREATE TABLE users"
     end
+
+    test "returns check constraints from named constraints", %{conn: conn} do
+      Connection.query(conn, """
+      CREATE TABLE with_checks (
+        id INTEGER PRIMARY KEY,
+        age INTEGER CONSTRAINT age_positive CHECK(age > 0),
+        status TEXT CONSTRAINT valid_status CHECK(status IN ('active', 'inactive'))
+      )
+      """)
+
+      {:ok, %TableStructure{} = structure} = Sqlite.get_table_structure(conn, "with_checks")
+
+      assert length(structure.check_constraints) == 2
+      names = Enum.map(structure.check_constraints, & &1.name)
+      assert "age_positive" in names
+      assert "valid_status" in names
+
+      age_check = Enum.find(structure.check_constraints, &(&1.name == "age_positive"))
+      assert age_check.definition =~ "age > 0"
+    end
+
+    test "returns check constraints from unnamed constraints", %{conn: conn} do
+      Connection.query(conn, """
+      CREATE TABLE with_bare_checks (
+        id INTEGER PRIMARY KEY,
+        quantity INTEGER CHECK(quantity >= 0)
+      )
+      """)
+
+      {:ok, %TableStructure{} = structure} = Sqlite.get_table_structure(conn, "with_bare_checks")
+
+      assert length(structure.check_constraints) == 1
+      check = hd(structure.check_constraints)
+      assert check.name == "check_1"
+      assert check.definition =~ "quantity >= 0"
+    end
+
+    test "returns empty check constraints when none exist", %{conn: conn} do
+      {:ok, %TableStructure{} = structure} = Sqlite.get_table_structure(conn, "users")
+
+      assert structure.check_constraints == []
+    end
   end
 
   describe "get_estimated_count/2" do

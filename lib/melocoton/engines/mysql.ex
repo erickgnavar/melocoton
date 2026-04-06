@@ -195,12 +195,27 @@ defmodule Melocoton.Engines.Mysql do
     ORDER BY kcu.TABLE_NAME, tc.CONSTRAINT_NAME;
     """
 
+    check_sql = """
+    SELECT
+      cc.CONSTRAINT_NAME AS constraint_name,
+      cc.CHECK_CLAUSE AS definition
+    FROM information_schema.CHECK_CONSTRAINTS cc
+    JOIN information_schema.TABLE_CONSTRAINTS tc
+      ON cc.CONSTRAINT_NAME = tc.CONSTRAINT_NAME
+      AND cc.CONSTRAINT_SCHEMA = tc.CONSTRAINT_SCHEMA
+    WHERE cc.CONSTRAINT_SCHEMA = DATABASE()
+      AND tc.TABLE_NAME = '#{escaped}'
+      AND tc.CONSTRAINT_TYPE = 'CHECK'
+    ORDER BY cc.CONSTRAINT_NAME;
+    """
+
     create_sql = "SHOW CREATE TABLE `#{String.replace(table_name, "`", "``")}`"
 
     with {:ok, columns_result} <- query_and_normalize(conn, columns_sql),
          {:ok, constraints_result} <- query_and_normalize(conn, constraints_sql),
          {:ok, fk_result} <- query_and_normalize(conn, fk_sql),
          {:ok, size_result} <- query_and_normalize(conn, size_sql),
+         {:ok, check_result} <- query_and_normalize(conn, check_sql),
          {:ok, indexes_result} <- query_and_normalize(conn, indexes_sql),
          {:ok, referenced_by_result} <- query_and_normalize(conn, referenced_by_sql),
          {:ok, create_result} <- query_and_normalize(conn, create_sql) do
@@ -273,6 +288,11 @@ defmodule Melocoton.Engines.Mysql do
           }
         end)
 
+      check_constraints =
+        Enum.map(check_result.rows, fn row ->
+          %{name: row["constraint_name"], definition: row["definition"]}
+        end)
+
       {:ok,
        %TableStructure{
          columns: columns_result.rows,
@@ -280,6 +300,7 @@ defmodule Melocoton.Engines.Mysql do
          unique_constraints: unique_constraints,
          foreign_keys: foreign_keys,
          referenced_by: referenced_by,
+         check_constraints: check_constraints,
          indexes: indexes,
          size: size_info,
          create_statement: create_statement

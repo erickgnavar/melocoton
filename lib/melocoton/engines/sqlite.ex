@@ -152,6 +152,7 @@ defmodule Melocoton.Engines.Sqlite do
           %{name: row["name"], unique: row["unique"] == 1, columns: cols}
         end)
 
+      check_constraints = parse_check_constraints(create_statement)
       referenced_by = get_referenced_by(conn, table_name)
 
       {:ok,
@@ -161,10 +162,26 @@ defmodule Melocoton.Engines.Sqlite do
          unique_constraints: unique_constraints,
          foreign_keys: foreign_keys,
          referenced_by: referenced_by,
+         check_constraints: check_constraints,
          indexes: indexes,
          create_statement: create_statement
        }}
     end
+  end
+
+  defp parse_check_constraints(nil), do: []
+
+  defp parse_check_constraints(create_sql) do
+    # Match CONSTRAINT name CHECK(...) and bare CHECK(...) in CREATE TABLE
+    ~r/(?:CONSTRAINT\s+(\w+)\s+)?CHECK\s*(\([^)]*(?:\([^)]*\))*[^)]*\))/i
+    |> Regex.scan(create_sql)
+    |> Enum.with_index(1)
+    |> Enum.map(fn {match, idx} ->
+      name = Enum.at(match, 1)
+      definition = Enum.at(match, 2)
+      name = if name in [nil, ""], do: "check_#{idx}", else: name
+      %{name: name, definition: definition}
+    end)
   end
 
   defp get_referenced_by(conn, table_name) do

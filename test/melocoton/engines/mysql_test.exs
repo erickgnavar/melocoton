@@ -134,6 +134,31 @@ defmodule Melocoton.Engines.MysqlTest do
       assert is_map(structure.size)
       assert Map.has_key?(structure.size, "total_size")
     end
+
+    test "returns check constraints", %{conn: conn} do
+      Melocoton.Connection.query(conn, """
+      CREATE TABLE with_checks (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        age INT,
+        status VARCHAR(20),
+        CONSTRAINT age_positive CHECK (age > 0),
+        CONSTRAINT valid_status CHECK (status IN ('active', 'inactive'))
+      )
+      """)
+
+      {:ok, %TableStructure{} = structure} = Mysql.get_table_structure(conn, "with_checks")
+
+      assert length(structure.check_constraints) >= 2
+      names = Enum.map(structure.check_constraints, & &1.name)
+      assert "age_positive" in names
+      assert "valid_status" in names
+    end
+
+    test "returns empty check constraints when none exist", %{conn: conn} do
+      {:ok, %TableStructure{} = structure} = Mysql.get_table_structure(conn, "posts")
+
+      assert structure.check_constraints == []
+    end
   end
 
   describe "get_estimated_count/2" do
