@@ -25,7 +25,8 @@ defmodule MelocotonWeb.SettingsModalComponent do
       provider: provider,
       model: model,
       model_options: Models.model_options(provider),
-      required_key: Models.required_api_key(provider)
+      required_key: Models.required_api_key(provider),
+      ollama_status: nil
     )
     |> ok()
   end
@@ -84,6 +85,19 @@ defmodule MelocotonWeb.SettingsModalComponent do
   @impl true
   def handle_event("change-model", %{"model" => model}, socket) do
     socket |> assign(model: model) |> noreply()
+  end
+
+  @impl true
+  def handle_event("test-ollama", _params, socket) do
+    status =
+      case Melocoton.AI.Ollama.list_models() do
+        [] -> :unreachable
+        models -> {:ok, length(models)}
+      end
+
+    socket
+    |> assign(ollama_status: status)
+    |> noreply()
   end
 
   @impl true

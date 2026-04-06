@@ -143,22 +143,45 @@
       </div>
     </div>
 
-    <p
-      :if={@provider == "ollama" and @model_options == []}
-      class="mt-1 text-[10px]"
-      style="color: var(--text-tertiary);"
-    >
-      No models found. Make sure Ollama is running
-      (<code style="color: var(--syntax-keyword);">ollama serve</code>)
-    </p>
-    <p
-      :if={@provider == "ollama" and @model_options != []}
-      class="mt-1 text-[10px]"
-      style="color: var(--text-tertiary);"
-    >
-      Showing models installed locally. To download new models run:
-      <code style="color: var(--syntax-keyword);">ollama pull &lt;model-name&gt;</code>
-    </p>
+    <div :if={@provider == "ollama"} class="mt-1.5 space-y-1.5">
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          phx-click="test-ollama"
+          phx-target={@myself}
+          class="px-2 py-0.5 text-[10px] rounded flex items-center gap-1"
+          style="background: var(--bg-tertiary); color: var(--text-secondary); border: 0.5px solid var(--border-medium);"
+        >
+          <.icon name="lucide-wifi" class="size-3" /> Test connection
+        </button>
+        <span
+          :if={@ollama_status == :unreachable}
+          class="text-[10px]"
+          style="color: #ef4444;"
+        >
+          Could not connect to localhost:11434
+        </span>
+        <span :if={match?({:ok, _}, @ollama_status)} class="text-[10px]" style="color: #22c55e;">
+          Connected — {elem(@ollama_status, 1)} models available
+        </span>
+      </div>
+      <p
+        :if={@model_options == []}
+        class="text-[10px]"
+        style="color: var(--text-tertiary);"
+      >
+        No models found. Make sure Ollama is running
+        (<code style="color: var(--syntax-keyword);">ollama serve</code>)
+      </p>
+      <p
+        :if={@model_options != []}
+        class="text-[10px]"
+        style="color: var(--text-tertiary);"
+      >
+        Showing models installed locally. To download new models run:
+        <code style="color: var(--syntax-keyword);">ollama pull &lt;model-name&gt;</code>
+      </p>
+    </div>
 
     <div class="w-full h-px" style="background: var(--border-medium);"></div>
 
