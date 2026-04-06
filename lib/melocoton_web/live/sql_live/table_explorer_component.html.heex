@@ -417,7 +417,7 @@
                 style={
                   cond do
                     is_editing && @editing_cell.column == col ->
-                      "border-bottom: 0.5px solid var(--border-subtle); border-left: 0.5px solid var(--border-subtle); padding: 0;"
+                      "border-bottom: 0.5px solid var(--border-subtle); border-left: 0.5px solid var(--border-subtle); padding: 0; background: #{@database.group.color}08;"
 
                     @pk_columns != [] &&
                         cell_pending_value(@pending_changes, row, @pk_columns, col) != :error ->
@@ -454,18 +454,28 @@
                       type="text"
                       value={edit_value}
                       class="flex-1 px-1.5 py-1 text-xs"
-                      style="background: var(--bg-primary); color: var(--text-primary); border: 2px solid var(--border-medium); outline: none; min-width: 60px;"
+                      style={"background: var(--bg-primary); color: var(--text-primary); border: 2px solid #{@database.group.color}; outline: none; min-width: 60px;"}
                       name="value"
                     />
+                    <button
+                      type="submit"
+                      name="set-null"
+                      value="true"
+                      class="px-1 py-0.5 text-[9px] font-medium rounded"
+                      style="color: var(--text-tertiary); background: var(--bg-tertiary);"
+                      title="Set NULL (Ctrl+Enter)"
+                    >
+                      NULL
+                    </button>
                     <button
                       phx-click="cancel-edit"
                       phx-target={@myself}
                       type="button"
-                      class="px-1 text-[10px]"
+                      class="px-0.5 text-[10px]"
                       style="color: var(--text-tertiary);"
                       title="Cancel (Esc)"
                     >
-                      <.icon name="lucide-x" class="size-4" />
+                      <.icon name="lucide-x" class="size-3.5" />
                     </button>
                   </form>
                 <% else %>
