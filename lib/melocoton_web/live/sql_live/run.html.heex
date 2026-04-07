@@ -822,35 +822,35 @@
                   </button>
                 </div>
               </div>
+            </div>
 
-              <%!-- Status bar --%>
-              <div class="flex items-center justify-between px-3 h-6 text-[10px] app-status-bar">
-                <div class="flex items-center gap-3">
-                  <%!-- Env chip --%>
-                  <span
-                    class="uppercase font-medium px-1.5 py-0.5 rounded-lg tracking-wide"
-                    style={"background: #{@database.group.color}22; color: #{@database.group.color};"}
-                  >
-                    {@database.group.name}
-                  </span>
-                  <span style="color: var(--text-secondary);">{@database.name}</span>
-                  <span style="color: var(--text-tertiary);">|</span>
-                  <span style="color: var(--text-tertiary);">{@database.type}</span>
-                </div>
-                <div class="flex items-center gap-3">
-                  <button
-                    phx-click={show_modal("shortcuts-modal")}
-                    class="flex items-center gap-1 hover:underline"
-                    style="color: var(--text-tertiary);"
-                    title="Keyboard Shortcuts (?)"
-                  >
-                    <.icon name="lucide-keyboard" class="size-3" /> Shortcuts
-                  </button>
-                  <span class="flex items-center gap-1.5" style="color: var(--text-tertiary);">
-                    connected
-                    <div class="indicator-connected"></div>
-                  </span>
-                </div>
+            <%!-- Status bar --%>
+            <div class="flex items-center justify-between px-3 h-6 flex-shrink-0 text-[10px] app-status-bar">
+              <div class="flex items-center gap-3">
+                <%!-- Env chip --%>
+                <span
+                  class="uppercase font-medium px-1.5 py-0.5 rounded-lg tracking-wide"
+                  style={"background: #{@database.group.color}22; color: #{@database.group.color};"}
+                >
+                  {@database.group.name}
+                </span>
+                <span style="color: var(--text-secondary);">{@database.name}</span>
+                <span style="color: var(--text-tertiary);">|</span>
+                <span style="color: var(--text-tertiary);">{@database.type}</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <button
+                  phx-click={show_modal("shortcuts-modal")}
+                  class="flex items-center gap-1 hover:underline"
+                  style="color: var(--text-tertiary);"
+                  title="Keyboard Shortcuts (?)"
+                >
+                  <.icon name="lucide-keyboard" class="size-3" /> Shortcuts
+                </button>
+                <span class="flex items-center gap-1.5" style="color: var(--text-tertiary);">
+                  connected
+                  <div class="indicator-connected"></div>
+                </span>
               </div>
             </div>
           </div>
