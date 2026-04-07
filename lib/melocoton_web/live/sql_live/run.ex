@@ -342,14 +342,13 @@ defmodule MelocotonWeb.SQLLive.Run do
   @impl true
   def handle_info({MelocotonWeb.SqlLive.AiChatComponent, {:insert_sql, sql}}, socket) do
     socket
-    |> push_event("load-query", %{query: sql})
+    |> push_event("append-query", %{query: sql})
     |> noreply()
   end
 
   @impl true
   def handle_info({MelocotonWeb.SqlLive.AiChatComponent, {:run_sql, sql}}, socket) do
-    # Insert into editor and trigger the same flow as run-query event
-    socket = push_event(socket, "load-query", %{query: sql})
+    socket = push_event(socket, "append-query", %{query: sql})
     handle_event("run-query", %{"query" => sql}, socket)
   end
 

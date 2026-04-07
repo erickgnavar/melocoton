@@ -421,6 +421,16 @@ window.addEventListener("phx:load-query", ({ detail }) => {
   view.dispatch(newState);
 });
 
+window.addEventListener("phx:append-query", ({ detail }) => {
+  const pos = view.state.doc.length;
+  const text = (pos > 0 ? "\n" : "") + detail.query;
+  view.dispatch({
+    changes: { from: pos, insert: text },
+    selection: { anchor: pos + text.length },
+  });
+  view.focus();
+});
+
 // Refocus the SQL editor (e.g. after closing command palette)
 window.addEventListener("phx:refocus-editor", () => {
   if (typeof view !== "undefined") view.focus();
