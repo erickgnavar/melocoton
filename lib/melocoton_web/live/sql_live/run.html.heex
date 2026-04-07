@@ -806,11 +806,20 @@
                 :if={
                   @active_result_tab == :results and !is_nil(@error_message) and !@running_query
                 }
+                id="error-banner"
                 class="error-banner"
               >
-                <div class="flex items-center gap-2">
-                  <.icon name="lucide-alert-circle" class="size-4 flex-shrink-0" />
-                  <span class="font-medium">{@error_message}</span>
+                <div class="flex items-start gap-2">
+                  <.icon name="lucide-alert-circle" class="size-4 flex-shrink-0 mt-0.5" />
+                  <span class="font-medium flex-1 error-message-text">{@error_message}</span>
+                  <button
+                    phx-click={JS.hide(to: "#error-banner")}
+                    class="flex-shrink-0 p-0.5 rounded hover:bg-red-500/10"
+                    title="Dismiss"
+                    aria-label="Dismiss error"
+                  >
+                    <.icon name="lucide-x" class="size-3.5" />
+                  </button>
                 </div>
               </div>
 

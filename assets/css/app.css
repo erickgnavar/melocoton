@@ -291,6 +291,13 @@ input:focus, button:active, textarea:focus, select:focus,
   font-size: 0.75rem;
 }
 
+.error-message-text {
+  max-height: 6rem;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 [data-theme="light"] .error-banner {
   border-color: rgba(239, 68, 68, 0.25);
   background: #fef2f2;
