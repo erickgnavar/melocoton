@@ -185,6 +185,14 @@ const liveSocket = new LiveSocket("/live", Socket, {
 
         view.focus();
       },
+      destroyed() {
+        if (window.view) {
+          window.view.destroy();
+          window.view = null;
+        }
+        window.sqlExtensionCompartment = null;
+        window.vimCompartment = null;
+      },
     },
     CommandPalette: {
       mounted() {
@@ -415,35 +423,42 @@ const liveSocket = new LiveSocket("/live", Socket, {
 window.addEventListener("phx:load-query", ({ detail }) => {
   // this will be triggered when a new session is loaded in server, so
   // we need to reset SQL editor with new session's query
-  const newState = view.state.update({
-    changes: { from: 0, to: view.state.doc.length, insert: detail.query },
+  if (!window.view) return;
+  const newState = window.view.state.update({
+    changes: {
+      from: 0,
+      to: window.view.state.doc.length,
+      insert: detail.query,
+    },
   });
-  view.dispatch(newState);
+  window.view.dispatch(newState);
 });
 
 window.addEventListener("phx:append-query", ({ detail }) => {
-  const pos = view.state.doc.length;
+  if (!window.view) return;
+  const pos = window.view.state.doc.length;
   const text = (pos > 0 ? "\n" : "") + detail.query;
-  view.dispatch({
+  window.view.dispatch({
     changes: { from: pos, insert: text },
     selection: { anchor: pos + text.length },
   });
-  view.focus();
+  window.view.focus();
 });
 
 // Refocus the SQL editor (e.g. after closing command palette)
 window.addEventListener("phx:refocus-editor", () => {
-  if (typeof view !== "undefined") view.focus();
+  if (window.view) window.view.focus();
 });
 
 window.addEventListener("phx:load-schema", ({ detail: { schema, type } }) => {
+  if (!window.view || !window.sqlExtensionCompartment) return;
   let dialect = StandardSQL;
   if (type === "postgres") dialect = PostgreSQL;
   if (type === "sqlite") dialect = SQLite;
   if (type === "mysql") dialect = MySQL;
 
-  view.dispatch({
-    effects: sqlExtensionCompartment.reconfigure(
+  window.view.dispatch({
+    effects: window.sqlExtensionCompartment.reconfigure(
       sql({ schema: schema, dialect: dialect }),
     ),
   });
@@ -791,8 +806,8 @@ window.addEventListener("phx:set-editor-mode", (event) => {
   const mode = event.detail.mode;
   localStorage.setItem("editor-mode", mode);
 
-  if (typeof view !== "undefined" && window.vimCompartment) {
-    view.dispatch({
+  if (window.view && window.vimCompartment) {
+    window.view.dispatch({
       effects: window.vimCompartment.reconfigure(mode === "vim" ? vim() : []),
     });
   }
