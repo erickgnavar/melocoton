@@ -779,7 +779,20 @@ themeToggle.addEventListener("click", () => {
   applyTheme(next);
 });
 
-// Font size management
+// Font size management — restore saved size on load
+const savedFontSize = localStorage.getItem("font-size");
+if (savedFontSize) {
+  const presets = { xs: true, sm: true, md: true, lg: true, xl: true };
+  if (presets[savedFontSize]) {
+    document.documentElement.setAttribute("data-font-size", savedFontSize);
+  } else {
+    document.documentElement.style.setProperty(
+      "--font-size-base",
+      `${savedFontSize}px`,
+    );
+  }
+}
+
 window.addEventListener("phx:set-font-size", (event) => {
   const size = event.detail.size;
   const presets = {
