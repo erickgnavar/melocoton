@@ -3,6 +3,7 @@ defmodule Melocoton.Engines.Mysql do
 
   alias Melocoton.{Connection, DatabaseClient, Pool}
   alias Melocoton.Engines.{TableMeta, TableStructure}
+  import Connection, only: [escape_literal: 1]
 
   @impl true
   def get_tables(conn) do
@@ -72,7 +73,7 @@ defmodule Melocoton.Engines.Mysql do
 
   @impl true
   def get_table_meta(conn, table_name) do
-    escaped = String.replace(table_name, "'", "''")
+    escaped = escape_literal(table_name)
 
     sql = """
     SELECT
@@ -111,7 +112,7 @@ defmodule Melocoton.Engines.Mysql do
 
   @impl true
   def get_table_structure(conn, table_name) do
-    escaped = String.replace(table_name, "'", "''")
+    escaped = escape_literal(table_name)
 
     columns_sql = """
     SELECT
@@ -323,7 +324,7 @@ defmodule Melocoton.Engines.Mysql do
 
   @impl true
   def get_estimated_count(conn, table_name) do
-    escaped = String.replace(table_name, "'", "''")
+    escaped = escape_literal(table_name)
 
     sql =
       "SELECT TABLE_ROWS AS count FROM information_schema.TABLES WHERE TABLE_NAME = '#{escaped}' AND TABLE_SCHEMA = DATABASE()"

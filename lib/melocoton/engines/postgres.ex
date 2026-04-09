@@ -3,6 +3,7 @@ defmodule Melocoton.Engines.Postgres do
 
   alias Melocoton.{Connection, DatabaseClient, Pool}
   alias Melocoton.Engines.{TableMeta, TableStructure}
+  import Connection, only: [escape_literal: 1]
 
   @impl true
   def get_tables(conn) do
@@ -74,7 +75,7 @@ defmodule Melocoton.Engines.Postgres do
 
   @impl true
   def get_table_meta(conn, table_name) do
-    escaped = String.replace(table_name, "'", "''")
+    escaped = escape_literal(table_name)
 
     sql = """
     SELECT
@@ -116,7 +117,7 @@ defmodule Melocoton.Engines.Postgres do
 
   @impl true
   def get_table_structure(conn, table_name) do
-    escaped = String.replace(table_name, "'", "''")
+    escaped = escape_literal(table_name)
 
     columns_sql = """
     SELECT

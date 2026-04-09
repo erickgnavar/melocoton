@@ -3,7 +3,7 @@ defmodule Melocoton.Engines.Sqlite do
 
   alias Melocoton.Connection
   alias Melocoton.Engines.{TableMeta, TableStructure}
-  import Connection, only: [quote_identifier: 1]
+  import Connection, only: [escape_literal: 1, quote_identifier: 1]
 
   @impl true
   def get_tables(conn) do
@@ -88,7 +88,7 @@ defmodule Melocoton.Engines.Sqlite do
 
   @impl true
   def get_table_structure(conn, table_name) do
-    escaped = String.replace(table_name, "'", "''")
+    escaped = escape_literal(table_name)
     quoted = quote_identifier(table_name)
 
     create_sql =
@@ -191,7 +191,7 @@ defmodule Melocoton.Engines.Sqlite do
 
   defp get_referenced_by(conn, table_name) do
     tables_sql =
-      "SELECT name FROM sqlite_master WHERE type = 'table' AND name != '#{String.replace(table_name, "'", "''")}'"
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name != '#{escape_literal(table_name)}'"
 
     case query_and_normalize(conn, tables_sql) do
       {:ok, %{rows: rows}} ->

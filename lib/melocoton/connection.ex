@@ -15,6 +15,14 @@ defmodule Melocoton.Connection do
     ~s("#{String.replace(name, "\"", "\"\"")}")
   end
 
+  @doc """
+  Escapes a string value for use in single-quoted SQL literals.
+  Doubles any embedded single quotes.
+  """
+  def escape_literal(value) when is_binary(value) do
+    String.replace(value, "'", "''")
+  end
+
   def query(%__MODULE__{pid: pid, type: :postgres}, sql) do
     case Postgrex.query(pid, sql, [], timeout: @query_timeout) do
       {:ok, %Postgrex.Result{columns: cols, rows: rows, num_rows: num_rows}} ->
