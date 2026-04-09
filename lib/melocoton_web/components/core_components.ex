@@ -878,22 +878,18 @@ defmodule MelocotonWeb.CoreComponents do
 
   defp cell_type(nil), do: :null
   defp cell_type(value) when is_boolean(value), do: :boolean
-  defp cell_type(value) when is_list(value) or is_map(value), do: :json
-  defp cell_type(value) when is_binary(value) and binary_part(value, 0, 4) == "http", do: :url
-
-  defp cell_type(value) when is_integer(value) or is_float(value), do: :number
   defp cell_type(%Date{}), do: :date
   defp cell_type(%Time{}), do: :time
   defp cell_type(%NaiveDateTime{}), do: :timestamp
   defp cell_type(%DateTime{}), do: :timestamp
   defp cell_type(%Decimal{}), do: :number
+  defp cell_type(value) when is_list(value) or is_map(value), do: :json
+  defp cell_type(value) when is_binary(value) and binary_part(value, 0, 4) == "http", do: :url
+  defp cell_type(value) when is_integer(value) or is_float(value), do: :number
 
   defp cell_type(value) when is_binary(value) do
     if json_string?(value), do: :json, else: :text
   end
-
-  defp cell_type(value) when is_binary(value) and byte_size(value) > @max_cell_length,
-    do: :long_text
 
   defp cell_type(_), do: :text
 
