@@ -40,6 +40,27 @@ defmodule MelocotonWeb.DatabaseLive.FormComponent do
             >
               {if @db_type == :postgres, do: "PostgreSQL", else: "MySQL"} Connection
             </legend>
+            <div>
+              <label
+                class="block text-sm font-semibold leading-6"
+                style="color: var(--text-secondary);"
+              >
+                Connection string
+              </label>
+              <input
+                type="text"
+                name="connection_string"
+                value=""
+                placeholder={"#{if @db_type == :postgres, do: "postgres", else: "mysql"}://user:password@host:port/database"}
+                phx-change="parse-connection-string"
+                phx-target={@myself}
+                class="mt-1 block w-full rounded border px-3 py-1.5 text-sm"
+                style="background: var(--bg-primary); color: var(--text-primary); border-color: var(--border-medium);"
+              />
+              <p class="mt-1 text-[11px]" style="color: var(--text-tertiary);">
+                Paste a connection string to fill the fields below
+              </p>
+            </div>
             <.input field={@form[:pg_host]} type="text" label="Host" value={@pg_host} />
             <.input field={@form[:pg_port]} type="text" label="Port" value={@pg_port} />
             <.input field={@form[:pg_user]} type="text" label="User" value={@pg_user} />
@@ -107,6 +128,25 @@ defmodule MelocotonWeb.DatabaseLive.FormComponent do
   end
 
   @impl true
+  def handle_event("parse-connection-string", %{"connection_string" => url}, socket) do
+    {host, port, user, password, database} = parse_connection_url(url, socket.assigns.db_type)
+
+    socket =
+      assign(socket,
+        pg_host: host,
+        pg_port: port,
+        pg_user: user,
+        pg_password: password,
+        pg_database: database
+      )
+
+    url = build_connection_url(socket.assigns.db_type, host, port, user, password, database)
+    current = socket.assigns.form.params || %{}
+    params = Map.merge(current, %{"url" => url, "type" => to_string(socket.assigns.db_type)})
+    changeset = Databases.change_database(socket.assigns.database, params)
+    {:noreply, assign(socket, form: to_form(changeset, action: :validate))}
+  end
+
   def handle_event("validate", %{"database" => database_params}, socket) do
     db_type = String.to_existing_atom(database_params["type"] || "sqlite")
 

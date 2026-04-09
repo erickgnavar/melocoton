@@ -96,6 +96,129 @@ defmodule MelocotonWeb.DatabaseLiveTest do
     end
   end
 
+  describe "Connection string parsing" do
+    setup [:create_database]
+
+    test "fills postgres fields from connection string", %{conn: conn} do
+      {:ok, index_live, _html} = live(conn, ~p"/databases")
+      index_live |> element("a", "New Connection") |> render_click()
+
+      # Switch to postgres type first
+      index_live
+      |> form("#database-form", database: %{type: "postgres", name: "test db"})
+      |> render_change()
+
+      # Paste a connection string
+      index_live
+      |> element("input[name=connection_string]")
+      |> render_change(%{connection_string: "postgres://admin:secret@db.example.com:5433/myapp"})
+
+      html = render(index_live)
+      assert html =~ "db.example.com"
+      assert html =~ "5433"
+      assert html =~ "admin"
+      assert html =~ "myapp"
+    end
+
+    test "preserves name when filling from connection string", %{conn: conn} do
+      {:ok, index_live, _html} = live(conn, ~p"/databases")
+      index_live |> element("a", "New Connection") |> render_click()
+
+      index_live
+      |> form("#database-form", database: %{type: "postgres", name: "My Production DB"})
+      |> render_change()
+
+      index_live
+      |> element("input[name=connection_string]")
+      |> render_change(%{connection_string: "postgres://user:pass@host:5432/db"})
+
+      html = render(index_live)
+      assert html =~ "My Production DB"
+      assert html =~ "host"
+    end
+
+    test "fills mysql fields from connection string", %{conn: conn} do
+      {:ok, index_live, _html} = live(conn, ~p"/databases")
+      index_live |> element("a", "New Connection") |> render_click()
+
+      index_live
+      |> form("#database-form", database: %{type: "mysql"})
+      |> render_change()
+
+      index_live
+      |> element("input[name=connection_string]")
+      |> render_change(%{connection_string: "mysql://root:pass@mysql-host:3307/shop"})
+
+      html = render(index_live)
+      assert html =~ "mysql-host"
+      assert html =~ "3307"
+      assert html =~ "root"
+      assert html =~ "shop"
+    end
+
+    test "handles connection string without password", %{conn: conn} do
+      {:ok, index_live, _html} = live(conn, ~p"/databases")
+      index_live |> element("a", "New Connection") |> render_click()
+
+      index_live
+      |> form("#database-form", database: %{type: "postgres"})
+      |> render_change()
+
+      index_live
+      |> element("input[name=connection_string]")
+      |> render_change(%{connection_string: "postgres://readonly@host/analytics"})
+
+      html = render(index_live)
+      assert html =~ "readonly"
+      assert html =~ "analytics"
+    end
+
+    test "handles invalid connection string gracefully", %{conn: conn} do
+      {:ok, index_live, _html} = live(conn, ~p"/databases")
+      index_live |> element("a", "New Connection") |> render_click()
+
+      index_live
+      |> form("#database-form", database: %{type: "postgres"})
+      |> render_change()
+
+      # Should not crash, falls back to defaults
+      index_live
+      |> element("input[name=connection_string]")
+      |> render_change(%{connection_string: "not-a-valid-url"})
+
+      html = render(index_live)
+      assert html =~ "PostgreSQL Connection"
+    end
+
+    test "can submit form after filling from connection string", %{conn: conn} do
+      {:ok, index_live, _html} = live(conn, ~p"/databases")
+      index_live |> element("a", "New Connection") |> render_click()
+
+      index_live
+      |> form("#database-form",
+        database: %{
+          type: "postgres",
+          name: "from string",
+          group_id: hd(Melocoton.Databases.list_groups()).id
+        }
+      )
+      |> render_change()
+
+      index_live
+      |> element("input[name=connection_string]")
+      |> render_change(%{connection_string: "postgres://user:pass@host:5432/mydb"})
+
+      index_live
+      |> form("#database-form", database: %{})
+      |> render_submit()
+
+      assert_patch(index_live, ~p"/databases")
+      html = render(index_live)
+      assert html =~ "Database created successfully"
+      assert html =~ "from string"
+    end
+  end
+
   describe "Database form postgres fields" do
     setup [:create_database]
 
