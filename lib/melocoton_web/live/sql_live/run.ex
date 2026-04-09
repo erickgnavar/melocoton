@@ -661,4 +661,27 @@ defmodule MelocotonWeb.SQLLive.Run do
       socket
     end
   end
+
+  for {color, types} <- [
+        {"var(--syntax-number)", ~w(int2 int4 int8 float4 float8 numeric decimal serial bigserial
+           smallserial integer real double smallint bigint tinyint mediumint)},
+        {"var(--syntax-table)", ~w(text varchar char bpchar name citext character clob
+           tinytext mediumtext longtext)},
+        {"var(--syntax-keyword)",
+         ~w(timestamp timestamptz date time timetz interval datetime year)},
+        {"var(--syntax-string)", ~w(json jsonb)},
+        {"var(--text-tertiary)", ~w(bytea blob binary varbinary tinyblob mediumblob longblob)},
+        {"#22c55e", ~w(bool boolean)},
+        {"var(--syntax-comment)", ~w(uuid)}
+      ],
+      type <- types do
+    defp do_type_color(unquote(type)), do: unquote(color)
+  end
+
+  defp do_type_color("_" <> _), do: "var(--syntax-string)"
+  defp do_type_color(_), do: "var(--text-tertiary)"
+
+  defp type_color(type) do
+    type |> String.downcase() |> String.replace(~r/\(.*\)/, "") |> do_type_color()
+  end
 end
