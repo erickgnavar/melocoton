@@ -170,7 +170,7 @@ body {
 
 /* Theme transitions */
 *, *::before, *::after {
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.1s ease;
+  transition: background-color 0.1s ease, border-color 0.1s ease, color 0.05s ease;
 }
 
 /* Exclude transitions on interactive elements for instant feedback */
@@ -191,7 +191,7 @@ input:focus, button:active, textarea:focus, select:focus,
   cursor: col-resize;
   flex-shrink: 0;
   background: transparent;
-  transition: background 0.15s;
+  transition: background 0.1s;
 }
 
 .panel-resize-handle:hover,
@@ -307,7 +307,7 @@ input:focus, button:active, textarea:focus, select:focus,
 /* ===== Card hover actions ===== */
 .card-actions {
   opacity: 0;
-  transition: opacity 0.15s;
+  transition: opacity 0.1s;
 }
 .card:hover .card-actions {
   opacity: 1;

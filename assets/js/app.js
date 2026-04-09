@@ -329,12 +329,12 @@ const liveSocket = new LiveSocket("/live", Socket, {
     AutoHideFlash: {
       mounted() {
         this.timer = setTimeout(() => {
-          this.el.style.transition = "opacity 0.3s ease-out";
+          this.el.style.transition = "opacity 0.15s ease-out";
           this.el.style.opacity = "0";
           setTimeout(() => {
             this.pushEvent("lv:clear-flash", {});
             this.el.remove();
-          }, 300);
+          }, 150);
         }, 2000);
       },
       destroyed() {
