@@ -5,6 +5,14 @@ defmodule Melocoton.DatabaseClient do
 
   alias Melocoton.Connection
 
+  @engines %{
+    postgres: Melocoton.Engines.Postgres,
+    mysql: Melocoton.Engines.Mysql,
+    sqlite: Melocoton.Engines.Sqlite
+  }
+
+  defp engine(type), do: Map.fetch!(@engines, type)
+
   def query(%Connection{} = conn, sql, column_types \\ %{}, opts \\ []) do
     init_time = System.monotonic_time(:nanosecond)
     result = Connection.query(conn, sql)
@@ -33,23 +41,26 @@ defmodule Melocoton.DatabaseClient do
 
   # TODO: make specific structs for each database object
   @spec get_tables(Connection.t()) :: {:ok, [map]} | {:error, String.t()}
-  def get_tables(%Connection{type: type} = conn), do: do_get_tables(conn, type)
+  def get_tables(%Connection{type: type} = conn), do: engine(type).get_tables(conn)
 
   @spec get_indexes(Connection.t()) :: {:ok, [map]} | {:error, String.t()}
-  def get_indexes(%Connection{type: type} = conn), do: do_get_indexes(conn, type)
+  def get_indexes(%Connection{type: type} = conn), do: engine(type).get_indexes(conn)
 
   @spec get_table_meta(Connection.t(), String.t()) :: Melocoton.Engines.TableMeta.t()
   def get_table_meta(%Connection{type: type} = conn, table_name),
-    do: do_get_table_meta(conn, table_name, type)
+    do: engine(type).get_table_meta(conn, table_name)
 
   @spec get_table_structure(Connection.t(), String.t()) ::
           {:ok, Melocoton.Engines.TableStructure.t()} | {:error, String.t()}
   def get_table_structure(%Connection{type: type} = conn, table_name),
-    do: do_get_table_structure(conn, table_name, type)
+    do: engine(type).get_table_structure(conn, table_name)
 
   @spec get_estimated_count(Connection.t(), String.t()) :: non_neg_integer()
   def get_estimated_count(%Connection{type: type} = conn, table_name),
-    do: do_get_estimated_count(conn, table_name, type)
+    do: engine(type).get_estimated_count(conn, table_name)
+
+  def get_all_relations(%Connection{type: type} = conn),
+    do: engine(type).get_all_relations(conn)
 
   def exact_count(conn, table_name) do
     quoted = Connection.quote_identifier(table_name)
@@ -67,50 +78,6 @@ defmodule Melocoton.DatabaseClient do
   def translate_query_error(%Postgrex.QueryError{message: message}), do: message
   def translate_query_error(error) when is_binary(error), do: error
   def translate_query_error(error), do: inspect(error)
-
-  defp do_get_tables(conn, :postgres), do: Melocoton.Engines.Postgres.get_tables(conn)
-  defp do_get_tables(conn, :mysql), do: Melocoton.Engines.Mysql.get_tables(conn)
-  defp do_get_tables(conn, :sqlite), do: Melocoton.Engines.Sqlite.get_tables(conn)
-
-  defp do_get_indexes(conn, :postgres), do: Melocoton.Engines.Postgres.get_indexes(conn)
-  defp do_get_indexes(conn, :mysql), do: Melocoton.Engines.Mysql.get_indexes(conn)
-  defp do_get_indexes(conn, :sqlite), do: Melocoton.Engines.Sqlite.get_indexes(conn)
-
-  defp do_get_table_meta(conn, table_name, :postgres),
-    do: Melocoton.Engines.Postgres.get_table_meta(conn, table_name)
-
-  defp do_get_table_meta(conn, table_name, :mysql),
-    do: Melocoton.Engines.Mysql.get_table_meta(conn, table_name)
-
-  defp do_get_table_meta(conn, table_name, :sqlite),
-    do: Melocoton.Engines.Sqlite.get_table_meta(conn, table_name)
-
-  defp do_get_estimated_count(conn, table_name, :postgres),
-    do: Melocoton.Engines.Postgres.get_estimated_count(conn, table_name)
-
-  defp do_get_estimated_count(conn, table_name, :mysql),
-    do: Melocoton.Engines.Mysql.get_estimated_count(conn, table_name)
-
-  defp do_get_estimated_count(conn, table_name, :sqlite),
-    do: Melocoton.Engines.Sqlite.get_estimated_count(conn, table_name)
-
-  defp do_get_table_structure(conn, table_name, :postgres),
-    do: Melocoton.Engines.Postgres.get_table_structure(conn, table_name)
-
-  defp do_get_table_structure(conn, table_name, :mysql),
-    do: Melocoton.Engines.Mysql.get_table_structure(conn, table_name)
-
-  defp do_get_table_structure(conn, table_name, :sqlite),
-    do: Melocoton.Engines.Sqlite.get_table_structure(conn, table_name)
-
-  def get_all_relations(%Connection{type: :postgres} = conn),
-    do: Melocoton.Engines.Postgres.get_all_relations(conn)
-
-  def get_all_relations(%Connection{type: :mysql} = conn),
-    do: Melocoton.Engines.Mysql.get_all_relations(conn)
-
-  def get_all_relations(%Connection{type: :sqlite} = conn),
-    do: Melocoton.Engines.Sqlite.get_all_relations(conn)
 
   @doc """
   Normalizes a query result into a map with `cols`, `rows`, and `num_rows`.
