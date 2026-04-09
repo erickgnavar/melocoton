@@ -851,6 +851,11 @@ defmodule MelocotonWeb.CoreComponents do
           <span :if={@filter == ""}>{@value}</span>
           <span :if={@filter != ""}><.put_mark value={@value} term={@filter} /></span>
         </span>
+      <% :array -> %>
+        <span class="cell-array cell-expandable" data-full-value={raw_cell_value(@value)}>
+          <span :if={@filter == ""}>{format_array(@value)}</span>
+          <span :if={@filter != ""}><.put_mark value={format_array(@value)} term={@filter} /></span>
+        </span>
       <% :json -> %>
         <span class="cell-json cell-expandable" data-full-value={raw_cell_value(@value)}>
           <span :if={@filter == ""}>{format_cell_value(@value, :long_text)}</span>
@@ -883,7 +888,8 @@ defmodule MelocotonWeb.CoreComponents do
   defp cell_type(%NaiveDateTime{}), do: :timestamp
   defp cell_type(%DateTime{}), do: :timestamp
   defp cell_type(%Decimal{}), do: :number
-  defp cell_type(value) when is_list(value) or is_map(value), do: :json
+  defp cell_type(value) when is_list(value), do: :array
+  defp cell_type(value) when is_map(value), do: :json
   defp cell_type(value) when is_binary(value) and binary_part(value, 0, 4) == "http", do: :url
   defp cell_type(value) when is_integer(value) or is_float(value), do: :number
 
@@ -909,11 +915,23 @@ defmodule MelocotonWeb.CoreComponents do
 
   defp format_cell_value(value, _type), do: value
 
+  defp format_array(list) when is_list(list) do
+    inner = Enum.map_join(list, ",", &format_array_element/1)
+    "{#{inner}}"
+  end
+
+  defp format_array_element(value) when is_list(value), do: format_array(value)
+  defp format_array_element(nil), do: "NULL"
+  defp format_array_element(value) when is_binary(value), do: value
+  defp format_array_element(value), do: to_string(value)
+
   defp raw_cell_value(value) when is_binary(value), do: value
-  defp raw_cell_value(value) when is_list(value) or is_map(value), do: Jason.encode!(value)
+  defp raw_cell_value(value) when is_list(value), do: format_array(value)
+  defp raw_cell_value(value) when is_map(value), do: Jason.encode!(value)
   defp raw_cell_value(value), do: inspect(value, structs: false)
 
   defp to_display_string(value) when is_binary(value), do: value
-  defp to_display_string(value) when is_list(value) or is_map(value), do: Jason.encode!(value)
+  defp to_display_string(value) when is_list(value), do: format_array(value)
+  defp to_display_string(value) when is_map(value), do: Jason.encode!(value)
   defp to_display_string(value), do: inspect(value, structs: false)
 end
