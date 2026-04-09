@@ -355,13 +355,13 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
   end
 
   @impl true
-  def handle_event("save-cell", %{"value" => _value, "set-null" => "true"}, socket) do
-    stage_pending_change(socket, nil)
+  def handle_event("save-cell", %{"value" => value}, socket) do
+    stage_pending_change(socket, value)
   end
 
   @impl true
-  def handle_event("save-cell", %{"value" => value}, socket) do
-    stage_pending_change(socket, value)
+  def handle_event("save-cell-null", _params, socket) do
+    stage_pending_change(socket, nil)
   end
 
   @impl true

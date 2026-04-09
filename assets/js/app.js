@@ -377,8 +377,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
             } else if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
               // Ctrl+Enter sets NULL
               e.preventDefault();
-              this.el.querySelector("input[name='set-null']").value = "true";
-              this.el.requestSubmit();
+              this.pushEventTo(this.el, "save-cell-null", {});
             }
           });
         }

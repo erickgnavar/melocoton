@@ -449,7 +449,6 @@
                     phx-target={@myself}
                     class="flex items-center gap-0.5"
                   >
-                    <input type="hidden" name="set-null" value="false" />
                     <input
                       type="text"
                       value={edit_value}
@@ -458,9 +457,9 @@
                       name="value"
                     />
                     <button
-                      type="submit"
-                      name="set-null"
-                      value="true"
+                      type="button"
+                      phx-click="save-cell-null"
+                      phx-target={@myself}
                       class="px-1 py-0.5 text-[9px] font-medium rounded"
                       style="color: var(--text-tertiary); background: var(--bg-tertiary);"
                       title="Set NULL (Ctrl+Enter)"

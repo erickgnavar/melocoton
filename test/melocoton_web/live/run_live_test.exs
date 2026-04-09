@@ -851,10 +851,16 @@ defmodule MelocotonWeb.SQLLive.RunTest do
       |> render_click()
     end
 
-    defp save_cell(live_view, row_idx, column, value, set_null \\ "false") do
+    defp save_cell(live_view, row_idx, column, value) do
       live_view
-      |> form("#cell-editor-#{row_idx}-#{column}", %{"value" => value, "set-null" => set_null})
+      |> form("#cell-editor-#{row_idx}-#{column}", %{"value" => value})
       |> render_submit()
+    end
+
+    defp save_cell_null(live_view) do
+      live_view
+      |> element("[phx-click='save-cell-null']")
+      |> render_click()
     end
 
     defp apply_changes(live_view) do
@@ -915,6 +921,29 @@ defmodule MelocotonWeb.SQLLive.RunTest do
       assert html =~ ">1</span>"
       # Editor should be closed
       refute html =~ "cell-editor"
+    end
+
+    test "save-cell submits the typed value, not null", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "users")
+
+      edit_cell(live_view, 0, "name")
+      html = save_cell(live_view, 0, "name", "new_name")
+
+      # The typed value should be staged, not NULL
+      assert html =~ "new_name"
+      refute html =~ "cell-null"
+    end
+
+    test "save-cell-null sets value to null", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+      open_table_explorer(live_view, "users")
+
+      edit_cell(live_view, 0, "name")
+      html = save_cell_null(live_view)
+
+      assert html =~ "cell-null"
+      assert html =~ "Apply changes"
     end
 
     test "apply-changes writes pending changes to database", %{conn: conn, database: database} do
