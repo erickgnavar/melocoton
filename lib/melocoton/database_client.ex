@@ -62,6 +62,15 @@ defmodule Melocoton.DatabaseClient do
   def get_all_relations(%Connection{type: type} = conn),
     do: engine(type).get_all_relations(conn)
 
+  def test_connection_via_query(database) do
+    conn = Melocoton.Pool.get_repo(database)
+
+    case query(conn, "SELECT 1") do
+      {:ok, _result, _meta} -> :ok
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
   def exact_count(conn, table_name) do
     quoted = Connection.quote_identifier(table_name)
 

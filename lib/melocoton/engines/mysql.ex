@@ -1,7 +1,7 @@
 defmodule Melocoton.Engines.Mysql do
   @behaviour Melocoton.Behaviours.Engine
 
-  alias Melocoton.{Connection, DatabaseClient, Pool}
+  alias Melocoton.{Connection, DatabaseClient}
   alias Melocoton.Engines.{TableMeta, TableStructure}
   import Connection, only: [escape_literal: 1]
 
@@ -372,15 +372,5 @@ defmodule Melocoton.Engines.Mysql do
   end
 
   @impl true
-  def test_connection(database) do
-    conn = Pool.get_repo(database)
-
-    case DatabaseClient.query(conn, "SELECT 1") do
-      {:ok, _result, _meta} ->
-        :ok
-
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
+  def test_connection(database), do: DatabaseClient.test_connection_via_query(database)
 end
