@@ -29,7 +29,10 @@
         </div>
         <span class="text-xs font-medium truncate flex-1">{@database.name}</span>
         <button class="icon-btn" phx-click="reload-objects" title="Reload" aria-label="Reload">
-          <.icon name="lucide-refresh-cw" class="size-3.5" />
+          <.icon
+            name="lucide-refresh-cw"
+            class={["size-3.5", @tables.loading && "animate-spin"]}
+          />
         </button>
       </div>
 
