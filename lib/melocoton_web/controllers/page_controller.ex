@@ -30,8 +30,13 @@ defmodule MelocotonWeb.PageController do
   end
 
   defp do_export(conn, "csv", %{rows: rows, cols: cols}, database_name) do
+    formatted_rows =
+      Enum.map(rows, fn row ->
+        Map.new(row, fn {k, v} -> {k, format_cell(v)} end)
+      end)
+
     csv_content =
-      rows
+      formatted_rows
       |> CSV.encode(headers: cols)
       |> Enum.to_list()
       |> to_string()
@@ -58,8 +63,12 @@ defmodule MelocotonWeb.PageController do
   defp format_cell(%DateTime{} = dt), do: DateTime.to_string(dt)
   defp format_cell(%NaiveDateTime{} = dt), do: NaiveDateTime.to_string(dt)
   defp format_cell(%Date{} = d), do: Date.to_string(d)
+  defp format_cell(%Time{} = t), do: Time.to_string(t)
+  defp format_cell(%Decimal{} = d), do: Decimal.to_string(d)
   defp format_cell(value) when is_binary(value), do: value
   defp format_cell(value) when is_number(value), do: value
   defp format_cell(value) when is_boolean(value), do: value
-  defp format_cell(value), do: inspect(value)
+  defp format_cell(value) when is_list(value), do: Jason.encode!(value)
+  defp format_cell(value) when is_map(value), do: Jason.encode!(value)
+  defp format_cell(value), do: to_string(value)
 end
