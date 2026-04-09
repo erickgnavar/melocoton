@@ -1,7 +1,7 @@
 defmodule Melocoton.Engines.Sqlite do
   @behaviour Melocoton.Behaviours.Engine
 
-  alias Melocoton.Connection
+  alias Melocoton.{Connection, DatabaseClient}
   alias Melocoton.Engines.{TableMeta, TableStructure}
   import Connection, only: [escape_literal: 1, quote_identifier: 1]
 
@@ -25,7 +25,7 @@ defmodule Melocoton.Engines.Sqlite do
             case Connection.query(conn, "PRAGMA table_info(#{quote_identifier(name)});") do
               {:ok, result} ->
                 result
-                |> Melocoton.DatabaseClient.handle_response()
+                |> DatabaseClient.handle_response()
                 |> Map.get(:rows)
                 |> Enum.map(fn row ->
                   %{
@@ -68,7 +68,10 @@ defmodule Melocoton.Engines.Sqlite do
 
   @impl true
   def get_table_meta(conn, table_name) do
-    case query_and_normalize(conn, "PRAGMA table_info(#{quote_identifier(table_name)})") do
+    case DatabaseClient.query_and_normalize(
+           conn,
+           "PRAGMA table_info(#{quote_identifier(table_name)})"
+         ) do
       {:ok, %{rows: rows}} ->
         columns = Enum.map(rows, & &1["name"])
         column_types = Map.new(rows, fn r -> {r["name"], String.downcase(r["type"] || "")} end)
@@ -98,10 +101,10 @@ defmodule Melocoton.Engines.Sqlite do
     fk_sql = "PRAGMA foreign_key_list(#{quoted})"
     index_sql = "PRAGMA index_list(#{quoted})"
 
-    with {:ok, create_result} <- query_and_normalize(conn, create_sql),
-         {:ok, columns_result} <- query_and_normalize(conn, columns_sql),
-         {:ok, fk_result} <- query_and_normalize(conn, fk_sql),
-         {:ok, index_result} <- query_and_normalize(conn, index_sql) do
+    with {:ok, create_result} <- DatabaseClient.query_and_normalize(conn, create_sql),
+         {:ok, columns_result} <- DatabaseClient.query_and_normalize(conn, columns_sql),
+         {:ok, fk_result} <- DatabaseClient.query_and_normalize(conn, fk_sql),
+         {:ok, index_result} <- DatabaseClient.query_and_normalize(conn, index_sql) do
       create_statement =
         case create_result.rows do
           [%{"sql" => sql} | _] -> sql
@@ -139,7 +142,7 @@ defmodule Melocoton.Engines.Sqlite do
           index_info_sql = "PRAGMA index_info(#{quote_identifier(row["name"])})"
 
           cols =
-            case query_and_normalize(conn, index_info_sql) do
+            case DatabaseClient.query_and_normalize(conn, index_info_sql) do
               {:ok, info} -> Enum.map(info.rows, & &1["name"])
               _ -> []
             end
@@ -193,12 +196,12 @@ defmodule Melocoton.Engines.Sqlite do
     tables_sql =
       "SELECT name FROM sqlite_master WHERE type = 'table' AND name != '#{escape_literal(table_name)}'"
 
-    case query_and_normalize(conn, tables_sql) do
+    case DatabaseClient.query_and_normalize(conn, tables_sql) do
       {:ok, %{rows: rows}} ->
         Enum.flat_map(rows, fn %{"name" => other_table} ->
           fk_sql = "PRAGMA foreign_key_list(#{quote_identifier(other_table)})"
 
-          case query_and_normalize(conn, fk_sql) do
+          case DatabaseClient.query_and_normalize(conn, fk_sql) do
             {:ok, %{rows: fk_rows}} ->
               fk_rows
               |> Enum.filter(&(&1["table"] == table_name))
@@ -221,29 +224,22 @@ defmodule Melocoton.Engines.Sqlite do
     end
   end
 
-  defp query_and_normalize(conn, sql) do
-    case Connection.query(conn, sql) do
-      {:ok, result} -> {:ok, Melocoton.DatabaseClient.handle_response(result)}
-      {:error, error} -> {:error, error}
-    end
-  end
-
   @impl true
   def get_estimated_count(conn, table_name) do
-    Melocoton.DatabaseClient.exact_count(conn, table_name)
+    DatabaseClient.exact_count(conn, table_name)
   end
 
   @impl true
   def get_all_relations(conn) do
     tables_sql = "SELECT name FROM sqlite_master WHERE type = 'table'"
 
-    case query_and_normalize(conn, tables_sql) do
+    case DatabaseClient.query_and_normalize(conn, tables_sql) do
       {:ok, %{rows: rows}} ->
         relations =
           Enum.flat_map(rows, fn %{"name" => table_name} ->
             fk_sql = "PRAGMA foreign_key_list(#{quote_identifier(table_name)})"
 
-            case query_and_normalize(conn, fk_sql) do
+            case DatabaseClient.query_and_normalize(conn, fk_sql) do
               {:ok, %{rows: fk_rows}} ->
                 Enum.map(fk_rows, fn row ->
                   %{

@@ -98,7 +98,7 @@ defmodule Melocoton.Engines.Postgres do
     ORDER BY c.ordinal_position
     """
 
-    case query_and_normalize(conn, sql) do
+    case DatabaseClient.query_and_normalize(conn, sql) do
       {:ok, %{rows: rows}} ->
         columns = Enum.map(rows, & &1["column_name"])
         column_types = Map.new(rows, fn r -> {r["column_name"], r["udt_name"]} end)
@@ -220,13 +220,14 @@ defmodule Melocoton.Engines.Postgres do
     ORDER BY kcu.table_name, tc.constraint_name;
     """
 
-    with {:ok, columns_result} <- query_and_normalize(conn, columns_sql),
-         {:ok, constraints_result} <- query_and_normalize(conn, constraints_sql),
-         {:ok, fk_result} <- query_and_normalize(conn, fk_sql),
-         {:ok, size_result} <- query_and_normalize(conn, size_sql),
-         {:ok, check_result} <- query_and_normalize(conn, check_sql),
-         {:ok, indexes_result} <- query_and_normalize(conn, indexes_sql),
-         {:ok, referenced_by_result} <- query_and_normalize(conn, referenced_by_sql) do
+    with {:ok, columns_result} <- DatabaseClient.query_and_normalize(conn, columns_sql),
+         {:ok, constraints_result} <- DatabaseClient.query_and_normalize(conn, constraints_sql),
+         {:ok, fk_result} <- DatabaseClient.query_and_normalize(conn, fk_sql),
+         {:ok, size_result} <- DatabaseClient.query_and_normalize(conn, size_sql),
+         {:ok, check_result} <- DatabaseClient.query_and_normalize(conn, check_sql),
+         {:ok, indexes_result} <- DatabaseClient.query_and_normalize(conn, indexes_sql),
+         {:ok, referenced_by_result} <-
+           DatabaseClient.query_and_normalize(conn, referenced_by_sql) do
       pk_columns =
         constraints_result.rows
         |> Enum.filter(&(&1["constraint_type"] == "PRIMARY KEY"))
@@ -304,13 +305,6 @@ defmodule Melocoton.Engines.Postgres do
     end
   end
 
-  defp query_and_normalize(conn, sql) do
-    case Connection.query(conn, sql) do
-      {:ok, result} -> {:ok, DatabaseClient.handle_response(result)}
-      {:error, error} -> {:error, error}
-    end
-  end
-
   @impl true
   def get_estimated_count(conn, table_name) do
     sql =
@@ -345,7 +339,7 @@ defmodule Melocoton.Engines.Postgres do
     ORDER BY kcu.table_name, kcu.column_name
     """
 
-    case query_and_normalize(conn, sql) do
+    case DatabaseClient.query_and_normalize(conn, sql) do
       {:ok, %{rows: rows}} ->
         relations =
           Enum.map(rows, fn row ->

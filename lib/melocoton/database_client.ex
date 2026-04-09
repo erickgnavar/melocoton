@@ -88,6 +88,13 @@ defmodule Melocoton.DatabaseClient do
   def translate_query_error(error) when is_binary(error), do: error
   def translate_query_error(error), do: inspect(error)
 
+  def query_and_normalize(conn, sql) do
+    case Connection.query(conn, sql) do
+      {:ok, result} -> {:ok, handle_response(result)}
+      {:error, error} -> {:error, error}
+    end
+  end
+
   @doc """
   Normalizes a query result into a map with `cols`, `rows`, and `num_rows`.
 
