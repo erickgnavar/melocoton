@@ -7,7 +7,8 @@ defmodule Melocoton.Engines.Mysql do
   @impl true
   def get_tables(conn) do
     sql = """
-    SELECT t.TABLE_NAME, t.TABLE_TYPE, c.COLUMN_NAME, c.DATA_TYPE
+    SELECT t.TABLE_NAME, t.TABLE_TYPE, c.COLUMN_NAME, c.DATA_TYPE,
+           c.IS_NULLABLE, c.COLUMN_DEFAULT
     FROM information_schema.TABLES t
     LEFT JOIN information_schema.COLUMNS c
       ON c.TABLE_SCHEMA = t.TABLE_SCHEMA AND c.TABLE_NAME = t.TABLE_NAME
@@ -25,9 +26,14 @@ defmodule Melocoton.Engines.Mysql do
 
           cols =
             col_rows
-            |> Enum.reject(fn [_, _, col_name, _] -> is_nil(col_name) end)
-            |> Enum.map(fn [_, _, col_name, data_type] ->
-              %{name: col_name, type: data_type}
+            |> Enum.reject(fn [_, _, col_name, _, _, _] -> is_nil(col_name) end)
+            |> Enum.map(fn [_, _, col_name, data_type, is_nullable, col_default] ->
+              %{
+                name: col_name,
+                type: data_type,
+                nullable: is_nullable == "YES",
+                has_default: not is_nil(col_default)
+              }
             end)
 
           %{name: name, type: if(table_type == "VIEW", do: :view, else: :table), cols: cols}

@@ -28,7 +28,12 @@ defmodule Melocoton.Engines.Sqlite do
                 |> Melocoton.DatabaseClient.handle_response()
                 |> Map.get(:rows)
                 |> Enum.map(fn row ->
-                  %{name: row["name"], type: row["type"]}
+                  %{
+                    name: row["name"],
+                    type: row["type"],
+                    nullable: row["notnull"] == 0,
+                    has_default: not is_nil(row["dflt_value"])
+                  }
                 end)
 
               {:error, _error} ->

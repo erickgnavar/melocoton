@@ -7,7 +7,8 @@ defmodule Melocoton.Engines.Postgres do
   @impl true
   def get_tables(conn) do
     sql = """
-    SELECT t.table_name, t.table_type, c.column_name, c.data_type
+    SELECT t.table_name, t.table_type, c.column_name, c.data_type,
+           c.is_nullable, c.column_default
     FROM information_schema.tables t
     LEFT JOIN information_schema.columns c
       ON c.table_schema = t.table_schema AND c.table_name = t.table_name
@@ -25,9 +26,14 @@ defmodule Melocoton.Engines.Postgres do
 
           cols =
             col_rows
-            |> Enum.reject(fn [_, _, col_name, _] -> is_nil(col_name) end)
-            |> Enum.map(fn [_, _, col_name, data_type] ->
-              %{name: col_name, type: data_type}
+            |> Enum.reject(fn [_, _, col_name, _, _, _] -> is_nil(col_name) end)
+            |> Enum.map(fn [_, _, col_name, data_type, is_nullable, col_default] ->
+              %{
+                name: col_name,
+                type: data_type,
+                nullable: is_nullable == "YES",
+                has_default: not is_nil(col_default)
+              }
             end)
 
           %{name: name, type: if(table_type == "VIEW", do: :view, else: :table), cols: cols}

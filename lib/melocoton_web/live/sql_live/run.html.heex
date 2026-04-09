@@ -166,8 +166,26 @@
                     class="flex items-center justify-between p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded"
                   >
                     <span>{col.name}</span>
-                    <span class="font-mono text-[9px]" style={"color: #{type_color(col.type)}"}>
-                      {col.type}
+                    <span class="flex items-center gap-1">
+                      <span
+                        :if={col[:nullable] == false}
+                        class="text-[8px] font-medium px-0.5 rounded"
+                        style="color: var(--text-tertiary); background: var(--bg-tertiary);"
+                        title="NOT NULL"
+                      >
+                        NN
+                      </span>
+                      <span
+                        :if={col[:has_default]}
+                        class="text-[8px] font-medium px-0.5 rounded"
+                        style="color: var(--text-tertiary); background: var(--bg-tertiary);"
+                        title="Has default value"
+                      >
+                        DF
+                      </span>
+                      <span class="font-mono text-[9px]" style={"color: #{type_color(col.type)}"}>
+                        {col.type}
+                      </span>
                     </span>
                   </li>
                 </ul>
