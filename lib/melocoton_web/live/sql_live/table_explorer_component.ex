@@ -402,6 +402,41 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
     |> noreply()
   end
 
+  @impl true
+  def handle_event("export-table", %{"format" => format}, socket) do
+    %{
+      repo: repo,
+      table_name: table_name,
+      sort_column: sort_column,
+      sort_direction: sort_direction,
+      filter: filter,
+      filters: filters,
+      columns: columns,
+      column_types: column_types,
+      database: database
+    } = socket.assigns
+
+    result =
+      get_export_result(repo, table_name, %{
+        sort_column: sort_column,
+        sort_direction: sort_direction,
+        filter: filter,
+        filters: filters,
+        columns: columns,
+        column_types: column_types
+      })
+
+    token =
+      Melocoton.ExportStore.put(%{
+        result: result,
+        database_name: database.name
+      })
+
+    socket
+    |> push_event("open-url", %{url: "/export/#{format}/#{token}"})
+    |> noreply()
+  end
+
   defp stage_pending_change(socket, value) do
     case socket.assigns.editing_cell do
       nil ->
@@ -607,6 +642,24 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
 
       {:error, error} ->
         {:ok, %{result: %{cols: [], rows: [], num_rows: 0, query_error: error}}}
+    end
+  end
+
+  defp get_export_result(repo, table_name, opts) do
+    text_conditions = build_text_filter_conditions(opts.filter, opts.columns, repo.type)
+    column_conditions = build_column_filter_conditions(opts.filters, repo.type)
+    all_conditions = Enum.reject(text_conditions ++ column_conditions, &is_nil/1)
+
+    where_clause =
+      if all_conditions == [], do: "", else: " WHERE #{Enum.join(all_conditions, " AND ")}"
+
+    order_clause = build_order_clause(opts.sort_column, opts.sort_direction)
+
+    sql = "SELECT * FROM #{quote_identifier(table_name)}#{where_clause}#{order_clause}"
+
+    case DatabaseClient.query(repo, sql, opts.column_types, max_rows: 50_000) do
+      {:ok, result, _} -> result
+      {:error, _} -> %{cols: [], rows: [], num_rows: 0}
     end
   end
 

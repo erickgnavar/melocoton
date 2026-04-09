@@ -48,12 +48,48 @@
       >
         <.icon name="lucide-plus" class="size-3 mr-1.5" /> Add row
       </button>
-      <button
-        class="px-2 py-1 rounded flex items-center"
-        style="background: var(--bg-tertiary); color: var(--text-secondary);"
-      >
-        <.icon name="lucide-file-output" class="size-3 mr-1.5" /> Export
-      </button>
+      <div class="relative" id="table-explorer-export-dropdown">
+        <button
+          class="px-2 py-1 rounded flex items-center"
+          style="background: var(--bg-tertiary); color: var(--text-secondary);"
+          phx-click={JS.toggle(to: "#table-explorer-export-menu")}
+        >
+          <.icon name="lucide-file-output" class="size-3 mr-1.5" /> Export
+        </button>
+        <div
+          id="table-explorer-export-menu"
+          class="hidden absolute top-full left-0 mt-1 rounded shadow-lg py-1 z-50 min-w-[120px]"
+          style="background: var(--bg-secondary); border: 1px solid var(--border-medium);"
+          phx-click-away={JS.hide(to: "#table-explorer-export-menu")}
+        >
+          <button
+            class="flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/5 w-full"
+            style="color: var(--text-primary);"
+            phx-click="export-table"
+            phx-value-format="csv"
+            phx-target={@myself}
+          >
+            <.icon
+              name="lucide-file-spreadsheet"
+              class="size-3"
+              style="color: var(--text-tertiary);"
+            /> CSV
+          </button>
+          <button
+            class="flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/5 w-full"
+            style="color: var(--text-primary);"
+            phx-click="export-table"
+            phx-value-format="xlsx"
+            phx-target={@myself}
+          >
+            <.icon
+              name="lucide-file-spreadsheet"
+              class="size-3"
+              style="color: var(--text-tertiary);"
+            /> Excel
+          </button>
+        </div>
+      </div>
       <div class="w-px h-4" style="background: var(--border-medium);"></div>
       <div class="relative">
         <button
