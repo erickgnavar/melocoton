@@ -112,7 +112,7 @@ defmodule MelocotonWeb.CoreComponents do
           class="absolute inset-0 bg-black/40"
           aria-hidden="true"
         />
-        <div
+        <.focus_wrap
           id="cell-detail-modal-container"
           phx-window-keydown={JS.exec("data-cancel", to: "#cell-detail-modal")}
           phx-key="escape"
@@ -174,7 +174,7 @@ defmodule MelocotonWeb.CoreComponents do
               style="color: var(--text-primary); font-family: var(--font-mono, monospace);"
             ></pre>
           </div>
-        </div>
+        </.focus_wrap>
       </div>
     </div>
     """
