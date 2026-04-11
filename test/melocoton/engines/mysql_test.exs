@@ -8,30 +8,22 @@ defmodule Melocoton.Engines.MysqlTest do
 
   @moduletag :container
 
+  # NOTE: CREATE FUNCTION requires SUPER privilege when binary logging is
+  # enabled (which the testcontainers image enables by default), and the
+  # test user lacks it. Procedures are not subject to that restriction and
+  # exercise the same `get_functions/1` query path.
   @seed_sql [
     "CREATE TABLE users (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255) NOT NULL, email VARCHAR(255) UNIQUE)",
     "CREATE TABLE posts (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT, title VARCHAR(255), body TEXT, FOREIGN KEY (user_id) REFERENCES users(id))",
     "CREATE INDEX idx_posts_user_id ON posts(user_id)",
     "INSERT INTO users (name, email) VALUES ('Alice', 'alice@example.com')",
     "INSERT INTO users (name, email) VALUES ('Bob', 'bob@example.com')",
-    "INSERT INTO posts (user_id, title, body) VALUES (1, 'Hello', 'World')"
-  ]
-
-  # NOTE: CREATE FUNCTION requires SUPER privilege when binary logging is
-  # enabled (which the testcontainers image enables by default), and the
-  # test user lacks it. Procedures are not subject to that restriction and
-  # exercise the same `get_functions/1` query path.
-  @routine_sql [
+    "INSERT INTO posts (user_id, title, body) VALUES (1, 'Hello', 'World')",
     "CREATE PROCEDURE noop_proc() SELECT 1"
   ]
 
   setup_all do
     {container, conn} = ContainerHelper.start_mysql(@seed_sql)
-
-    for sql <- @routine_sql do
-      {:ok, _} = MyXQL.query(conn.pid, sql, [], query_type: :text)
-    end
-
     conn_params = Testcontainers.MySqlContainer.connection_parameters(container)
 
     url =

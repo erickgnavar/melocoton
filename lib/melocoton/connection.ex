@@ -28,7 +28,14 @@ defmodule Melocoton.Connection do
   end
 
   def query(%__MODULE__{pid: pid, type: :mysql}, sql, params) do
-    case MyXQL.query(pid, sql, params, timeout: @query_timeout) do
+    # When the caller passes no binds, use the text protocol so DDL like
+    # CREATE FUNCTION / CREATE PROCEDURE goes through — MySQL rejects those
+    # in the prepared-statement protocol (ER_UNSUPPORTED_PS). When there are
+    # binds, stay on the binary protocol since MyXQL's text path does not
+    # accept parameters.
+    query_type = if params == [], do: :text, else: :binary
+
+    case MyXQL.query(pid, sql, params, timeout: @query_timeout, query_type: query_type) do
       {:ok, %MyXQL.Result{columns: cols, rows: rows, num_rows: num_rows}} ->
         {:ok, %{columns: cols, rows: rows, num_rows: num_rows}}
 
