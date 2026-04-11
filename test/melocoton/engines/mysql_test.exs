@@ -213,6 +213,31 @@ defmodule Melocoton.Engines.MysqlTest do
       {:error, message} = DatabaseClient.query(conn, "SELECT * FROM nonexistent_table")
       assert is_binary(message)
     end
+
+    # These cover the text-protocol branch of Connection.query/3 for MySQL.
+    # MyXQL's prepared-statement protocol rejects routine/trigger DDL with
+    # ER_UNSUPPORTED_PS, so editor queries with no binds are routed through
+    # the text protocol. Regression tests for that split live here.
+    test "creates a stored procedure via the editor path", %{conn: conn} do
+      drop_sql = "DROP PROCEDURE IF EXISTS editor_proc"
+      create_sql = "CREATE PROCEDURE editor_proc() SELECT 1"
+
+      assert {:ok, _, _} = DatabaseClient.query(conn, drop_sql)
+      assert {:ok, _, _} = DatabaseClient.query(conn, create_sql)
+
+      {:ok, functions} = Mysql.get_functions(conn)
+      assert Enum.any?(functions, &(&1.name == "editor_proc" and &1.kind == :procedure))
+
+      # cleanup so the assertion doesn't leak into other tests
+      assert {:ok, _, _} = DatabaseClient.query(conn, drop_sql)
+    end
+
+    test "parameterized engine queries still work alongside DDL", %{conn: conn} do
+      # Regression guard: confirms the `params == []` vs `params != []`
+      # protocol split in Connection.query doesn't break the bound path.
+      assert %TableMeta{columns: columns} = Mysql.get_table_meta(conn, "users")
+      assert "email" in columns
+    end
   end
 
   describe "get_functions/1" do
