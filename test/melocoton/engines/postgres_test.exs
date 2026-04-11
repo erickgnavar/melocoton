@@ -18,7 +18,9 @@ defmodule Melocoton.Engines.PostgresTest do
     "CREATE FUNCTION add_ints(a integer, b integer) RETURNS integer AS $$ SELECT a + b $$ LANGUAGE sql",
     "CREATE PROCEDURE noop_proc() LANGUAGE sql AS $$ SELECT 1 $$",
     "CREATE VIEW active_users AS SELECT id, name FROM users",
-    "CREATE MATERIALIZED VIEW user_counts AS SELECT COUNT(*) AS total FROM users"
+    "CREATE MATERIALIZED VIEW user_counts AS SELECT COUNT(*) AS total FROM users",
+    "CREATE FUNCTION noop_trigger_fn() RETURNS trigger AS $$ BEGIN RETURN NEW; END $$ LANGUAGE plpgsql",
+    "CREATE TRIGGER users_noop BEFORE INSERT ON users FOR EACH ROW EXECUTE FUNCTION noop_trigger_fn()"
   ]
 
   setup_all do
@@ -261,6 +263,40 @@ defmodule Melocoton.Engines.PostgresTest do
 
     test "returns error for unknown oid", %{conn: conn} do
       assert {:error, _} = Postgres.get_function_definition(conn, "0")
+    end
+  end
+
+  describe "get_triggers/1" do
+    test "returns user-defined triggers with their table", %{conn: conn} do
+      {:ok, triggers} = Postgres.get_triggers(conn)
+
+      trg = Enum.find(triggers, &(&1.name == "users_noop"))
+      assert trg != nil
+      assert trg.table == "users"
+      assert is_binary(trg.id) and trg.id != ""
+    end
+
+    test "excludes internal/system triggers", %{conn: conn} do
+      {:ok, triggers} = Postgres.get_triggers(conn)
+      refute Enum.any?(triggers, &String.starts_with?(&1.name, "pg_"))
+      refute Enum.any?(triggers, &String.starts_with?(&1.name, "RI_"))
+    end
+  end
+
+  describe "get_trigger_definition/2" do
+    test "returns the CREATE TRIGGER text", %{conn: conn} do
+      {:ok, triggers} = Postgres.get_triggers(conn)
+      trg = Enum.find(triggers, &(&1.name == "users_noop"))
+
+      {:ok, definition} = Postgres.get_trigger_definition(conn, trg.id)
+
+      assert definition =~ "TRIGGER users_noop"
+      assert definition =~ "BEFORE INSERT"
+      assert definition =~ "noop_trigger_fn"
+    end
+
+    test "returns error for unknown oid", %{conn: conn} do
+      assert {:error, _} = Postgres.get_trigger_definition(conn, "0")
     end
   end
 end

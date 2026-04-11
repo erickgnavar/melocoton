@@ -267,6 +267,40 @@ defmodule Melocoton.Engines.Sqlite do
     do: {:error, "SQLite does not support stored functions"}
 
   @impl true
+  def get_triggers(conn) do
+    sql = """
+    SELECT name, tbl_name
+    FROM sqlite_master
+    WHERE type = 'trigger'
+    ORDER BY tbl_name, name;
+    """
+
+    case Connection.query(conn, sql) do
+      {:ok, %{rows: rows}} ->
+        triggers =
+          Enum.map(rows, fn [name, table] ->
+            %{id: name, name: name, table: table}
+          end)
+
+        {:ok, triggers}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  @impl true
+  def get_trigger_definition(conn, id) do
+    sql = "SELECT sql FROM sqlite_master WHERE type = 'trigger' AND name = ?"
+
+    case DatabaseClient.query_and_normalize(conn, sql, [id]) do
+      {:ok, %{rows: [%{"sql" => def} | _]}} when is_binary(def) -> {:ok, def}
+      {:ok, _} -> {:error, "Trigger not found"}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  @impl true
   def test_connection(database) do
     if File.exists?(database.url) do
       :ok

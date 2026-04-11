@@ -48,6 +48,19 @@ defmodule Melocoton.Engines.SqliteTest do
       )
 
     :ok = Exqlite.Sqlite3.execute(raw_db, "CREATE TABLE empty_table (id INTEGER PRIMARY KEY)")
+
+    :ok =
+      Exqlite.Sqlite3.execute(
+        raw_db,
+        """
+        CREATE TRIGGER users_name_not_empty BEFORE INSERT ON users
+        BEGIN
+          SELECT CASE WHEN LENGTH(NEW.name) = 0
+            THEN RAISE(ABORT, 'name cannot be empty') END;
+        END;
+        """
+      )
+
     Exqlite.Sqlite3.close(raw_db)
 
     {:ok, pid} = DBConnection.start_link(Exqlite.Connection, database: db_path, pool_size: 1)
@@ -273,6 +286,31 @@ defmodule Melocoton.Engines.SqliteTest do
   describe "get_function_definition/2" do
     test "returns an error", %{conn: conn} do
       assert {:error, _} = Sqlite.get_function_definition(conn, "anything")
+    end
+  end
+
+  describe "get_triggers/1" do
+    test "returns user-defined triggers with their table", %{conn: conn} do
+      {:ok, triggers} = Sqlite.get_triggers(conn)
+
+      trg = Enum.find(triggers, &(&1.name == "users_name_not_empty"))
+      assert trg != nil
+      assert trg.table == "users"
+      assert trg.id == "users_name_not_empty"
+    end
+  end
+
+  describe "get_trigger_definition/2" do
+    test "returns the CREATE TRIGGER body", %{conn: conn} do
+      {:ok, definition} = Sqlite.get_trigger_definition(conn, "users_name_not_empty")
+
+      assert definition =~ "TRIGGER users_name_not_empty"
+      assert definition =~ "BEFORE INSERT ON users"
+      assert definition =~ "name cannot be empty"
+    end
+
+    test "returns error for unknown trigger", %{conn: conn} do
+      assert {:error, _} = Sqlite.get_trigger_definition(conn, "nope")
     end
   end
 end

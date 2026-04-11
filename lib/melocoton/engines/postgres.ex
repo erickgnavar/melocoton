@@ -466,5 +466,45 @@ defmodule Melocoton.Engines.Postgres do
   end
 
   @impl true
+  def get_triggers(conn) do
+    sql = """
+    SELECT
+      t.oid::text AS id,
+      t.tgname AS name,
+      c.relname AS "table"
+    FROM pg_trigger t
+    JOIN pg_class c ON c.oid = t.tgrelid
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE NOT t.tgisinternal
+      AND n.nspname NOT IN ('pg_catalog', 'information_schema')
+    ORDER BY c.relname, t.tgname;
+    """
+
+    case DatabaseClient.query_and_normalize(conn, sql) do
+      {:ok, %{rows: rows}} ->
+        triggers =
+          Enum.map(rows, fn row ->
+            %{id: row["id"], name: row["name"], table: row["table"]}
+          end)
+
+        {:ok, triggers}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  @impl true
+  def get_trigger_definition(conn, id) do
+    sql = "SELECT pg_get_triggerdef($1::text::oid) AS definition"
+
+    case DatabaseClient.query_and_normalize(conn, sql, [id]) do
+      {:ok, %{rows: [%{"definition" => def} | _]}} when is_binary(def) -> {:ok, def}
+      {:ok, _} -> {:error, "Trigger not found"}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  @impl true
   def test_connection(database), do: DatabaseClient.test_connection_via_query(database)
 end

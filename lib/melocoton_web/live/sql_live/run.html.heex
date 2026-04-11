@@ -188,6 +188,28 @@
             </span>
           </div>
         </.section>
+
+        <.section :let={triggers} id="triggers" title="Triggers" assign={@triggers}>
+          <div
+            :for={trigger <- triggers}
+            :if={@search_term == "" || String.contains?(trigger.name, @search_term)}
+            class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded"
+            phx-click="set-trigger-explorer"
+            phx-value-id={trigger.id}
+            phx-value-name={trigger.name}
+            phx-value-table={trigger.table}
+          >
+            <.icon
+              name="lucide-zap"
+              class="size-3 mr-1.5"
+              style={"color: #{@database.group.color};"}
+            />
+            <span class="truncate">{trigger.name}</span>
+            <span class="ml-1 text-[9px]" style="color: var(--text-tertiary);">
+              ({trigger.table})
+            </span>
+          </div>
+        </.section>
       </div>
 
       <%!-- Sidebar footer: connection info --%>
@@ -429,6 +451,13 @@
                 style={"color: #{@database.group.color};"}
               />
               <span class="max-w-[120px] truncate">{tab.function_name}</span>
+            <% :trigger -> %>
+              <.icon
+                name="lucide-zap"
+                class="size-3 mr-1.5"
+                style={"color: #{@database.group.color};"}
+              />
+              <span class="max-w-[120px] truncate">{tab.trigger_name}</span>
           <% end %>
           <button
             class="ml-2 hover:bg-black/10 dark:hover:bg-white/10 rounded p-0.5"
@@ -830,6 +859,16 @@
             function_id={function_id}
             function_name={function_tab.function_name}
             function_kind={function_tab.function_kind}
+            database={@database}
+          />
+        <% %{type: :trigger, trigger_id: trigger_id} = trigger_tab -> %>
+          <.live_component
+            module={MelocotonWeb.SqlLive.TriggerExplorerComponent}
+            id={"trigger-explorer-#{trigger_id}"}
+            repo={@conn}
+            trigger_id={trigger_id}
+            trigger_name={trigger_tab.trigger_name}
+            trigger_table={trigger_tab.trigger_table}
             database={@database}
           />
         <% _ -> %>

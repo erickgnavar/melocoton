@@ -425,5 +425,40 @@ defmodule Melocoton.Engines.Mysql do
   end
 
   @impl true
+  def get_triggers(conn) do
+    sql = """
+    SELECT TRIGGER_NAME AS name, EVENT_OBJECT_TABLE AS `table`
+    FROM information_schema.TRIGGERS
+    WHERE TRIGGER_SCHEMA = DATABASE()
+    ORDER BY EVENT_OBJECT_TABLE, TRIGGER_NAME;
+    """
+
+    case DatabaseClient.query_and_normalize(conn, sql) do
+      {:ok, %{rows: rows}} ->
+        triggers =
+          Enum.map(rows, fn row ->
+            %{id: row["name"], name: row["name"], table: row["table"]}
+          end)
+
+        {:ok, triggers}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  @impl true
+  def get_trigger_definition(conn, id) do
+    quoted_name = "`" <> String.replace(id, "`", "``") <> "`"
+    sql = "SHOW CREATE TRIGGER #{quoted_name}"
+
+    case DatabaseClient.query_and_normalize(conn, sql) do
+      {:ok, %{rows: [row | _]}} -> {:ok, Map.get(row, "SQL Original Statement") || ""}
+      {:ok, _} -> {:error, "Trigger not found"}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  @impl true
   def test_connection(database), do: DatabaseClient.test_connection_via_query(database)
 end

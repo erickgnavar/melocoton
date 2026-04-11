@@ -38,6 +38,7 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> assign_async(:tables, fn -> get_tables(conn, liveview_pid) end)
     |> assign_async(:indexes, fn -> get_indexes(conn) end)
     |> assign_async(:functions, fn -> get_functions(conn) end)
+    |> assign_async(:triggers, fn -> get_triggers(conn) end)
     |> assign(:database, database)
     |> assign(:tabs, tabs)
     |> assign(:active_tab_index, 0)
@@ -168,6 +169,30 @@ defmodule MelocotonWeb.SQLLive.Run do
     end
   end
 
+  def handle_event(
+        "set-trigger-explorer",
+        %{"id" => id, "name" => name, "table" => table},
+        socket
+      ) do
+    tabs = socket.assigns.tabs
+
+    case Enum.find_index(tabs, &(&1.type == :trigger and &1.trigger_id == id)) do
+      nil ->
+        new_tab = %{type: :trigger, trigger_id: id, trigger_name: name, trigger_table: table}
+        tabs = tabs ++ [new_tab]
+
+        socket
+        |> assign(:tabs, tabs)
+        |> assign(:active_tab_index, length(tabs) - 1)
+        |> noreply()
+
+      existing_index ->
+        socket
+        |> assign(:active_tab_index, existing_index)
+        |> noreply()
+    end
+  end
+
   def handle_event("set-table-explorer", %{"table" => ""}, socket), do: noreply(socket)
 
   def handle_event("set-table-explorer", %{"table" => table_name}, socket) do
@@ -259,6 +284,7 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> assign_async(:tables, fn -> get_tables(conn, liveview_pid) end)
     |> assign_async(:indexes, fn -> get_indexes(conn) end)
     |> assign_async(:functions, fn -> get_functions(conn) end)
+    |> assign_async(:triggers, fn -> get_triggers(conn) end)
     |> noreply()
   end
 
@@ -584,6 +610,13 @@ defmodule MelocotonWeb.SQLLive.Run do
   defp get_functions(conn) do
     case DatabaseClient.get_functions(conn) do
       {:ok, functions} -> {:ok, %{functions: functions}}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  defp get_triggers(conn) do
+    case DatabaseClient.get_triggers(conn) do
+      {:ok, triggers} -> {:ok, %{triggers: triggers}}
       {:error, error} -> {:error, error}
     end
   end

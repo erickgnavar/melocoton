@@ -54,6 +54,14 @@ defmodule Melocoton.DatabaseClient do
   def get_function_definition(%Connection{type: type} = conn, id),
     do: engine(type).get_function_definition(conn, id)
 
+  @spec get_triggers(Connection.t()) :: {:ok, [map]} | {:error, String.t()}
+  def get_triggers(%Connection{type: type} = conn), do: engine(type).get_triggers(conn)
+
+  @spec get_trigger_definition(Connection.t(), String.t()) ::
+          {:ok, String.t()} | {:error, String.t()}
+  def get_trigger_definition(%Connection{type: type} = conn, id),
+    do: engine(type).get_trigger_definition(conn, id)
+
   @spec get_table_meta(Connection.t(), String.t()) :: Melocoton.Engines.TableMeta.t()
   def get_table_meta(%Connection{type: type} = conn, table_name),
     do: engine(type).get_table_meta(conn, table_name)

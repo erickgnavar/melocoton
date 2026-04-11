@@ -17,6 +17,11 @@ defmodule Melocoton.Behaviours.Engine do
            arguments: String.t() | nil,
            language: String.t() | nil
          }
+  @typep trigger_summary :: %{
+           id: String.t(),
+           name: String.t(),
+           table: String.t()
+         }
 
   @doc """
   Return all the existing tables and columns inside the given
@@ -61,6 +66,18 @@ defmodule Melocoton.Behaviours.Engine do
   identified by the engine-specific id returned by `get_functions/1`.
   """
   @callback get_function_definition(repo, String.t()) ::
+              {:ok, String.t()} | {:error, String.t()}
+
+  @doc """
+  Return all user-defined triggers in the database.
+  """
+  @callback get_triggers(repo) :: {:ok, [trigger_summary]} | {:error, String.t()}
+
+  @doc """
+  Return the full definition (source/DDL) of a trigger, identified by the
+  engine-specific id returned by `get_triggers/1`.
+  """
+  @callback get_trigger_definition(repo, String.t()) ::
               {:ok, String.t()} | {:error, String.t()}
 
   @doc """
