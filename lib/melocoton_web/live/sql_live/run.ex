@@ -3,6 +3,7 @@ defmodule MelocotonWeb.SQLLive.Run do
 
   require Logger
   alias Melocoton.{DatabaseClient, Databases, Pool, TransactionSession}
+  import MelocotonWeb.SqlLive.SidebarComponents, only: [section: 1]
 
   @max_rows 1_000
 

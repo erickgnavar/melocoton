@@ -55,286 +55,139 @@
 
       <%!-- Collapsible tree: Tables with inline columns and index counts --%>
       <div class="overflow-y-auto overscroll-none flex-1 p-1">
-        <div class="p-2 app-section-border">
+        <.section :let={tables} id="tables" title="Tables & Views" assign={@tables} open>
           <div
-            class="flex items-center justify-between cursor-pointer"
-            phx-click={
-              JS.toggle(to: "#tables-content")
-              |> JS.toggle(to: "#tables-chevron-open")
-              |> JS.toggle(to: "#tables-chevron-closed")
+            :for={table <- tables}
+            :if={
+              @search_term == "" ||
+                String.contains?(table.name, @search_term) ||
+                Enum.any?(table.cols, &String.contains?(&1.name, @search_term))
             }
+            class="mt-1 text-xs"
           >
-            <div
-              class="text-[11px] font-medium uppercase tracking-wide"
-              style="color: var(--text-secondary);"
-            >
-              Tables & Views
-            </div>
-            <div class="flex items-center gap-1.5">
-              <.async_result :let={tables} assign={@tables}>
-                <:loading>
-                  <span class="text-[10px]" style="color: var(--text-tertiary);">...</span>
-                </:loading>
-                <:failed :let={_failure}>
-                  <span class="text-[10px] text-red-500">err</span>
-                </:failed>
-                <span class="text-[10px]" style="color: var(--text-tertiary);">
-                  {length(tables)}
-                </span>
-              </.async_result>
-              <span id="tables-chevron-open">
-                <.icon
-                  name="lucide-chevron-down"
-                  class="size-3"
-                  style="color: var(--text-tertiary);"
-                />
-              </span>
-              <span id="tables-chevron-closed" class="hidden">
-                <.icon
-                  name="lucide-chevron-right"
-                  class="size-3"
-                  style="color: var(--text-tertiary);"
-                />
-              </span>
-            </div>
-          </div>
-
-          <div id="tables-content">
-            <.async_result :let={tables} assign={@tables}>
-              <:loading></:loading>
-              <:failed :let={failure}>{"#{inspect(failure)}"}</:failed>
-              <div
-                :for={table <- tables}
-                :if={
-                  @search_term == "" ||
-                    String.contains?(table.name, @search_term) ||
-                    Enum.any?(table.cols, &String.contains?(&1.name, @search_term))
+            <div class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded group">
+              <span
+                id={"table-toggle-icon-#{table.name}-closed"}
+                style="color: var(--text-tertiary);"
+                phx-click={
+                  JS.toggle(to: "#table-#{table.name}-columns")
+                  |> JS.toggle(to: "#table-toggle-icon-#{table.name}-open")
+                  |> JS.toggle(to: "#table-toggle-icon-#{table.name}-closed")
                 }
-                class="mt-1 text-xs"
               >
-                <div class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded group">
-                  <span
-                    id={"table-toggle-icon-#{table.name}-closed"}
-                    style="color: var(--text-tertiary);"
-                    phx-click={
-                      JS.toggle(to: "#table-#{table.name}-columns")
-                      |> JS.toggle(to: "#table-toggle-icon-#{table.name}-open")
-                      |> JS.toggle(to: "#table-toggle-icon-#{table.name}-closed")
-                    }
-                  >
-                    <.icon name="lucide-chevron-right" class="size-3 mr-1" />
-                  </span>
-                  <span
-                    id={"table-toggle-icon-#{table.name}-open"}
-                    class="hidden"
-                    style="color: var(--text-tertiary);"
-                    phx-click={
-                      JS.toggle(to: "#table-#{table.name}-columns")
-                      |> JS.toggle(to: "#table-toggle-icon-#{table.name}-closed")
-                      |> JS.toggle(to: "#table-toggle-icon-#{table.name}-open")
-                    }
-                  >
-                    <.icon name="lucide-chevron-down" class="size-3 mr-1" />
-                  </span>
-                  <.icon
-                    name={
-                      case Map.get(table, :type) do
-                        :view -> "lucide-eye"
-                        :materialized_view -> "lucide-layers"
-                        _ -> "lucide-table-2"
-                      end
-                    }
-                    class="size-3 mr-1.5"
-                    style="color: var(--text-tertiary);"
-                  />
-                  <span
-                    class="flex-1 cursor-pointer"
-                    phx-click="set-table-explorer"
-                    phx-value-table={table.name}
-                  >
-                    {table.name}
-                  </span>
-                  <span class="text-[9px] mr-0.5" style="color: var(--text-tertiary);">
-                    {length(table.cols)}
-                  </span>
-                </div>
+                <.icon name="lucide-chevron-right" class="size-3 mr-1" />
+              </span>
+              <span
+                id={"table-toggle-icon-#{table.name}-open"}
+                class="hidden"
+                style="color: var(--text-tertiary);"
+                phx-click={
+                  JS.toggle(to: "#table-#{table.name}-columns")
+                  |> JS.toggle(to: "#table-toggle-icon-#{table.name}-closed")
+                  |> JS.toggle(to: "#table-toggle-icon-#{table.name}-open")
+                }
+              >
+                <.icon name="lucide-chevron-down" class="size-3 mr-1" />
+              </span>
+              <.icon
+                name={
+                  case Map.get(table, :type) do
+                    :view -> "lucide-eye"
+                    :materialized_view -> "lucide-layers"
+                    _ -> "lucide-table-2"
+                  end
+                }
+                class="size-3 mr-1.5"
+                style="color: var(--text-tertiary);"
+              />
+              <span
+                class="flex-1 cursor-pointer"
+                phx-click="set-table-explorer"
+                phx-value-table={table.name}
+              >
+                {table.name}
+              </span>
+              <span class="text-[9px] mr-0.5" style="color: var(--text-tertiary);">
+                {length(table.cols)}
+              </span>
+            </div>
 
-                <ul
-                  class="mt-0.5 hidden"
-                  id={"table-#{table.name}-columns"}
-                  style="padding-left: 30px;"
-                >
-                  <li
-                    :for={col <- table.cols}
-                    :if={@search_term == "" || String.contains?(col.name, @search_term)}
-                    class="flex items-center justify-between p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded"
-                  >
-                    <span>{col.name}</span>
-                    <span class="flex items-center gap-1">
-                      <span
-                        :if={col[:nullable] == false}
-                        class="text-[8px] font-medium px-0.5 rounded"
-                        style="color: var(--text-tertiary); background: var(--bg-tertiary);"
-                        title="NOT NULL"
-                      >
-                        NN
-                      </span>
-                      <span
-                        :if={col[:has_default]}
-                        class="text-[8px] font-medium px-0.5 rounded"
-                        style="color: var(--text-tertiary); background: var(--bg-tertiary);"
-                        title="Has default value"
-                      >
-                        DF
-                      </span>
-                      <span class="font-mono text-[9px]" style={"color: #{type_color(col.type)}"}>
-                        {col.type}
-                      </span>
-                    </span>
-                  </li>
-                </ul>
-              </div>
-            </.async_result>
-          </div>
-        </div>
-
-        <%!-- Indexes section --%>
-        <div class="p-2 app-section-border">
-          <div
-            class="flex items-center justify-between cursor-pointer"
-            phx-click={
-              JS.toggle(to: "#indexes-content")
-              |> JS.toggle(to: "#indexes-chevron-open")
-              |> JS.toggle(to: "#indexes-chevron-closed")
-            }
-          >
-            <div
-              class="text-[11px] font-medium uppercase tracking-wide"
-              style="color: var(--text-secondary);"
+            <ul
+              class="mt-0.5 hidden"
+              id={"table-#{table.name}-columns"}
+              style="padding-left: 30px;"
             >
-              Indexes
-            </div>
-            <div class="flex items-center gap-1.5">
-              <.async_result :let={indexes} assign={@indexes}>
-                <:loading>
-                  <span class="text-[10px]" style="color: var(--text-tertiary);">...</span>
-                </:loading>
-                <:failed :let={_failure}>
-                  <span class="text-[10px] text-red-500">err</span>
-                </:failed>
-                <span class="text-[10px]" style="color: var(--text-tertiary);">
-                  {length(indexes)}
-                </span>
-              </.async_result>
-              <span id="indexes-chevron-open" class="hidden">
-                <.icon
-                  name="lucide-chevron-down"
-                  class="size-3"
-                  style="color: var(--text-tertiary);"
-                />
-              </span>
-              <span id="indexes-chevron-closed">
-                <.icon
-                  name="lucide-chevron-right"
-                  class="size-3"
-                  style="color: var(--text-tertiary);"
-                />
-              </span>
-            </div>
-          </div>
-          <div id="indexes-content" class="mt-1 text-xs hidden">
-            <.async_result :let={indexes} assign={@indexes}>
-              <:loading></:loading>
-              <:failed :let={failure}>{"#{inspect(failure)}"}</:failed>
-              <div
-                :for={index <- indexes}
-                :if={@search_term == "" || String.contains?(index.name, @search_term)}
-                class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded"
+              <li
+                :for={col <- table.cols}
+                :if={@search_term == "" || String.contains?(col.name, @search_term)}
+                class="flex items-center justify-between p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded"
               >
-                <.icon name="lucide-key-round" class="size-3 mr-1.5 text-amber-500" />
-                <span>{index.name}</span>
-                <span class="ml-1 text-[9px]" style="color: var(--text-tertiary);">
-                  ({index.table})
+                <span>{col.name}</span>
+                <span class="flex items-center gap-1">
+                  <span
+                    :if={col[:nullable] == false}
+                    class="text-[8px] font-medium px-0.5 rounded"
+                    style="color: var(--text-tertiary); background: var(--bg-tertiary);"
+                    title="NOT NULL"
+                  >
+                    NN
+                  </span>
+                  <span
+                    :if={col[:has_default]}
+                    class="text-[8px] font-medium px-0.5 rounded"
+                    style="color: var(--text-tertiary); background: var(--bg-tertiary);"
+                    title="Has default value"
+                  >
+                    DF
+                  </span>
+                  <span class="font-mono text-[9px]" style={"color: #{type_color(col.type)}"}>
+                    {col.type}
+                  </span>
                 </span>
-              </div>
-            </.async_result>
+              </li>
+            </ul>
           </div>
-        </div>
+        </.section>
 
-        <%!-- Functions section --%>
-        <div class="p-2 app-section-border">
+        <.section :let={indexes} id="indexes" title="Indexes" assign={@indexes}>
           <div
-            class="flex items-center justify-between cursor-pointer"
-            phx-click={
-              JS.toggle(to: "#functions-content")
-              |> JS.toggle(to: "#functions-chevron-open")
-              |> JS.toggle(to: "#functions-chevron-closed")
-            }
+            :for={index <- indexes}
+            :if={@search_term == "" || String.contains?(index.name, @search_term)}
+            class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded"
           >
-            <div
-              class="text-[11px] font-medium uppercase tracking-wide"
-              style="color: var(--text-secondary);"
+            <.icon name="lucide-key-round" class="size-3 mr-1.5 text-amber-500" />
+            <span>{index.name}</span>
+            <span class="ml-1 text-[9px]" style="color: var(--text-tertiary);">
+              ({index.table})
+            </span>
+          </div>
+        </.section>
+
+        <.section :let={functions} id="functions" title="Functions" assign={@functions}>
+          <div
+            :for={function <- functions}
+            :if={@search_term == "" || String.contains?(function.name, @search_term)}
+            class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded"
+            phx-click="set-function-explorer"
+            phx-value-id={function.id}
+            phx-value-name={function.name}
+            phx-value-kind={function.kind}
+          >
+            <.icon
+              name="lucide-function-square"
+              class="size-3 mr-1.5"
+              style={"color: #{@database.group.color};"}
+            />
+            <span class="truncate">{function.name}</span>
+            <span
+              :if={function.kind == :procedure}
+              class="ml-1 text-[9px] uppercase"
+              style="color: var(--text-tertiary);"
             >
-              Functions
-            </div>
-            <div class="flex items-center gap-1.5">
-              <.async_result :let={functions} assign={@functions}>
-                <:loading>
-                  <span class="text-[10px]" style="color: var(--text-tertiary);">...</span>
-                </:loading>
-                <:failed :let={_failure}>
-                  <span class="text-[10px] text-red-500">err</span>
-                </:failed>
-                <span class="text-[10px]" style="color: var(--text-tertiary);">
-                  {length(functions)}
-                </span>
-              </.async_result>
-              <span id="functions-chevron-open" class="hidden">
-                <.icon
-                  name="lucide-chevron-down"
-                  class="size-3"
-                  style="color: var(--text-tertiary);"
-                />
-              </span>
-              <span id="functions-chevron-closed">
-                <.icon
-                  name="lucide-chevron-right"
-                  class="size-3"
-                  style="color: var(--text-tertiary);"
-                />
-              </span>
-            </div>
+              proc
+            </span>
           </div>
-          <div id="functions-content" class="mt-1 text-xs hidden">
-            <.async_result :let={functions} assign={@functions}>
-              <:loading></:loading>
-              <:failed :let={failure}>{"#{inspect(failure)}"}</:failed>
-              <div
-                :for={function <- functions}
-                :if={@search_term == "" || String.contains?(function.name, @search_term)}
-                class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded"
-                phx-click="set-function-explorer"
-                phx-value-id={function.id}
-                phx-value-name={function.name}
-                phx-value-kind={function.kind}
-              >
-                <.icon
-                  name="lucide-function-square"
-                  class="size-3 mr-1.5"
-                  style={"color: #{@database.group.color};"}
-                />
-                <span class="truncate">{function.name}</span>
-                <span
-                  :if={function.kind == :procedure}
-                  class="ml-1 text-[9px] uppercase"
-                  style="color: var(--text-tertiary);"
-                >
-                  proc
-                </span>
-              </div>
-            </.async_result>
-          </div>
-        </div>
+        </.section>
       </div>
 
       <%!-- Sidebar footer: connection info --%>
