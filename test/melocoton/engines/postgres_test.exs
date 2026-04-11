@@ -16,7 +16,9 @@ defmodule Melocoton.Engines.PostgresTest do
     "INSERT INTO users (name, email) VALUES ('Bob', 'bob@example.com')",
     "INSERT INTO posts (user_id, title, body) VALUES (1, 'Hello', 'World')",
     "CREATE FUNCTION add_ints(a integer, b integer) RETURNS integer AS $$ SELECT a + b $$ LANGUAGE sql",
-    "CREATE PROCEDURE noop_proc() LANGUAGE sql AS $$ SELECT 1 $$"
+    "CREATE PROCEDURE noop_proc() LANGUAGE sql AS $$ SELECT 1 $$",
+    "CREATE VIEW active_users AS SELECT id, name FROM users",
+    "CREATE MATERIALIZED VIEW user_counts AS SELECT COUNT(*) AS total FROM users"
   ]
 
   setup_all do
@@ -61,6 +63,20 @@ defmodule Melocoton.Engines.PostgresTest do
       names = Enum.map(tables, & &1.name)
       assert names == Enum.sort(names)
     end
+
+    test "includes views tagged with :view", %{conn: conn} do
+      {:ok, tables} = Postgres.get_tables(conn)
+      view = Enum.find(tables, &(&1.name == "active_users"))
+      assert view.type == :view
+      assert "id" in Enum.map(view.cols, & &1.name)
+    end
+
+    test "includes materialized views tagged with :materialized_view", %{conn: conn} do
+      {:ok, tables} = Postgres.get_tables(conn)
+      matview = Enum.find(tables, &(&1.name == "user_counts"))
+      assert matview.type == :materialized_view
+      assert "total" in Enum.map(matview.cols, & &1.name)
+    end
   end
 
   describe "get_indexes/1" do
@@ -97,6 +113,13 @@ defmodule Melocoton.Engines.PostgresTest do
 
       assert meta.column_types["id"] == "int4"
       assert meta.column_types["name"] == "text"
+    end
+
+    test "returns columns for a materialized view", %{conn: conn} do
+      %TableMeta{} = meta = Postgres.get_table_meta(conn, "user_counts")
+
+      assert meta.columns == ["total"]
+      assert meta.pk_columns == []
     end
   end
 

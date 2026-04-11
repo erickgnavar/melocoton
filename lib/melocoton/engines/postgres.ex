@@ -18,8 +18,22 @@ defmodule Melocoton.Engines.Postgres do
     ORDER BY t.table_name, c.ordinal_position;
     """
 
-    case Connection.query(conn, sql) do
-      {:ok, %{rows: rows}} ->
+    matview_sql = """
+    SELECT c.relname, a.attname, format_type(a.atttypid, a.atttypmod),
+           NOT a.attnotnull, pg_get_expr(d.adbin, d.adrelid)
+    FROM pg_class c
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    LEFT JOIN pg_attribute a
+      ON a.attrelid = c.oid AND a.attnum > 0 AND NOT a.attisdropped
+    LEFT JOIN pg_attrdef d ON d.adrelid = a.attrelid AND d.adnum = a.attnum
+    WHERE c.relkind = 'm'
+      AND n.nspname NOT IN ('pg_catalog', 'information_schema')
+    ORDER BY c.relname, a.attnum;
+    """
+
+    with {:ok, %{rows: rows}} <- Connection.query(conn, sql),
+         {:ok, %{rows: matview_rows}} <- Connection.query(conn, matview_sql) do
+      tables =
         rows
         |> Enum.group_by(fn [table_name | _] -> table_name end)
         |> Enum.map(fn {name, col_rows} ->
@@ -39,11 +53,27 @@ defmodule Melocoton.Engines.Postgres do
 
           %{name: name, type: if(table_type == "VIEW", do: :view, else: :table), cols: cols}
         end)
-        |> Enum.sort_by(& &1.name)
-        |> then(&{:ok, &1})
 
-      {:error, error} ->
-        {:error, error}
+      matviews =
+        matview_rows
+        |> Enum.group_by(fn [name | _] -> name end)
+        |> Enum.map(fn {name, col_rows} ->
+          cols =
+            col_rows
+            |> Enum.reject(fn [_, col_name, _, _, _] -> is_nil(col_name) end)
+            |> Enum.map(fn [_, col_name, data_type, is_nullable, col_default] ->
+              %{
+                name: col_name,
+                type: data_type,
+                nullable: is_nullable,
+                has_default: not is_nil(col_default)
+              }
+            end)
+
+          %{name: name, type: :materialized_view, cols: cols}
+        end)
+
+      {:ok, Enum.sort_by(tables ++ matviews, & &1.name)}
     end
   end
 
@@ -99,16 +129,44 @@ defmodule Melocoton.Engines.Postgres do
     """
 
     case DatabaseClient.query_and_normalize(conn, sql) do
+      {:ok, %{rows: []}} -> matview_meta(conn, table_name)
+      {:ok, %{rows: rows}} -> rows_to_table_meta(rows)
+      _ -> %TableMeta{}
+    end
+  end
+
+  defp rows_to_table_meta(rows) do
+    columns = Enum.map(rows, & &1["column_name"])
+    column_types = Map.new(rows, fn r -> {r["column_name"], r["udt_name"]} end)
+
+    pk_columns =
+      rows
+      |> Enum.filter(&(&1["is_pk"] == 1))
+      |> Enum.map(& &1["column_name"])
+
+    %TableMeta{columns: columns, pk_columns: pk_columns, column_types: column_types}
+  end
+
+  defp matview_meta(conn, table_name) do
+    sql = """
+    SELECT a.attname AS column_name,
+           format_type(a.atttypid, a.atttypmod) AS udt_name
+    FROM pg_class c
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    JOIN pg_attribute a ON a.attrelid = c.oid
+    WHERE c.relname = '#{escape_literal(table_name)}'
+      AND n.nspname NOT IN ('pg_catalog', 'information_schema')
+      AND c.relkind = 'm'
+      AND a.attnum > 0
+      AND NOT a.attisdropped
+    ORDER BY a.attnum
+    """
+
+    case DatabaseClient.query_and_normalize(conn, sql) do
       {:ok, %{rows: rows}} ->
         columns = Enum.map(rows, & &1["column_name"])
         column_types = Map.new(rows, fn r -> {r["column_name"], r["udt_name"]} end)
-
-        pk_columns =
-          rows
-          |> Enum.filter(&(&1["is_pk"] == 1))
-          |> Enum.map(& &1["column_name"])
-
-        %TableMeta{columns: columns, pk_columns: pk_columns, column_types: column_types}
+        %TableMeta{columns: columns, pk_columns: [], column_types: column_types}
 
       _ ->
         %TableMeta{}

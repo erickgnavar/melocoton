@@ -138,7 +138,11 @@
                   </span>
                   <.icon
                     name={
-                      if Map.get(table, :type) == :view, do: "lucide-eye", else: "lucide-table-2"
+                      case Map.get(table, :type) do
+                        :view -> "lucide-eye"
+                        :materialized_view -> "lucide-layers"
+                        _ -> "lucide-table-2"
+                      end
                     }
                     class="size-3 mr-1.5"
                     style="color: var(--text-tertiary);"
