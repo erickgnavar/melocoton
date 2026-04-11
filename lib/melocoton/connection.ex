@@ -15,16 +15,10 @@ defmodule Melocoton.Connection do
     ~s("#{String.replace(name, "\"", "\"\"")}")
   end
 
-  @doc """
-  Escapes a string value for use in single-quoted SQL literals.
-  Doubles any embedded single quotes.
-  """
-  def escape_literal(value) when is_binary(value) do
-    String.replace(value, "'", "''")
-  end
+  def query(conn, sql, params \\ [])
 
-  def query(%__MODULE__{pid: pid, type: :postgres}, sql) do
-    case Postgrex.query(pid, sql, [], timeout: @query_timeout) do
+  def query(%__MODULE__{pid: pid, type: :postgres}, sql, params) do
+    case Postgrex.query(pid, sql, params, timeout: @query_timeout) do
       {:ok, %Postgrex.Result{columns: cols, rows: rows, num_rows: num_rows}} ->
         {:ok, %{columns: cols, rows: rows, num_rows: num_rows}}
 
@@ -33,8 +27,8 @@ defmodule Melocoton.Connection do
     end
   end
 
-  def query(%__MODULE__{pid: pid, type: :mysql}, sql) do
-    case MyXQL.query(pid, sql, [], timeout: @query_timeout) do
+  def query(%__MODULE__{pid: pid, type: :mysql}, sql, params) do
+    case MyXQL.query(pid, sql, params, timeout: @query_timeout) do
       {:ok, %MyXQL.Result{columns: cols, rows: rows, num_rows: num_rows}} ->
         {:ok, %{columns: cols, rows: rows, num_rows: num_rows}}
 
@@ -43,10 +37,10 @@ defmodule Melocoton.Connection do
     end
   end
 
-  def query(%__MODULE__{pid: pid, type: :sqlite}, sql) do
+  def query(%__MODULE__{pid: pid, type: :sqlite}, sql, params) do
     stmt = %Exqlite.Query{name: sql, statement: sql}
 
-    case DBConnection.execute(pid, stmt, [], timeout: @query_timeout) do
+    case DBConnection.execute(pid, stmt, params, timeout: @query_timeout) do
       {:ok, _query, %Exqlite.Result{columns: cols, rows: rows, num_rows: num_rows}} ->
         {:ok, %{columns: cols, rows: rows, num_rows: num_rows}}
 

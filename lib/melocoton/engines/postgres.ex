@@ -3,7 +3,6 @@ defmodule Melocoton.Engines.Postgres do
 
   alias Melocoton.{Connection, DatabaseClient}
   alias Melocoton.Engines.{TableMeta, TableStructure}
-  import Connection, only: [escape_literal: 1]
 
   @impl true
   def get_tables(conn) do
@@ -105,8 +104,6 @@ defmodule Melocoton.Engines.Postgres do
 
   @impl true
   def get_table_meta(conn, table_name) do
-    escaped = escape_literal(table_name)
-
     sql = """
     SELECT
       c.column_name,
@@ -119,16 +116,16 @@ defmodule Melocoton.Engines.Postgres do
       JOIN information_schema.key_column_usage kcu
         ON tc.constraint_name = kcu.constraint_name
         AND tc.table_schema = kcu.table_schema
-      WHERE tc.table_name = '#{escaped}'
+      WHERE tc.table_name = $1
         AND tc.table_schema = 'public'
         AND tc.constraint_type = 'PRIMARY KEY'
     ) pk ON pk.column_name = c.column_name
-    WHERE c.table_name = '#{escaped}'
+    WHERE c.table_name = $1
       AND c.table_schema = 'public'
     ORDER BY c.ordinal_position
     """
 
-    case DatabaseClient.query_and_normalize(conn, sql) do
+    case DatabaseClient.query_and_normalize(conn, sql, [table_name]) do
       {:ok, %{rows: []}} -> matview_meta(conn, table_name)
       {:ok, %{rows: rows}} -> rows_to_table_meta(rows)
       _ -> %TableMeta{}
@@ -154,7 +151,7 @@ defmodule Melocoton.Engines.Postgres do
     FROM pg_class c
     JOIN pg_namespace n ON n.oid = c.relnamespace
     JOIN pg_attribute a ON a.attrelid = c.oid
-    WHERE c.relname = '#{escape_literal(table_name)}'
+    WHERE c.relname = $1::text
       AND n.nspname NOT IN ('pg_catalog', 'information_schema')
       AND c.relkind = 'm'
       AND a.attnum > 0
@@ -162,7 +159,7 @@ defmodule Melocoton.Engines.Postgres do
     ORDER BY a.attnum
     """
 
-    case DatabaseClient.query_and_normalize(conn, sql) do
+    case DatabaseClient.query_and_normalize(conn, sql, [table_name]) do
       {:ok, %{rows: rows}} ->
         columns = Enum.map(rows, & &1["column_name"])
         column_types = Map.new(rows, fn r -> {r["column_name"], r["udt_name"]} end)
@@ -175,7 +172,7 @@ defmodule Melocoton.Engines.Postgres do
 
   @impl true
   def get_table_structure(conn, table_name) do
-    escaped = escape_literal(table_name)
+    params = [table_name]
 
     columns_sql = """
     SELECT
@@ -188,7 +185,7 @@ defmodule Melocoton.Engines.Postgres do
       c.numeric_precision,
       c.numeric_scale
     FROM information_schema.columns c
-    WHERE c.table_name = '#{escaped}'
+    WHERE c.table_name = $1
       AND c.table_schema = 'public'
     ORDER BY c.ordinal_position;
     """
@@ -202,7 +199,7 @@ defmodule Melocoton.Engines.Postgres do
     JOIN information_schema.key_column_usage kcu
       ON tc.constraint_name = kcu.constraint_name
       AND tc.table_schema = kcu.table_schema
-    WHERE tc.table_name = '#{escaped}'
+    WHERE tc.table_name = $1
       AND tc.table_schema = 'public'
     ORDER BY tc.constraint_type, tc.constraint_name, kcu.ordinal_position;
     """
@@ -218,7 +215,7 @@ defmodule Melocoton.Engines.Postgres do
       ON tc.constraint_name = kcu.constraint_name
     JOIN information_schema.constraint_column_usage ccu
       ON tc.constraint_name = ccu.constraint_name
-    WHERE tc.table_name = '#{escaped}'
+    WHERE tc.table_name = $1
       AND tc.table_schema = 'public'
       AND tc.constraint_type = 'FOREIGN KEY'
     ORDER BY tc.constraint_name;
@@ -226,10 +223,10 @@ defmodule Melocoton.Engines.Postgres do
 
     size_sql = """
     SELECT
-      pg_size_pretty(pg_total_relation_size('#{escaped}'::regclass)) AS total_size,
-      pg_size_pretty(pg_table_size('#{escaped}'::regclass)) AS table_size,
-      pg_size_pretty(pg_indexes_size('#{escaped}'::regclass)) AS indexes_size,
-      (SELECT reltuples::bigint FROM pg_class WHERE relname = '#{escaped}') AS estimated_rows
+      pg_size_pretty(pg_total_relation_size($1::text::regclass)) AS total_size,
+      pg_size_pretty(pg_table_size($1::text::regclass)) AS table_size,
+      pg_size_pretty(pg_indexes_size($1::text::regclass)) AS indexes_size,
+      (SELECT reltuples::bigint FROM pg_class WHERE relname = $1::text) AS estimated_rows
     """
 
     check_sql = """
@@ -237,7 +234,7 @@ defmodule Melocoton.Engines.Postgres do
       conname AS constraint_name,
       pg_get_constraintdef(oid) AS definition
     FROM pg_constraint
-    WHERE conrelid = '#{escaped}'::regclass
+    WHERE conrelid = $1::text::regclass
       AND contype = 'c'
     ORDER BY conname;
     """
@@ -253,7 +250,7 @@ defmodule Melocoton.Engines.Postgres do
     JOIN pg_class i ON i.oid = ix.indexrelid
     JOIN pg_namespace n ON n.oid = t.relnamespace
     JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY(ix.indkey)
-    WHERE t.relname = '#{escaped}'
+    WHERE t.relname = $1::text
       AND n.nspname = 'public'
     GROUP BY i.relname, ix.indisunique, i.oid
     ORDER BY i.relname;
@@ -271,21 +268,22 @@ defmodule Melocoton.Engines.Postgres do
       AND tc.table_schema = kcu.table_schema
     JOIN information_schema.constraint_column_usage ccu
       ON tc.constraint_name = ccu.constraint_name
-    WHERE ccu.table_name = '#{escaped}'
+    WHERE ccu.table_name = $1
       AND tc.table_schema = 'public'
       AND tc.constraint_type = 'FOREIGN KEY'
-      AND kcu.table_name != '#{escaped}'
+      AND kcu.table_name != $1
     ORDER BY kcu.table_name, tc.constraint_name;
     """
 
-    with {:ok, columns_result} <- DatabaseClient.query_and_normalize(conn, columns_sql),
-         {:ok, constraints_result} <- DatabaseClient.query_and_normalize(conn, constraints_sql),
-         {:ok, fk_result} <- DatabaseClient.query_and_normalize(conn, fk_sql),
-         {:ok, size_result} <- DatabaseClient.query_and_normalize(conn, size_sql),
-         {:ok, check_result} <- DatabaseClient.query_and_normalize(conn, check_sql),
-         {:ok, indexes_result} <- DatabaseClient.query_and_normalize(conn, indexes_sql),
+    with {:ok, columns_result} <- DatabaseClient.query_and_normalize(conn, columns_sql, params),
+         {:ok, constraints_result} <-
+           DatabaseClient.query_and_normalize(conn, constraints_sql, params),
+         {:ok, fk_result} <- DatabaseClient.query_and_normalize(conn, fk_sql, params),
+         {:ok, size_result} <- DatabaseClient.query_and_normalize(conn, size_sql, params),
+         {:ok, check_result} <- DatabaseClient.query_and_normalize(conn, check_sql, params),
+         {:ok, indexes_result} <- DatabaseClient.query_and_normalize(conn, indexes_sql, params),
          {:ok, referenced_by_result} <-
-           DatabaseClient.query_and_normalize(conn, referenced_by_sql) do
+           DatabaseClient.query_and_normalize(conn, referenced_by_sql, params) do
       pk_columns =
         constraints_result.rows
         |> Enum.filter(&(&1["constraint_type"] == "PRIMARY KEY"))
@@ -365,11 +363,10 @@ defmodule Melocoton.Engines.Postgres do
 
   @impl true
   def get_estimated_count(conn, table_name) do
-    sql =
-      "SELECT reltuples::bigint AS count FROM pg_class WHERE relname = '#{escape_literal(table_name)}'"
+    sql = "SELECT reltuples::bigint AS count FROM pg_class WHERE relname = $1::text"
 
-    case DatabaseClient.query(conn, sql) do
-      {:ok, %{rows: [%{"count" => count}]}, _} when count >= 0 ->
+    case DatabaseClient.query_and_normalize(conn, sql, [table_name]) do
+      {:ok, %{rows: [%{"count" => count}]}} when count >= 0 ->
         count
 
       _ ->
@@ -459,10 +456,9 @@ defmodule Melocoton.Engines.Postgres do
 
   @impl true
   def get_function_definition(conn, id) do
-    escaped = escape_literal(id)
-    sql = "SELECT pg_get_functiondef('#{escaped}'::oid) AS definition"
+    sql = "SELECT pg_get_functiondef($1::text::oid) AS definition"
 
-    case DatabaseClient.query_and_normalize(conn, sql) do
+    case DatabaseClient.query_and_normalize(conn, sql, [id]) do
       {:ok, %{rows: [%{"definition" => def} | _]}} when is_binary(def) -> {:ok, def}
       {:ok, _} -> {:error, "Function not found"}
       {:error, error} -> {:error, error}

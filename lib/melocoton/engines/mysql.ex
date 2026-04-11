@@ -3,7 +3,6 @@ defmodule Melocoton.Engines.Mysql do
 
   alias Melocoton.{Connection, DatabaseClient}
   alias Melocoton.Engines.{TableMeta, TableStructure}
-  import Connection, only: [escape_literal: 1]
 
   @impl true
   def get_tables(conn) do
@@ -73,8 +72,6 @@ defmodule Melocoton.Engines.Mysql do
 
   @impl true
   def get_table_meta(conn, table_name) do
-    escaped = escape_literal(table_name)
-
     sql = """
     SELECT
       c.COLUMN_NAME,
@@ -84,16 +81,16 @@ defmodule Melocoton.Engines.Mysql do
     LEFT JOIN (
       SELECT COLUMN_NAME
       FROM information_schema.KEY_COLUMN_USAGE
-      WHERE TABLE_NAME = '#{escaped}'
+      WHERE TABLE_NAME = ?
         AND TABLE_SCHEMA = DATABASE()
         AND CONSTRAINT_NAME = 'PRIMARY'
     ) pk ON pk.COLUMN_NAME = c.COLUMN_NAME
-    WHERE c.TABLE_NAME = '#{escaped}'
+    WHERE c.TABLE_NAME = ?
       AND c.TABLE_SCHEMA = DATABASE()
     ORDER BY c.ORDINAL_POSITION
     """
 
-    case DatabaseClient.query_and_normalize(conn, sql) do
+    case DatabaseClient.query_and_normalize(conn, sql, [table_name, table_name]) do
       {:ok, %{rows: rows}} ->
         columns = Enum.map(rows, & &1["COLUMN_NAME"])
         column_types = Map.new(rows, fn r -> {r["COLUMN_NAME"], r["DATA_TYPE"]} end)
@@ -112,7 +109,7 @@ defmodule Melocoton.Engines.Mysql do
 
   @impl true
   def get_table_structure(conn, table_name) do
-    escaped = escape_literal(table_name)
+    params = [table_name]
 
     columns_sql = """
     SELECT
@@ -125,7 +122,7 @@ defmodule Melocoton.Engines.Mysql do
       NUMERIC_PRECISION AS numeric_precision,
       NUMERIC_SCALE AS numeric_scale
     FROM information_schema.COLUMNS
-    WHERE TABLE_NAME = '#{escaped}'
+    WHERE TABLE_NAME = ?
       AND TABLE_SCHEMA = DATABASE()
     ORDER BY ORDINAL_POSITION;
     """
@@ -140,7 +137,7 @@ defmodule Melocoton.Engines.Mysql do
       ON tc.CONSTRAINT_NAME = kcu.CONSTRAINT_NAME
       AND tc.TABLE_SCHEMA = kcu.TABLE_SCHEMA
       AND tc.TABLE_NAME = kcu.TABLE_NAME
-    WHERE tc.TABLE_NAME = '#{escaped}'
+    WHERE tc.TABLE_NAME = ?
       AND tc.TABLE_SCHEMA = DATABASE()
     ORDER BY tc.CONSTRAINT_TYPE, tc.CONSTRAINT_NAME, kcu.ORDINAL_POSITION;
     """
@@ -156,7 +153,7 @@ defmodule Melocoton.Engines.Mysql do
       ON tc.CONSTRAINT_NAME = kcu.CONSTRAINT_NAME
       AND tc.TABLE_SCHEMA = kcu.TABLE_SCHEMA
       AND tc.TABLE_NAME = kcu.TABLE_NAME
-    WHERE tc.TABLE_NAME = '#{escaped}'
+    WHERE tc.TABLE_NAME = ?
       AND tc.TABLE_SCHEMA = DATABASE()
       AND tc.CONSTRAINT_TYPE = 'FOREIGN KEY'
     ORDER BY tc.CONSTRAINT_NAME;
@@ -169,7 +166,7 @@ defmodule Melocoton.Engines.Mysql do
       CONCAT(ROUND(INDEX_LENGTH / 1024), ' kB') AS indexes_size,
       TABLE_ROWS AS estimated_rows
     FROM information_schema.TABLES
-    WHERE TABLE_NAME = '#{escaped}'
+    WHERE TABLE_NAME = ?
       AND TABLE_SCHEMA = DATABASE()
     """
 
@@ -179,7 +176,7 @@ defmodule Melocoton.Engines.Mysql do
       NOT NON_UNIQUE AS is_unique,
       GROUP_CONCAT(COLUMN_NAME ORDER BY SEQ_IN_INDEX) AS columns
     FROM information_schema.STATISTICS
-    WHERE TABLE_NAME = '#{escaped}'
+    WHERE TABLE_NAME = ?
       AND TABLE_SCHEMA = DATABASE()
     GROUP BY INDEX_NAME, NON_UNIQUE
     ORDER BY INDEX_NAME;
@@ -196,7 +193,7 @@ defmodule Melocoton.Engines.Mysql do
       ON tc.CONSTRAINT_NAME = kcu.CONSTRAINT_NAME
       AND tc.TABLE_SCHEMA = kcu.TABLE_SCHEMA
       AND tc.TABLE_NAME = kcu.TABLE_NAME
-    WHERE kcu.REFERENCED_TABLE_NAME = '#{escaped}'
+    WHERE kcu.REFERENCED_TABLE_NAME = ?
       AND tc.TABLE_SCHEMA = DATABASE()
       AND tc.CONSTRAINT_TYPE = 'FOREIGN KEY'
     ORDER BY kcu.TABLE_NAME, tc.CONSTRAINT_NAME;
@@ -211,21 +208,22 @@ defmodule Melocoton.Engines.Mysql do
       ON cc.CONSTRAINT_NAME = tc.CONSTRAINT_NAME
       AND cc.CONSTRAINT_SCHEMA = tc.CONSTRAINT_SCHEMA
     WHERE cc.CONSTRAINT_SCHEMA = DATABASE()
-      AND tc.TABLE_NAME = '#{escaped}'
+      AND tc.TABLE_NAME = ?
       AND tc.CONSTRAINT_TYPE = 'CHECK'
     ORDER BY cc.CONSTRAINT_NAME;
     """
 
     create_sql = "SHOW CREATE TABLE `#{String.replace(table_name, "`", "``")}`"
 
-    with {:ok, columns_result} <- DatabaseClient.query_and_normalize(conn, columns_sql),
-         {:ok, constraints_result} <- DatabaseClient.query_and_normalize(conn, constraints_sql),
-         {:ok, fk_result} <- DatabaseClient.query_and_normalize(conn, fk_sql),
-         {:ok, size_result} <- DatabaseClient.query_and_normalize(conn, size_sql),
-         {:ok, check_result} <- DatabaseClient.query_and_normalize(conn, check_sql),
-         {:ok, indexes_result} <- DatabaseClient.query_and_normalize(conn, indexes_sql),
+    with {:ok, columns_result} <- DatabaseClient.query_and_normalize(conn, columns_sql, params),
+         {:ok, constraints_result} <-
+           DatabaseClient.query_and_normalize(conn, constraints_sql, params),
+         {:ok, fk_result} <- DatabaseClient.query_and_normalize(conn, fk_sql, params),
+         {:ok, size_result} <- DatabaseClient.query_and_normalize(conn, size_sql, params),
+         {:ok, check_result} <- DatabaseClient.query_and_normalize(conn, check_sql, params),
+         {:ok, indexes_result} <- DatabaseClient.query_and_normalize(conn, indexes_sql, params),
          {:ok, referenced_by_result} <-
-           DatabaseClient.query_and_normalize(conn, referenced_by_sql),
+           DatabaseClient.query_and_normalize(conn, referenced_by_sql, params),
          {:ok, create_result} <- DatabaseClient.query_and_normalize(conn, create_sql) do
       create_statement =
         case create_result.rows do
@@ -318,13 +316,11 @@ defmodule Melocoton.Engines.Mysql do
 
   @impl true
   def get_estimated_count(conn, table_name) do
-    escaped = escape_literal(table_name)
-
     sql =
-      "SELECT TABLE_ROWS AS count FROM information_schema.TABLES WHERE TABLE_NAME = '#{escaped}' AND TABLE_SCHEMA = DATABASE()"
+      "SELECT TABLE_ROWS AS count FROM information_schema.TABLES WHERE TABLE_NAME = ? AND TABLE_SCHEMA = DATABASE()"
 
-    case DatabaseClient.query(conn, sql) do
-      {:ok, %{rows: [%{"count" => count}]}, _} when not is_nil(count) and count >= 0 ->
+    case DatabaseClient.query_and_normalize(conn, sql, [table_name]) do
+      {:ok, %{rows: [%{"count" => count}]}} when not is_nil(count) and count >= 0 ->
         count
 
       _ ->

@@ -3,7 +3,7 @@ defmodule Melocoton.Engines.Sqlite do
 
   alias Melocoton.{Connection, DatabaseClient}
   alias Melocoton.Engines.{TableMeta, TableStructure}
-  import Connection, only: [escape_literal: 1, quote_identifier: 1]
+  import Connection, only: [quote_identifier: 1]
 
   @impl true
   def get_tables(conn) do
@@ -91,17 +91,15 @@ defmodule Melocoton.Engines.Sqlite do
 
   @impl true
   def get_table_structure(conn, table_name) do
-    escaped = escape_literal(table_name)
     quoted = quote_identifier(table_name)
 
-    create_sql =
-      "SELECT sql FROM sqlite_schema WHERE type = 'table' AND name = '#{escaped}'"
-
+    create_sql = "SELECT sql FROM sqlite_schema WHERE type = 'table' AND name = ?"
     columns_sql = "PRAGMA table_info(#{quoted})"
     fk_sql = "PRAGMA foreign_key_list(#{quoted})"
     index_sql = "PRAGMA index_list(#{quoted})"
 
-    with {:ok, create_result} <- DatabaseClient.query_and_normalize(conn, create_sql),
+    with {:ok, create_result} <-
+           DatabaseClient.query_and_normalize(conn, create_sql, [table_name]),
          {:ok, columns_result} <- DatabaseClient.query_and_normalize(conn, columns_sql),
          {:ok, fk_result} <- DatabaseClient.query_and_normalize(conn, fk_sql),
          {:ok, index_result} <- DatabaseClient.query_and_normalize(conn, index_sql) do
@@ -193,10 +191,9 @@ defmodule Melocoton.Engines.Sqlite do
   end
 
   defp get_referenced_by(conn, table_name) do
-    tables_sql =
-      "SELECT name FROM sqlite_master WHERE type = 'table' AND name != '#{escape_literal(table_name)}'"
+    tables_sql = "SELECT name FROM sqlite_master WHERE type = 'table' AND name != ?"
 
-    case DatabaseClient.query_and_normalize(conn, tables_sql) do
+    case DatabaseClient.query_and_normalize(conn, tables_sql, [table_name]) do
       {:ok, %{rows: rows}} ->
         Enum.flat_map(rows, fn %{"name" => other_table} ->
           fk_sql = "PRAGMA foreign_key_list(#{quote_identifier(other_table)})"
