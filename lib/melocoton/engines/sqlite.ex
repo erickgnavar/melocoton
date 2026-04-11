@@ -53,17 +53,9 @@ defmodule Melocoton.Engines.Sqlite do
   def get_indexes(conn) do
     sql = "SELECT name, tbl_name FROM sqlite_master WHERE type = 'index';"
 
-    case Connection.query(conn, sql) do
-      {:ok, %{rows: rows}} ->
-        rows
-        |> Enum.map(fn [name, table] ->
-          %{name: name, table: table}
-        end)
-        |> then(&{:ok, &1})
-
-      {:error, error} ->
-        {:error, error}
-    end
+    conn
+    |> Connection.query(sql)
+    |> DatabaseClient.map_rows(fn [name, table] -> %{name: name, table: table} end)
   end
 
   @impl true
@@ -275,18 +267,9 @@ defmodule Melocoton.Engines.Sqlite do
     ORDER BY tbl_name, name;
     """
 
-    case Connection.query(conn, sql) do
-      {:ok, %{rows: rows}} ->
-        triggers =
-          Enum.map(rows, fn [name, table] ->
-            %{id: name, name: name, table: table}
-          end)
-
-        {:ok, triggers}
-
-      {:error, error} ->
-        {:error, error}
-    end
+    conn
+    |> Connection.query(sql)
+    |> DatabaseClient.map_rows(fn [name, table] -> %{id: name, name: name, table: table} end)
   end
 
   @impl true

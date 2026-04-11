@@ -89,17 +89,9 @@ defmodule Melocoton.Engines.Postgres do
           indexname;
     """
 
-    case Connection.query(conn, sql) do
-      {:ok, %{rows: rows}} ->
-        rows
-        |> Enum.map(fn [name, table] ->
-          %{name: name, table: table}
-        end)
-        |> then(&{:ok, &1})
-
-      {:error, error} ->
-        {:error, error}
-    end
+    conn
+    |> Connection.query(sql)
+    |> DatabaseClient.map_rows(fn [name, table] -> %{name: name, table: table} end)
   end
 
   @impl true
@@ -394,23 +386,16 @@ defmodule Melocoton.Engines.Postgres do
     ORDER BY kcu.table_name, kcu.column_name
     """
 
-    case DatabaseClient.query_and_normalize(conn, sql) do
-      {:ok, %{rows: rows}} ->
-        relations =
-          Enum.map(rows, fn row ->
-            %{
-              from_table: row["from_table"],
-              from_column: row["from_column"],
-              to_table: row["to_table"],
-              to_column: row["to_column"]
-            }
-          end)
-
-        {:ok, relations}
-
-      {:error, error} ->
-        {:error, error}
-    end
+    conn
+    |> DatabaseClient.query_and_normalize(sql)
+    |> DatabaseClient.map_rows(fn row ->
+      %{
+        from_table: row["from_table"],
+        from_column: row["from_column"],
+        to_table: row["to_table"],
+        to_column: row["to_column"]
+      }
+    end)
   end
 
   @impl true
@@ -432,26 +417,19 @@ defmodule Melocoton.Engines.Postgres do
     ORDER BY n.nspname, p.proname;
     """
 
-    case DatabaseClient.query_and_normalize(conn, sql) do
-      {:ok, %{rows: rows}} ->
-        functions =
-          Enum.map(rows, fn row ->
-            %{
-              id: row["id"],
-              schema: row["schema"],
-              name: row["name"],
-              kind: if(row["kind"] == "procedure", do: :procedure, else: :function),
-              return_type: row["return_type"],
-              arguments: row["arguments"],
-              language: row["language"]
-            }
-          end)
-
-        {:ok, functions}
-
-      {:error, error} ->
-        {:error, error}
-    end
+    conn
+    |> DatabaseClient.query_and_normalize(sql)
+    |> DatabaseClient.map_rows(fn row ->
+      %{
+        id: row["id"],
+        schema: row["schema"],
+        name: row["name"],
+        kind: if(row["kind"] == "procedure", do: :procedure, else: :function),
+        return_type: row["return_type"],
+        arguments: row["arguments"],
+        language: row["language"]
+      }
+    end)
   end
 
   @impl true
@@ -480,18 +458,11 @@ defmodule Melocoton.Engines.Postgres do
     ORDER BY c.relname, t.tgname;
     """
 
-    case DatabaseClient.query_and_normalize(conn, sql) do
-      {:ok, %{rows: rows}} ->
-        triggers =
-          Enum.map(rows, fn row ->
-            %{id: row["id"], name: row["name"], table: row["table"]}
-          end)
-
-        {:ok, triggers}
-
-      {:error, error} ->
-        {:error, error}
-    end
+    conn
+    |> DatabaseClient.query_and_normalize(sql)
+    |> DatabaseClient.map_rows(fn row ->
+      %{id: row["id"], name: row["name"], table: row["table"]}
+    end)
   end
 
   @impl true

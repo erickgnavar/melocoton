@@ -239,4 +239,32 @@ defmodule Melocoton.DatabaseClientTest do
       %{rows: [%{"n" => nil}]} = DatabaseClient.handle_response(result)
     end
   end
+
+  describe "map_rows/2" do
+    test "maps every row when the input is ok (map rows)" do
+      input = {:ok, %{rows: [%{"name" => "a"}, %{"name" => "b"}]}}
+
+      assert {:ok, ["a", "b"]} = DatabaseClient.map_rows(input, & &1["name"])
+    end
+
+    test "maps every row when the input is ok (tuple/list rows)" do
+      input = {:ok, %{rows: [[1, "a"], [2, "b"]]}}
+
+      assert {:ok, [%{id: 1, name: "a"}, %{id: 2, name: "b"}]} =
+               DatabaseClient.map_rows(input, fn [id, name] -> %{id: id, name: name} end)
+    end
+
+    test "preserves an empty row list" do
+      assert {:ok, []} = DatabaseClient.map_rows({:ok, %{rows: []}}, & &1)
+    end
+
+    test "passes errors through unchanged" do
+      assert {:error, :boom} = DatabaseClient.map_rows({:error, :boom}, & &1)
+    end
+
+    test "does not invoke the mapper on error" do
+      mapper = fn _ -> flunk("mapper should not be called") end
+      assert {:error, :oops} = DatabaseClient.map_rows({:error, :oops}, mapper)
+    end
+  end
 end

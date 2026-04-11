@@ -112,6 +112,19 @@ defmodule Melocoton.DatabaseClient do
   end
 
   @doc """
+  Maps each row of a query result through `fun`, preserving the
+  `{:ok, list} | {:error, reason}` shape.
+
+  Accepts either a raw `Connection.query/3` result (rows as tuples /
+  lists) or a `query_and_normalize/3` result (rows as maps).
+  """
+  def map_rows({:ok, %{rows: rows}}, fun) when is_function(fun, 1) do
+    {:ok, Enum.map(rows, fun)}
+  end
+
+  def map_rows({:error, _} = error, _fun), do: error
+
+  @doc """
   Normalizes a query result into a map with `cols`, `rows`, and `num_rows`.
 
   Accepts an optional `column_types` map (`%{"col_name" => "type_name"}`)
