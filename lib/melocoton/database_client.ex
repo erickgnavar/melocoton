@@ -46,6 +46,14 @@ defmodule Melocoton.DatabaseClient do
   @spec get_indexes(Connection.t()) :: {:ok, [map]} | {:error, String.t()}
   def get_indexes(%Connection{type: type} = conn), do: engine(type).get_indexes(conn)
 
+  @spec get_functions(Connection.t()) :: {:ok, [map]} | {:error, String.t()}
+  def get_functions(%Connection{type: type} = conn), do: engine(type).get_functions(conn)
+
+  @spec get_function_definition(Connection.t(), String.t()) ::
+          {:ok, String.t()} | {:error, String.t()}
+  def get_function_definition(%Connection{type: type} = conn, id),
+    do: engine(type).get_function_definition(conn, id)
+
   @spec get_table_meta(Connection.t(), String.t()) :: Melocoton.Engines.TableMeta.t()
   def get_table_meta(%Connection{type: type} = conn, table_name),
     do: engine(type).get_table_meta(conn, table_name)

@@ -8,6 +8,15 @@ defmodule Melocoton.Behaviours.Engine do
 
   @typep repo :: atom
   @typep index :: %{name: String.t(), table: String.t()}
+  @typep function_summary :: %{
+           id: String.t(),
+           name: String.t(),
+           schema: String.t() | nil,
+           kind: :function | :procedure,
+           return_type: String.t() | nil,
+           arguments: String.t() | nil,
+           language: String.t() | nil
+         }
 
   @doc """
   Return all the existing tables and columns inside the given
@@ -41,6 +50,18 @@ defmodule Melocoton.Behaviours.Engine do
   Return all foreign key relations across the entire database.
   """
   @callback get_all_relations(repo) :: {:ok, [map]} | {:error, String.t()}
+
+  @doc """
+  Return all user-defined functions and stored procedures in the database.
+  """
+  @callback get_functions(repo) :: {:ok, [function_summary]} | {:error, String.t()}
+
+  @doc """
+  Return the full definition (source/DDL) of a function or stored procedure,
+  identified by the engine-specific id returned by `get_functions/1`.
+  """
+  @callback get_function_definition(repo, String.t()) ::
+              {:ok, String.t()} | {:error, String.t()}
 
   @doc """
   Validate if we can connect with the received database

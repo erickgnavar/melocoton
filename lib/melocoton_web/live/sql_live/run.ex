@@ -36,6 +36,7 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> assign(:conn, conn)
     |> assign_async(:tables, fn -> get_tables(conn, liveview_pid) end)
     |> assign_async(:indexes, fn -> get_indexes(conn) end)
+    |> assign_async(:functions, fn -> get_functions(conn) end)
     |> assign(:database, database)
     |> assign(:tabs, tabs)
     |> assign(:active_tab_index, 0)
@@ -134,6 +135,30 @@ defmodule MelocotonWeb.SQLLive.Run do
   def handle_event("next-session", _params, socket), do: cycle_tab(socket, 1)
   def handle_event("prev-session", _params, socket), do: cycle_tab(socket, -1)
 
+  def handle_event(
+        "set-function-explorer",
+        %{"id" => id, "name" => name, "kind" => kind},
+        socket
+      ) do
+    tabs = socket.assigns.tabs
+
+    case Enum.find_index(tabs, &(&1.type == :function and &1.function_id == id)) do
+      nil ->
+        new_tab = %{type: :function, function_id: id, function_name: name, function_kind: kind}
+        tabs = tabs ++ [new_tab]
+
+        socket
+        |> assign(:tabs, tabs)
+        |> assign(:active_tab_index, length(tabs) - 1)
+        |> noreply()
+
+      existing_index ->
+        socket
+        |> assign(:active_tab_index, existing_index)
+        |> noreply()
+    end
+  end
+
   def handle_event("set-table-explorer", %{"table" => ""}, socket), do: noreply(socket)
 
   def handle_event("set-table-explorer", %{"table" => table_name}, socket) do
@@ -224,6 +249,7 @@ defmodule MelocotonWeb.SQLLive.Run do
     socket
     |> assign_async(:tables, fn -> get_tables(conn, liveview_pid) end)
     |> assign_async(:indexes, fn -> get_indexes(conn) end)
+    |> assign_async(:functions, fn -> get_functions(conn) end)
     |> noreply()
   end
 
@@ -542,6 +568,13 @@ defmodule MelocotonWeb.SQLLive.Run do
   defp get_indexes(conn) do
     case DatabaseClient.get_indexes(conn) do
       {:ok, indexes} -> {:ok, %{indexes: indexes}}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  defp get_functions(conn) do
+    case DatabaseClient.get_functions(conn) do
+      {:ok, functions} -> {:ok, %{functions: functions}}
       {:error, error} -> {:error, error}
     end
   end

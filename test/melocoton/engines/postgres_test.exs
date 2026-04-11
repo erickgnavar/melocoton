@@ -14,7 +14,9 @@ defmodule Melocoton.Engines.PostgresTest do
     "CREATE INDEX idx_posts_user_id ON posts(user_id)",
     "INSERT INTO users (name, email) VALUES ('Alice', 'alice@example.com')",
     "INSERT INTO users (name, email) VALUES ('Bob', 'bob@example.com')",
-    "INSERT INTO posts (user_id, title, body) VALUES (1, 'Hello', 'World')"
+    "INSERT INTO posts (user_id, title, body) VALUES (1, 'Hello', 'World')",
+    "CREATE FUNCTION add_ints(a integer, b integer) RETURNS integer AS $$ SELECT a + b $$ LANGUAGE sql",
+    "CREATE PROCEDURE noop_proc() LANGUAGE sql AS $$ SELECT 1 $$"
   ]
 
   setup_all do
@@ -188,6 +190,54 @@ defmodule Melocoton.Engines.PostgresTest do
     test "returns error for invalid SQL", %{conn: conn} do
       {:error, message} = DatabaseClient.query(conn, "SELECT * FROM nonexistent_table")
       assert is_binary(message)
+    end
+  end
+
+  describe "get_functions/1" do
+    test "returns user-defined functions and procedures", %{conn: conn} do
+      {:ok, functions} = Postgres.get_functions(conn)
+
+      names = Enum.map(functions, & &1.name)
+      assert "add_ints" in names
+      assert "noop_proc" in names
+    end
+
+    test "excludes pg_catalog and information_schema routines", %{conn: conn} do
+      {:ok, functions} = Postgres.get_functions(conn)
+
+      schemas = functions |> Enum.map(& &1.schema) |> Enum.uniq()
+      refute "pg_catalog" in schemas
+      refute "information_schema" in schemas
+    end
+
+    test "tags kind, return type and id", %{conn: conn} do
+      {:ok, functions} = Postgres.get_functions(conn)
+
+      fn_add = Enum.find(functions, &(&1.name == "add_ints"))
+      assert fn_add.kind == :function
+      assert fn_add.return_type =~ "integer"
+      assert fn_add.arguments =~ "a integer"
+      assert is_binary(fn_add.id) and fn_add.id != ""
+
+      proc = Enum.find(functions, &(&1.name == "noop_proc"))
+      assert proc.kind == :procedure
+    end
+  end
+
+  describe "get_function_definition/2" do
+    test "returns full definition for a function", %{conn: conn} do
+      {:ok, functions} = Postgres.get_functions(conn)
+      fn_add = Enum.find(functions, &(&1.name == "add_ints"))
+
+      {:ok, definition} = Postgres.get_function_definition(conn, fn_add.id)
+
+      assert definition =~ "FUNCTION"
+      assert definition =~ "add_ints"
+      assert definition =~ "a + b"
+    end
+
+    test "returns error for unknown oid", %{conn: conn} do
+      assert {:error, _} = Postgres.get_function_definition(conn, "0")
     end
   end
 end

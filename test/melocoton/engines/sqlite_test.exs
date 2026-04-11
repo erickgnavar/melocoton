@@ -263,4 +263,16 @@ defmodule Melocoton.Engines.SqliteTest do
       assert is_binary(message)
     end
   end
+
+  describe "get_functions/1" do
+    test "returns an empty list (SQLite has no stored functions)", %{conn: conn} do
+      assert {:ok, []} = Sqlite.get_functions(conn)
+    end
+  end
+
+  describe "get_function_definition/2" do
+    test "returns an error", %{conn: conn} do
+      assert {:error, _} = Sqlite.get_function_definition(conn, "anything")
+    end
+  end
 end

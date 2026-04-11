@@ -359,5 +359,58 @@ defmodule Melocoton.Engines.Postgres do
   end
 
   @impl true
+  def get_functions(conn) do
+    sql = """
+    SELECT
+      p.oid::text AS id,
+      n.nspname AS schema,
+      p.proname AS name,
+      CASE p.prokind WHEN 'p' THEN 'procedure' ELSE 'function' END AS kind,
+      pg_get_function_result(p.oid) AS return_type,
+      pg_get_function_arguments(p.oid) AS arguments,
+      l.lanname AS language
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    JOIN pg_language l ON l.oid = p.prolang
+    WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
+      AND p.prokind IN ('f', 'p')
+    ORDER BY n.nspname, p.proname;
+    """
+
+    case DatabaseClient.query_and_normalize(conn, sql) do
+      {:ok, %{rows: rows}} ->
+        functions =
+          Enum.map(rows, fn row ->
+            %{
+              id: row["id"],
+              schema: row["schema"],
+              name: row["name"],
+              kind: if(row["kind"] == "procedure", do: :procedure, else: :function),
+              return_type: row["return_type"],
+              arguments: row["arguments"],
+              language: row["language"]
+            }
+          end)
+
+        {:ok, functions}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  @impl true
+  def get_function_definition(conn, id) do
+    escaped = escape_literal(id)
+    sql = "SELECT pg_get_functiondef('#{escaped}'::oid) AS definition"
+
+    case DatabaseClient.query_and_normalize(conn, sql) do
+      {:ok, %{rows: [%{"definition" => def} | _]}} when is_binary(def) -> {:ok, def}
+      {:ok, _} -> {:error, "Function not found"}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  @impl true
   def test_connection(database), do: DatabaseClient.test_connection_via_query(database)
 end

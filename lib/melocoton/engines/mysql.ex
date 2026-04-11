@@ -366,5 +366,68 @@ defmodule Melocoton.Engines.Mysql do
   end
 
   @impl true
+  def get_functions(conn) do
+    sql = """
+    SELECT
+      CONCAT(ROUTINE_TYPE, '::', ROUTINE_NAME) AS id,
+      ROUTINE_SCHEMA AS `schema`,
+      ROUTINE_NAME AS name,
+      LOWER(ROUTINE_TYPE) AS kind,
+      DTD_IDENTIFIER AS return_type,
+      EXTERNAL_LANGUAGE AS language
+    FROM information_schema.ROUTINES
+    WHERE ROUTINE_SCHEMA = DATABASE()
+    ORDER BY ROUTINE_NAME;
+    """
+
+    case DatabaseClient.query_and_normalize(conn, sql) do
+      {:ok, %{rows: rows}} ->
+        functions =
+          Enum.map(rows, fn row ->
+            %{
+              id: row["id"],
+              schema: row["schema"],
+              name: row["name"],
+              kind: if(row["kind"] == "procedure", do: :procedure, else: :function),
+              return_type: row["return_type"],
+              arguments: nil,
+              language: row["language"]
+            }
+          end)
+
+        {:ok, functions}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  @impl true
+  def get_function_definition(conn, id) do
+    case String.split(id, "::", parts: 2) do
+      [routine_type, name] when routine_type in ["FUNCTION", "PROCEDURE"] ->
+        quoted_name = "`" <> String.replace(name, "`", "``") <> "`"
+        sql = "SHOW CREATE #{routine_type} #{quoted_name}"
+
+        case DatabaseClient.query_and_normalize(conn, sql) do
+          {:ok, %{rows: [row | _]}} ->
+            column =
+              if routine_type == "FUNCTION", do: "Create Function", else: "Create Procedure"
+
+            {:ok, Map.get(row, column) || ""}
+
+          {:ok, _} ->
+            {:error, "Routine not found"}
+
+          {:error, error} ->
+            {:error, error}
+        end
+
+      _ ->
+        {:error, "Invalid function id"}
+    end
+  end
+
+  @impl true
   def test_connection(database), do: DatabaseClient.test_connection_via_query(database)
 end

@@ -17,8 +17,21 @@ defmodule Melocoton.Engines.MysqlTest do
     "INSERT INTO posts (user_id, title, body) VALUES (1, 'Hello', 'World')"
   ]
 
+  # NOTE: CREATE FUNCTION requires SUPER privilege when binary logging is
+  # enabled (which the testcontainers image enables by default), and the
+  # test user lacks it. Procedures are not subject to that restriction and
+  # exercise the same `get_functions/1` query path.
+  @routine_sql [
+    "CREATE PROCEDURE noop_proc() SELECT 1"
+  ]
+
   setup_all do
     {container, conn} = ContainerHelper.start_mysql(@seed_sql)
+
+    for sql <- @routine_sql do
+      {:ok, _} = MyXQL.query(conn.pid, sql, [], query_type: :text)
+    end
+
     conn_params = Testcontainers.MySqlContainer.connection_parameters(container)
 
     url =
@@ -207,6 +220,29 @@ defmodule Melocoton.Engines.MysqlTest do
     test "returns error for invalid SQL", %{conn: conn} do
       {:error, message} = DatabaseClient.query(conn, "SELECT * FROM nonexistent_table")
       assert is_binary(message)
+    end
+  end
+
+  describe "get_functions/1" do
+    test "returns stored procedures", %{conn: conn} do
+      {:ok, functions} = Mysql.get_functions(conn)
+
+      proc = Enum.find(functions, &(&1.name == "noop_proc"))
+      assert proc != nil
+      assert proc.kind == :procedure
+      assert proc.id == "PROCEDURE::noop_proc"
+    end
+  end
+
+  describe "get_function_definition/2" do
+    test "returns SHOW CREATE output for a procedure", %{conn: conn} do
+      {:ok, definition} = Mysql.get_function_definition(conn, "PROCEDURE::noop_proc")
+
+      assert definition =~ "noop_proc"
+    end
+
+    test "returns error for malformed id", %{conn: conn} do
+      assert {:error, _} = Mysql.get_function_definition(conn, "not-a-valid-id")
     end
   end
 end

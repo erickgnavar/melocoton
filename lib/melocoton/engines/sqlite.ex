@@ -263,6 +263,13 @@ defmodule Melocoton.Engines.Sqlite do
   end
 
   @impl true
+  def get_functions(_conn), do: {:ok, []}
+
+  @impl true
+  def get_function_definition(_conn, _id),
+    do: {:error, "SQLite does not support stored functions"}
+
+  @impl true
   def test_connection(database) do
     if File.exists?(database.url) do
       :ok
