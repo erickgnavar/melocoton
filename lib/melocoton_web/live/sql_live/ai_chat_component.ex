@@ -275,11 +275,5 @@ defmodule MelocotonWeb.SqlLive.AiChatComponent do
     |> Phoenix.HTML.raw()
   end
 
-  defp render_sql_highlighted(sql) do
-    "```sql\n#{sql}\n```"
-    |> MDEx.to_html!()
-    |> Phoenix.HTML.raw()
-  end
-
   defp notify_parent(msg), do: send(self(), {__MODULE__, msg})
 end

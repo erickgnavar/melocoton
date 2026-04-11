@@ -210,9 +210,7 @@
                 <%= case part do %>
                   <% {:sql, sql} -> %>
                     <div class="my-1.5">
-                      <div class="ai-sql-block rounded text-[10px] overflow-hidden">
-                        {render_sql_highlighted(sql)}
-                      </div>
+                      <.sql_block sql={sql} class="text-[10px]" />
                       <div class="flex gap-1 mt-1">
                         <button
                           phx-click="insert-sql"

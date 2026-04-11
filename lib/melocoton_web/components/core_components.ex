@@ -719,6 +719,23 @@ defmodule MelocotonWeb.CoreComponents do
     """
   end
 
+  @doc """
+  Renders a read-only SQL snippet with syntax highlighting.
+
+  The SQL is wrapped in a fenced markdown block and rendered through
+  MDEx so it picks up the same highlighting theme as the AI chat panel.
+  """
+  attr :sql, :string, required: true
+  attr :class, :any, default: "text-xs"
+
+  def sql_block(assigns) do
+    ~H"""
+    <div class={["ai-sql-block rounded overflow-hidden", @class]}>
+      {"```sql\n#{@sql}\n```" |> MDEx.to_html!() |> Phoenix.HTML.raw()}
+    </div>
+    """
+  end
+
   ## JS Commands
 
   def show(js \\ %JS{}, selector) do

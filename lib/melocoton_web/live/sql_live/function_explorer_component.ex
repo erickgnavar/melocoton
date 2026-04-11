@@ -33,9 +33,7 @@ defmodule MelocotonWeb.SqlLive.FunctionExplorerComponent do
       <div class="flex-1 overflow-auto p-3">
         <%= case @result do %>
           <% {:ok, definition} -> %>
-            <div class="ai-sql-block rounded text-xs overflow-hidden">
-              {"```sql\n#{definition}\n```" |> MDEx.to_html!() |> Phoenix.HTML.raw()}
-            </div>
+            <.sql_block sql={definition} />
           <% {:error, err} -> %>
             <div class="text-xs text-red-500">{err}</div>
         <% end %>
