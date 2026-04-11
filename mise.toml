@@ -1,6 +1,6 @@
 [tools]
 elixir = "1.19.5-otp-28"
 erlang = "28.4.1"
-nodejs = "20.3.1"
+nodejs = "24.14.1"
 zig = "0.15.2"
 rust = "1.94"
