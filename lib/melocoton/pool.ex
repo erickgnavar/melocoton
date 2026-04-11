@@ -28,6 +28,24 @@ defmodule Melocoton.Pool do
     end
   end
 
+  def handle_call({:release, database_id}, _from, state) do
+    case Map.pop(state, database_id) do
+      {nil, state} ->
+        {:reply, :ok, state}
+
+      {%Connection{pid: pid}, state} ->
+        if Process.alive?(pid) do
+          try do
+            GenServer.stop(pid, :normal, 1_000)
+          catch
+            :exit, _ -> :ok
+          end
+        end
+
+        {:reply, :ok, state}
+    end
+  end
+
   @impl true
   def handle_info(:health_check, state) do
     new_state =
@@ -55,6 +73,15 @@ defmodule Melocoton.Pool do
   end
 
   def get_repo(database), do: GenServer.call(__MODULE__, {:get_conn, database})
+
+  @doc """
+  Stops the cached connection for `database_id` and removes it from the pool.
+
+  Called when a LiveView terminates so that DBConnection pool workers stop
+  retrying against a backend the user no longer cares about, instead of
+  spamming logs with reconnection attempts.
+  """
+  def release(database_id), do: GenServer.call(__MODULE__, {:release, database_id})
 
   defp start_connection(%{type: :postgres, url: url}) do
     opts = Ecto.Repo.Supervisor.parse_url(url)

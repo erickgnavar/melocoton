@@ -65,4 +65,68 @@ defmodule Melocoton.PoolTest do
       assert :sys.get_state(Melocoton.Pool) == %{}
     end
   end
+
+  describe "release/1" do
+    setup do
+      on_exit(fn -> :sys.replace_state(Melocoton.Pool, fn _ -> %{} end) end)
+      :ok
+    end
+
+    test "stops the cached connection and removes it from state" do
+      {:ok, pid} = Agent.start(fn -> :ok end)
+
+      :sys.replace_state(Melocoton.Pool, fn _ ->
+        %{42 => %Connection{pid: pid, type: :sqlite}}
+      end)
+
+      ref = Process.monitor(pid)
+
+      assert :ok = Melocoton.Pool.release(42)
+
+      assert_receive {:DOWN, ^ref, :process, ^pid, _}, 500
+      refute Process.alive?(pid)
+      refute Map.has_key?(:sys.get_state(Melocoton.Pool), 42)
+    end
+
+    test "is a no-op when the id is not cached" do
+      :sys.replace_state(Melocoton.Pool, fn _ -> %{} end)
+
+      assert :ok = Melocoton.Pool.release(999)
+      assert :sys.get_state(Melocoton.Pool) == %{}
+    end
+
+    test "tolerates an already-dead cached pid" do
+      dead_pid = spawn(fn -> :ok end)
+      ref = Process.monitor(dead_pid)
+      assert_receive {:DOWN, ^ref, :process, ^dead_pid, _}
+
+      :sys.replace_state(Melocoton.Pool, fn _ ->
+        %{7 => %Connection{pid: dead_pid, type: :sqlite}}
+      end)
+
+      assert :ok = Melocoton.Pool.release(7)
+      refute Map.has_key?(:sys.get_state(Melocoton.Pool), 7)
+    end
+
+    test "only releases the requested id" do
+      {:ok, keep_pid} = Agent.start(fn -> :ok end)
+      {:ok, drop_pid} = Agent.start(fn -> :ok end)
+
+      :sys.replace_state(Melocoton.Pool, fn _ ->
+        %{
+          1 => %Connection{pid: keep_pid, type: :sqlite},
+          2 => %Connection{pid: drop_pid, type: :sqlite}
+        }
+      end)
+
+      assert :ok = Melocoton.Pool.release(2)
+
+      state = :sys.get_state(Melocoton.Pool)
+      assert Map.has_key?(state, 1)
+      refute Map.has_key?(state, 2)
+      assert Process.alive?(keep_pid)
+
+      GenServer.stop(keep_pid)
+    end
+  end
 end

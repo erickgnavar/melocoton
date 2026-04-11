@@ -64,6 +64,14 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> ok()
   end
 
+  @impl true
+  def terminate(_reason, socket) do
+    case socket.assigns[:database] do
+      %{id: id} -> Pool.release(id)
+      _ -> :ok
+    end
+  end
+
   defp empty_result do
     %{cols: [], rows: [], num_rows: 0}
   end
