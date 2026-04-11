@@ -195,6 +195,7 @@ defmodule Melocoton.Engines.PostgresTest do
       assert Postgres.test_connection(database) == :ok
     end
 
+    @tag :capture_log
     test "returns error for invalid connection" do
       :sys.replace_state(Melocoton.Pool, fn _ -> %{} end)
       database = %{id: :test_pg_bad, type: :postgres, url: "postgres://localhost:1/nonexistent"}

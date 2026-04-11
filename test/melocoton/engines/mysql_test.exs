@@ -192,6 +192,7 @@ defmodule Melocoton.Engines.MysqlTest do
       assert Mysql.test_connection(database) == :ok
     end
 
+    @tag :capture_log
     test "returns error for invalid connection" do
       :sys.replace_state(Melocoton.Pool, fn _ -> %{} end)
       database = %{id: :test_mysql_bad, type: :mysql, url: "mysql://localhost:1/nonexistent"}
