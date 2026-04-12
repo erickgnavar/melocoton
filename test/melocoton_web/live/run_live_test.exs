@@ -1074,7 +1074,9 @@ defmodule MelocotonWeb.SQLLive.RunTest do
       html = open_structure_tab(live_view, "users")
 
       assert html =~ "Create Statement"
-      assert html =~ "CREATE TABLE users"
+      assert html =~ "CREATE"
+      assert html =~ "TABLE"
+      assert html =~ "users"
     end
 
     test "shows primary key columns", %{conn: conn, database: database} do

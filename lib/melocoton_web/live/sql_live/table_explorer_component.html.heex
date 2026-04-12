@@ -675,10 +675,7 @@
               >
                 Create Statement
               </h3>
-              <pre
-                class="p-3 rounded overflow-x-auto text-xs"
-                style="background: var(--bg-tertiary); border: 1px solid var(--border-medium); color: var(--text-primary);"
-              >{structure.create_statement}</pre>
+              <.sql_block sql={structure.create_statement} />
             </div>
           <% end %>
 
