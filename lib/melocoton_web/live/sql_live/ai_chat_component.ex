@@ -271,7 +271,11 @@ defmodule MelocotonWeb.SqlLive.AiChatComponent do
   defp render_markdown(text) do
     text
     |> String.trim()
-    |> MDEx.to_html!(extension: [table: true], sanitize: MDEx.Document.default_sanitize_options())
+    |> MDEx.to_html!(
+      extension: [table: true],
+      syntax_highlight: [formatter: :html_linked],
+      sanitize: MDEx.Document.default_sanitize_options()
+    )
     |> Phoenix.HTML.raw()
   end
 

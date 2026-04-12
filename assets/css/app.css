@@ -586,3 +586,21 @@ tr.row-selected {
 
 /* Reset browser default pre margin inside AI chat SQL blocks */
 .ai-sql-block pre { margin: 0; }
+
+/* ===== Lumis syntax highlighting (class-based, theme-aware) ===== */
+pre.lumis {
+  color: var(--text-primary);
+  background-color: var(--bg-secondary);
+  padding: 0.5rem;
+}
+
+pre.lumis .keyword      { color: var(--syntax-keyword); }
+pre.lumis .type         { color: var(--syntax-table); }
+pre.lumis .number-float,
+pre.lumis .number       { color: var(--syntax-number); }
+pre.lumis .comment      { color: var(--syntax-comment); font-style: italic; }
+pre.lumis .string       { color: var(--syntax-string); }
+pre.lumis .operator,
+pre.lumis .punctuation-delimiter { color: var(--text-secondary); }
+pre.lumis .variable-member       { color: var(--text-primary); }
+pre.lumis .function     { color: var(--syntax-keyword); }

@@ -42,6 +42,10 @@ import {
 } from "@codemirror/autocomplete";
 import { format } from "sql-formatter";
 
+function isDarkTheme() {
+  return document.documentElement.getAttribute("data-theme") === "dark";
+}
+
 const formatOptions = {
   language: "sql",
   indent: "  ",
@@ -98,6 +102,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
         const that = this;
         const sqlExtensionCompartment = new Compartment();
         const vimCompartment = new Compartment();
+        const themeCompartment = new Compartment();
         // HACK: allow to load schema after receiving its value from
         // server once the database was inspected
         window.sqlExtensionCompartment = sqlExtensionCompartment;
@@ -175,7 +180,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
                 session: { query: updateView.state.doc.toString() },
               });
             }),
-            oneDark,
+            themeCompartment.of(isDarkTheme() ? oneDark : []),
           ],
         });
 
@@ -183,9 +188,20 @@ const liveSocket = new LiveSocket("/live", Socket, {
         // to reset editor content
         window.view = view;
 
+        this._themeListener = (e) => {
+          const dark = e.detail.theme === "dark";
+          view.dispatch({
+            effects: themeCompartment.reconfigure(dark ? oneDark : []),
+          });
+        };
+        window.addEventListener("theme-changed", this._themeListener);
+
         view.focus();
       },
       destroyed() {
+        if (this._themeListener) {
+          window.removeEventListener("theme-changed", this._themeListener);
+        }
         if (window.view) {
           window.view.destroy();
           window.view = null;
@@ -754,6 +770,9 @@ function applyTheme(preference) {
   const resolved = resolveTheme(preference);
   document.documentElement.setAttribute("data-theme", resolved);
   localStorage.setItem("theme", preference);
+  window.dispatchEvent(
+    new CustomEvent("theme-changed", { detail: { theme: resolved } }),
+  );
 }
 
 // Apply initial theme
