@@ -79,9 +79,61 @@ jobs:
             melocoton.rpm
             melocoton.AppImage
 
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Install mise
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri https://mise.run -OutFile mise-install.sh
+          bash mise-install.sh
+          echo "$env:USERPROFILE\.local\bin" | Out-File -Append -FilePath $env:GITHUB_PATH
+
+      - name: Prepare environment
+        shell: pwsh
+        run: |
+          mise install
+          mise exec -- mix local.hex --force
+          mise exec -- mix local.rebar --force
+
+      - name: Build project
+        shell: pwsh
+        run: |
+          mise exec -- mix deps.get
+          Remove-Item -Recurse -Force _build/prod -ErrorAction SilentlyContinue
+          Remove-Item -Recurse -Force burrito_out -ErrorAction SilentlyContinue
+          npm install --prefix assets
+          $env:MIX_ENV = "prod"
+          mise exec -- mix assets.deploy
+          $env:BURRITO_TARGET = "windows"
+          mise exec -- mix release
+          Copy-Item burrito_out\melocoton_windows.exe src-tauri\binaries\webserver.exe
+          Set-Location src-tauri
+          npm install
+          npx tauri build
+
+      - name: Collect artifacts
+        shell: pwsh
+        run: |
+          $msi = Get-ChildItem -Recurse src-tauri\target\release\bundle\msi\*.msi | Select-Object -First 1
+          $nsis = Get-ChildItem -Recurse src-tauri\target\release\bundle\nsis\*.exe | Select-Object -First 1
+          Copy-Item $msi.FullName melocoton.msi
+          Copy-Item $nsis.FullName melocoton-setup.exe
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-installers
+          path: |
+            melocoton.msi
+            melocoton-setup.exe
+
   publish-releases:
     runs-on: ubuntu-24.04
-    needs: [build-macos, build-linux]
+    needs: [build-macos, build-linux, build-windows]
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -99,6 +151,12 @@ jobs:
         with:
           name: linux-installers
           path: linux/
+
+      - name: Download windows artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: windows-installers
+          path: windows/
 
       - name: Generate release body
         id: changelog
@@ -129,6 +187,8 @@ jobs:
             linux/melocoton.deb
             linux/melocoton.rpm
             linux/melocoton.AppImage
+            windows/melocoton.msi
+            windows/melocoton-setup.exe
           token: ${{ secrets.CUSTOM_GITHUB_TOKEN }}
           draft: false
           make_latest: true

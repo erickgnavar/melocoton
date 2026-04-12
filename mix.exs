@@ -42,7 +42,8 @@ defmodule Melocoton.MixProject do
         burrito: [
           targets: [
             linux: [os: :linux, cpu: :x86_64],
-            macos: [os: :darwin, cpu: :aarch64]
+            macos: [os: :darwin, cpu: :aarch64],
+            windows: [os: :windows, cpu: :x86_64]
           ]
         ]
       ]
