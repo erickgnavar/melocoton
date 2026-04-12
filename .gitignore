@@ -65,3 +65,8 @@ dist-ssr
 *.sw?
 
 burrito_out/
+
+# Nix
+.nix-mix/
+.nix-hex/
+result

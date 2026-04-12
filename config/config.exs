@@ -25,6 +25,7 @@ config :melocoton, MelocotonWeb.Endpoint,
 # Configure esbuild (the version is required)
 config :esbuild,
   version: "0.17.11",
+  path: System.get_env("MIX_ESBUILD_PATH"),
   melocoton: [
     args:
       ~w(js/app.js --bundle --target=es2017 --outdir=../priv/static/assets --external:/fonts/* --external:/images/*),
@@ -35,6 +36,7 @@ config :esbuild,
 # Configure tailwind (the version is required)
 config :tailwind,
   version: "3.4.17",
+  path: System.get_env("MIX_TAILWIND_PATH"),
   melocoton: [
     args: ~w(
       --config=tailwind.config.js

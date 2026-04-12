@@ -36,17 +36,22 @@ defmodule Melocoton.MixProject do
   defp elixirc_paths(_), do: ["lib"]
 
   defp releases do
-    [
-      melocoton: [
-        steps: [:assemble, &Burrito.wrap/1],
-        burrito: [
-          targets: [
-            linux: [os: :linux, cpu: :x86_64],
-            macos: [os: :darwin, cpu: :aarch64]
+    burrito_opts =
+      if System.get_env("BURRITO_WRAP") == "false" do
+        [steps: [:assemble]]
+      else
+        [
+          steps: [:assemble, &Burrito.wrap/1],
+          burrito: [
+            targets: [
+              linux: [os: :linux, cpu: :x86_64],
+              macos: [os: :darwin, cpu: :aarch64]
+            ]
           ]
         ]
-      ]
-    ]
+      end
+
+    [melocoton: burrito_opts]
   end
 
   # Specifies your project dependencies.
