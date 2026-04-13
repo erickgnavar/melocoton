@@ -249,7 +249,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
     AiChatInput: {
       resize() {
         this.el.style.height = "auto";
-        this.el.style.height = `${this.el.scrollHeight} px`;
+        this.el.style.height = `${this.el.scrollHeight}px`;
       },
       mounted() {
         this.el.addEventListener("input", () => this.resize());
