@@ -313,21 +313,21 @@
     <form
       phx-submit="send-message"
       phx-target={@myself}
-      class="px-3 py-2 flex items-center gap-2 app-status-bar"
+      class="px-3 py-2 flex items-end gap-2 app-status-bar"
     >
-      <input
+      <textarea
         id="ai-chat-input"
-        type="text"
         name="message"
-        value={@input}
-        placeholder="Ask about your database..."
+        placeholder="Ask about your database... (Shift+Enter for new line)"
         autocomplete="off"
+        rows="1"
         disabled={@loading}
-        class="flex-1 px-2.5 py-1.5 text-xs rounded"
+        phx-hook="AiChatInput"
+        class="flex-1 px-2.5 py-1.5 text-xs rounded resize-none overflow-hidden"
         style="background: var(--bg-primary); border: 0.5px solid var(--border-medium); color: var(--text-primary);"
         phx-change="update-input"
         phx-target={@myself}
-      />
+      >{@input}</textarea>
       <button
         type="submit"
         disabled={@loading}

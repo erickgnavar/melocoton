@@ -246,6 +246,25 @@ const liveSocket = new LiveSocket("/live", Socket, {
         }
       },
     },
+    AiChatInput: {
+      resize() {
+        this.el.style.height = "auto";
+        this.el.style.height = `${this.el.scrollHeight} px`;
+      },
+      mounted() {
+        this.el.addEventListener("input", () => this.resize());
+        this.el.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
+            e.preventDefault();
+            this.el.form.requestSubmit();
+          }
+        });
+        this.resize();
+      },
+      updated() {
+        this.resize();
+      },
+    },
     AiChatScroll: {
       mounted() {
         this.scrollToBottom();
