@@ -4,25 +4,25 @@ defmodule Melocoton.AI do
   Uses ReqLLM for provider-agnostic LLM integration.
   """
 
-  alias Melocoton.DatabaseClient
-
   @doc """
   Sends a chat message to the configured LLM with database schema context.
 
+  `schema` is a map with `:type` (atom) and `:tables` (list).
+
   Returns `{:ok, response_text}` or `{:error, reason}`.
   """
-  def chat(conn, messages, opts \\ []) do
+  def chat(schema, messages, opts \\ []) do
     model_str = opts[:model] || get_in(Application.get_env(:melocoton, :ai, []), [:model])
 
     if is_nil(model_str) or model_str == "" do
       {:error, "No AI model configured. Go to Settings to set a model and API key."}
     else
-      do_chat(conn, messages, model_str)
+      do_chat(schema, messages, model_str)
     end
   end
 
-  defp do_chat(conn, messages, model_str) do
-    system_prompt = build_system_prompt(conn)
+  defp do_chat(schema, messages, model_str) do
+    system_prompt = build_system_prompt(schema)
 
     llm_messages =
       [%{role: "system", content: system_prompt}] ++
@@ -76,16 +76,18 @@ defmodule Melocoton.AI do
 
   @doc """
   Builds a system prompt with the full database schema for LLM context.
+
+  `schema` is a map with `:type` and `:tables`.
   """
-  def build_system_prompt(conn) do
+  def build_system_prompt(schema) do
     db_type =
-      case conn.type do
+      case schema.type do
         :postgres -> "PostgreSQL"
         :mysql -> "MySQL"
         :sqlite -> "SQLite"
       end
 
-    schema_text = build_schema_text(conn)
+    schema_text = build_schema_text(schema.tables)
 
     """
     You are a SQL assistant for a #{db_type} database.
@@ -102,21 +104,15 @@ defmodule Melocoton.AI do
     """
   end
 
-  defp build_schema_text(conn) do
-    case DatabaseClient.get_tables(conn) do
-      {:ok, tables} ->
-        table_descriptions =
-          Enum.map_join(tables, "\n\n", fn table ->
-            cols =
-              Enum.map_join(table.cols, "\n", fn col -> "    - #{col.name} (#{col.type})" end)
+  defp build_schema_text(tables) do
+    table_descriptions =
+      Enum.map_join(tables, "\n\n", fn table ->
+        cols =
+          Enum.map_join(table.cols, "\n", fn col -> "    - #{col.name} (#{col.type})" end)
 
-            "  Table: #{table.name}\n#{cols}"
-          end)
+        "  Table: #{table.name}\n#{cols}"
+      end)
 
-        "Database schema:\n#{table_descriptions}"
-
-      {:error, _} ->
-        "Database schema: unavailable"
-    end
+    "Database schema:\n#{table_descriptions}"
   end
 end

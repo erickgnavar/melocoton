@@ -36,7 +36,7 @@ defmodule MelocotonWeb.SqlLive.AiChatComponent do
     if socket.assigns[:database_id] && socket.assigns.database_id == assigns.database.id do
       # Same database — preserve state, only update parent-driven assigns
       socket
-      |> assign(repo: assigns.repo, database: assigns.database)
+      |> assign(database: assigns.database, tables: assigns.tables)
       |> ok()
     else
       # First mount or database changed — full init
@@ -209,8 +209,16 @@ defmodule MelocotonWeb.SqlLive.AiChatComponent do
   end
 
   defp send_message(socket, message) do
-    %{database_id: database_id, repo: repo, messages: messages, current_chat: chat} =
+    %{database_id: database_id, database: database, messages: messages, current_chat: chat} =
       socket.assigns
+
+    tables =
+      case socket.assigns.tables do
+        %{ok?: true, result: %{tables: t}} -> t
+        _ -> []
+      end
+
+    schema = %{type: database.type, tables: tables}
 
     {:ok, user_msg} =
       Databases.create_chat_message(%{
@@ -227,7 +235,7 @@ defmodule MelocotonWeb.SqlLive.AiChatComponent do
     messages = messages ++ [user_msg]
 
     Task.start(fn ->
-      case AI.chat(repo, messages) do
+      case AI.chat(schema, messages) do
         {:ok, text} ->
           {:ok, assistant_msg} =
             Databases.create_chat_message(%{

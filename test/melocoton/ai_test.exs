@@ -3,38 +3,38 @@ defmodule Melocoton.AITest do
 
   alias Melocoton.AI
 
-  defp create_test_conn do
-    db_path =
-      Path.join(System.tmp_dir!(), "melocoton_ai_test_#{System.unique_integer([:positive])}.db")
-
-    {:ok, db} = Exqlite.Sqlite3.open(db_path)
-    :ok = Exqlite.Sqlite3.execute(db, "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)")
-
-    :ok =
-      Exqlite.Sqlite3.execute(
-        db,
-        "CREATE TABLE posts (id INTEGER PRIMARY KEY, user_id INTEGER REFERENCES users(id), title TEXT)"
-      )
-
-    Exqlite.Sqlite3.close(db)
-
-    {:ok, pid} = DBConnection.start_link(Exqlite.Connection, database: db_path, pool_size: 1)
-    on_exit(fn -> File.rm(db_path) end)
-
-    %Melocoton.Connection{pid: pid, type: :sqlite}
+  defp test_schema do
+    %{
+      type: :sqlite,
+      tables: [
+        %{
+          name: "users",
+          cols: [
+            %{name: "id", type: "INTEGER"},
+            %{name: "name", type: "TEXT"}
+          ]
+        },
+        %{
+          name: "posts",
+          cols: [
+            %{name: "id", type: "INTEGER"},
+            %{name: "user_id", type: "INTEGER"},
+            %{name: "title", type: "TEXT"}
+          ]
+        }
+      ]
+    }
   end
 
   describe "build_system_prompt/1" do
     test "includes database type" do
-      conn = create_test_conn()
-      prompt = AI.build_system_prompt(conn)
+      prompt = AI.build_system_prompt(test_schema())
 
       assert prompt =~ "SQLite"
     end
 
     test "includes table names and columns" do
-      conn = create_test_conn()
-      prompt = AI.build_system_prompt(conn)
+      prompt = AI.build_system_prompt(test_schema())
 
       assert prompt =~ "Table: users"
       assert prompt =~ "id"
@@ -45,8 +45,7 @@ defmodule Melocoton.AITest do
     end
 
     test "includes SQL generation rules" do
-      conn = create_test_conn()
-      prompt = AI.build_system_prompt(conn)
+      prompt = AI.build_system_prompt(test_schema())
 
       assert prompt =~ "```sql code block"
       assert prompt =~ "foreign key"
@@ -55,26 +54,21 @@ defmodule Melocoton.AITest do
 
   describe "chat/3" do
     test "returns error when no model is configured" do
-      conn = create_test_conn()
-
       # Ensure no model is configured
       Application.delete_env(:melocoton, :ai)
 
       messages = [%{role: "user", content: "show me all users"}]
-      assert {:error, message} = AI.chat(conn, messages)
+      assert {:error, message} = AI.chat(test_schema(), messages)
       assert message =~ "No AI model configured"
     end
   end
 
   describe "build_system_prompt/1 with postgres type" do
     test "uses PostgreSQL label for postgres connections" do
-      # We can't easily create a real postgres connection in tests,
-      # but we can test the type detection logic
-      conn = create_test_conn()
-      assert conn.type == :sqlite
-      prompt = AI.build_system_prompt(conn)
-      assert prompt =~ "SQLite"
-      refute prompt =~ "PostgreSQL"
+      schema = %{test_schema() | type: :postgres}
+      prompt = AI.build_system_prompt(schema)
+      assert prompt =~ "PostgreSQL"
+      refute prompt =~ "SQLite"
     end
   end
 end
