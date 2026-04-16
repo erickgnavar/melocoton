@@ -88,11 +88,17 @@ defmodule Melocoton.AI do
       end
 
     schema_text = build_schema_text(schema.tables)
+    indexes_text = build_indexes_text(schema.indexes)
+    triggers_text = build_triggers_text(schema.triggers)
+    functions_text = build_functions_text(schema.functions)
 
     """
     You are a SQL assistant for a #{db_type} database.
 
     #{schema_text}
+    #{indexes_text}
+    #{triggers_text}
+    #{functions_text}
 
     Rules:
     - Generate valid #{db_type} SQL
@@ -114,5 +120,41 @@ defmodule Melocoton.AI do
       end)
 
     "Database schema:\n#{table_descriptions}"
+  end
+
+  defp build_indexes_text([]), do: ""
+
+  defp build_indexes_text(indexes) do
+    descriptions =
+      indexes
+      |> Enum.group_by(& &1.table)
+      |> Enum.map_join("\n", fn {table, idxs} ->
+        "  #{table}: #{Enum.map_join(idxs, ", ", & &1.name)}"
+      end)
+
+    "Indexes:\n#{descriptions}"
+  end
+
+  defp build_triggers_text([]), do: ""
+
+  defp build_triggers_text(triggers) do
+    descriptions =
+      Enum.map_join(triggers, "\n", fn t -> "  #{t.name} ON #{t.table}" end)
+
+    "Triggers:\n#{descriptions}"
+  end
+
+  defp build_functions_text([]), do: ""
+
+  defp build_functions_text(functions) do
+    descriptions =
+      Enum.map_join(functions, "\n", fn f ->
+        schema_prefix = if f.schema, do: "#{f.schema}.", else: ""
+        args = if f.arguments, do: "(#{f.arguments})", else: "()"
+        returns = if f.return_type, do: " -> #{f.return_type}", else: ""
+        "  #{f.kind} #{schema_prefix}#{f.name}#{args}#{returns}"
+      end)
+
+    "Functions and procedures:\n#{descriptions}"
   end
 end

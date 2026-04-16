@@ -3,27 +3,33 @@ defmodule Melocoton.AITest do
 
   alias Melocoton.AI
 
-  defp test_schema do
-    %{
-      type: :sqlite,
-      tables: [
-        %{
-          name: "users",
-          cols: [
-            %{name: "id", type: "INTEGER"},
-            %{name: "name", type: "TEXT"}
-          ]
-        },
-        %{
-          name: "posts",
-          cols: [
-            %{name: "id", type: "INTEGER"},
-            %{name: "user_id", type: "INTEGER"},
-            %{name: "title", type: "TEXT"}
-          ]
-        }
-      ]
-    }
+  defp test_schema(overrides \\ %{}) do
+    Map.merge(
+      %{
+        type: :sqlite,
+        tables: [
+          %{
+            name: "users",
+            cols: [
+              %{name: "id", type: "INTEGER"},
+              %{name: "name", type: "TEXT"}
+            ]
+          },
+          %{
+            name: "posts",
+            cols: [
+              %{name: "id", type: "INTEGER"},
+              %{name: "user_id", type: "INTEGER"},
+              %{name: "title", type: "TEXT"}
+            ]
+          }
+        ],
+        indexes: [],
+        triggers: [],
+        functions: []
+      },
+      overrides
+    )
   end
 
   describe "build_system_prompt/1" do
@@ -49,6 +55,54 @@ defmodule Melocoton.AITest do
 
       assert prompt =~ "```sql code block"
       assert prompt =~ "foreign key"
+    end
+
+    test "includes indexes when present" do
+      schema = test_schema(%{indexes: [%{name: "idx_posts_user_id", table: "posts"}]})
+      prompt = AI.build_system_prompt(schema)
+
+      assert prompt =~ "Indexes:"
+      assert prompt =~ "idx_posts_user_id"
+    end
+
+    test "includes triggers when present" do
+      schema =
+        test_schema(%{triggers: [%{id: "t1", name: "update_timestamp", table: "posts"}]})
+
+      prompt = AI.build_system_prompt(schema)
+
+      assert prompt =~ "Triggers:"
+      assert prompt =~ "update_timestamp ON posts"
+    end
+
+    test "includes functions when present" do
+      schema =
+        test_schema(%{
+          functions: [
+            %{
+              id: "1",
+              name: "calc_total",
+              schema: "public",
+              kind: :function,
+              return_type: "numeric",
+              arguments: "order_id integer",
+              language: "plpgsql"
+            }
+          ]
+        })
+
+      prompt = AI.build_system_prompt(schema)
+
+      assert prompt =~ "Functions and procedures:"
+      assert prompt =~ "function public.calc_total(order_id integer) -> numeric"
+    end
+
+    test "omits empty sections" do
+      prompt = AI.build_system_prompt(test_schema())
+
+      refute prompt =~ "Indexes:"
+      refute prompt =~ "Triggers:"
+      refute prompt =~ "Functions"
     end
   end
 

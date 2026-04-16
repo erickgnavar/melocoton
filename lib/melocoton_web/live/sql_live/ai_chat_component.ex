@@ -36,7 +36,13 @@ defmodule MelocotonWeb.SqlLive.AiChatComponent do
     if socket.assigns[:database_id] && socket.assigns.database_id == assigns.database.id do
       # Same database — preserve state, only update parent-driven assigns
       socket
-      |> assign(database: assigns.database, tables: assigns.tables)
+      |> assign(
+        database: assigns.database,
+        tables: assigns.tables,
+        indexes: assigns.indexes,
+        functions: assigns.functions,
+        triggers: assigns.triggers
+      )
       |> ok()
     else
       # First mount or database changed — full init
@@ -212,13 +218,13 @@ defmodule MelocotonWeb.SqlLive.AiChatComponent do
     %{database_id: database_id, database: database, messages: messages, current_chat: chat} =
       socket.assigns
 
-    tables =
-      case socket.assigns.tables do
-        %{ok?: true, result: %{tables: t}} -> t
-        _ -> []
-      end
-
-    schema = %{type: database.type, tables: tables}
+    schema = %{
+      type: database.type,
+      tables: async_value(socket.assigns.tables),
+      indexes: async_value(socket.assigns.indexes),
+      functions: async_value(socket.assigns.functions),
+      triggers: async_value(socket.assigns.triggers)
+    }
 
     {:ok, user_msg} =
       Databases.create_chat_message(%{
@@ -286,6 +292,9 @@ defmodule MelocotonWeb.SqlLive.AiChatComponent do
     )
     |> Phoenix.HTML.raw()
   end
+
+  defp async_value(%{ok?: true, result: result}) when is_list(result), do: result
+  defp async_value(_), do: []
 
   defp notify_parent(msg), do: send(self(), {__MODULE__, msg})
 end
