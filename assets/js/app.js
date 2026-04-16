@@ -46,12 +46,10 @@ function isDarkTheme() {
   return document.documentElement.getAttribute("data-theme") === "dark";
 }
 
-const formatOptions = {
-  language: "sql",
-  indent: "  ",
-  tabWidth: 2,
-  keywordCase: "upper",
-  linesBetweenQueries: 1,
+const formatDialects = {
+  postgres: "postgresql",
+  sqlite: "sqlite",
+  mysql: "mysql",
 };
 
 function formatSQL(editorView, from, to) {
@@ -68,7 +66,13 @@ function formatSQL(editorView, from, to) {
     }
   }
 
-  const formatted = format(state.sliceDoc(from, to), formatOptions);
+  const formatted = format(state.sliceDoc(from, to), {
+    language: formatDialects[window.dbType] || "sql",
+    indent: "  ",
+    tabWidth: 2,
+    keywordCase: "upper",
+    linesBetweenQueries: 1,
+  });
   editorView.dispatch({ changes: { from, to, insert: formatted } });
 }
 
@@ -486,6 +490,7 @@ window.addEventListener("phx:refocus-editor", () => {
 
 window.addEventListener("phx:load-schema", ({ detail: { schema, type } }) => {
   if (!window.view || !window.sqlExtensionCompartment) return;
+  window.dbType = type;
   let dialect = StandardSQL;
   if (type === "postgres") dialect = PostgreSQL;
   if (type === "sqlite") dialect = SQLite;
