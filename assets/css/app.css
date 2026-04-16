@@ -529,6 +529,13 @@ tr.row-selected {
   border: 0.5px solid var(--border-subtle);
 }
 
+.ai-markdown pre code {
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+}
+
 .ai-markdown ul, .ai-markdown ol {
   padding-left: 1.25rem;
   margin: 0.25rem 0;
