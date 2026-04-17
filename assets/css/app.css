@@ -173,9 +173,10 @@ body {
   transition: background-color 0.1s ease, border-color 0.1s ease, color 0.05s ease;
 }
 
-/* Exclude transitions on interactive elements for instant feedback */
+/* Exclude transitions on interactive elements and dynamic content for instant feedback */
 input:focus, button:active, textarea:focus, select:focus,
-.cm-editor *, .cm-editor {
+.cm-editor *, .cm-editor,
+.result-table, .result-table * {
   transition: none;
 }
 
