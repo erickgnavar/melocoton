@@ -750,6 +750,14 @@ document.addEventListener(
       return;
     }
 
+    // Cmd+' Ctrl+' — Focus editor
+    if (mod && e.key === "'") {
+      e.preventDefault();
+      e.stopPropagation();
+      if (window.view) window.view.focus();
+      return;
+    }
+
     // CMD+B — Toggle AI panel
     if (mod && !e.shiftKey && e.key === "b") {
       e.preventDefault();

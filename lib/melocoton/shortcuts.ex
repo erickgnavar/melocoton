@@ -21,6 +21,7 @@ defmodule Melocoton.Shortcuts do
     {["?"], :global, "Keyboard shortcuts"},
 
     # SQL Editor
+    {["⌘", "'"], :sql_editor, "Focus editor"},
     {["⌘", "Enter"], :sql_editor, "Run query (selection or all)"},
     {["⌘", "S"], :sql_editor, "Save query to file"},
     {["⌘", "⇧", "F"], :sql_editor, "Format SQL"},
