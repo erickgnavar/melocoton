@@ -2,6 +2,7 @@
   "dependencies": {
     "@codemirror/lang-sql": "^6.8.0",
     "@codemirror/theme-one-dark": "^6.1.2",
+    "@fontsource/jetbrains-mono": "^5.2.8",
     "@replit/codemirror-vim": "^6.3.0",
     "codemirror": "^6.0.1",
     "mermaid": "^10.9.5",

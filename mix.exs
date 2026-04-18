@@ -100,10 +100,11 @@ defmodule Melocoton.MixProject do
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
-      "assets.build": ["tailwind melocoton", "esbuild melocoton"],
+      "assets.build": ["tailwind melocoton", "esbuild melocoton", &copy_fonts/1],
       "assets.deploy": [
         "tailwind melocoton --minify",
         "esbuild melocoton --minify",
+        &copy_fonts/1,
         "phx.digest"
       ],
       ci: [
@@ -114,5 +115,16 @@ defmodule Melocoton.MixProject do
         "test --cover"
       ]
     ]
+  end
+
+  defp copy_fonts(_) do
+    source = "assets/node_modules/@fontsource/jetbrains-mono/files"
+    dest = "priv/static/fonts"
+    File.mkdir_p!(dest)
+
+    Enum.each(
+      ~w(jetbrains-mono-latin-400-normal.woff2 jetbrains-mono-latin-400-normal.woff),
+      &File.cp!(Path.join(source, &1), Path.join(dest, &1))
+    )
   end
 end

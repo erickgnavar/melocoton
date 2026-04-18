@@ -175,6 +175,10 @@ const liveSocket = new LiveSocket("/live", Socket, {
             vimCompartment.of(editorMode === "vim" ? vim() : []),
             keymaps(),
             basicSetup,
+            EditorView.theme({
+              ".cm-content": { fontFamily: '"JetBrains Mono", monospace' },
+              ".cm-gutters": { fontFamily: '"JetBrains Mono", monospace' },
+            }),
             sqlExtensionCompartment.of(sql({})),
             EditorView.updateListener.of((updateView) => {
               if (!updateView.docChanged) return;
