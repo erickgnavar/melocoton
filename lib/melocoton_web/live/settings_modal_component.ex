@@ -6,6 +6,46 @@ defmodule MelocotonWeb.SettingsModalComponent do
 
   @presets %{"xs" => 11, "sm" => 12, "md" => 14, "lg" => 16, "xl" => 18}
 
+  @light_themes [
+    {"Default", "default"},
+    {"Basic Light", "basicLight"},
+    {"GitHub Light", "githubLight"},
+    {"Gruvbox Light", "gruvboxLight"},
+    {"High Contrast Light", "highContrastLight"},
+    {"Material Light", "materialLight"},
+    {"Solarized Light", "solarizedLight"},
+    {"Tokyo Night Day", "tokyoNightDay"},
+    {"VS Code Light", "vsCodeLight"}
+  ]
+
+  @dark_themes [
+    {"Default", "default"},
+    {"One Dark", "oneDark"},
+    {"Abcdef", "abcdef"},
+    {"Abyss", "abyss"},
+    {"Android Studio", "androidStudio"},
+    {"Andromeda", "andromeda"},
+    {"Basic Dark", "basicDark"},
+    {"Catppuccin Mocha", "catppuccinMocha"},
+    {"Cobalt 2", "cobalt2"},
+    {"Forest", "forest"},
+    {"GitHub Dark", "githubDark"},
+    {"Gruvbox Dark", "gruvboxDark"},
+    {"High Contrast Dark", "highContrastDark"},
+    {"Material Dark", "materialDark"},
+    {"Material Ocean", "materialOcean"},
+    {"Monokai", "monokai"},
+    {"Nord", "nord"},
+    {"Palenight", "palenight"},
+    {"Solarized Dark", "solarizedDark"},
+    {"Synthwave 84", "synthwave84"},
+    {"Tokyo Night Storm", "tokyoNightStorm"},
+    {"Volcano", "volcano"},
+    {"VS Code Dark", "vsCodeDark"}
+  ]
+
+  @editor_themes Enum.map(@light_themes ++ @dark_themes, &elem(&1, 1)) |> Enum.uniq()
+
   @impl true
   def update(assigns, socket) do
     settings = Settings.get_api_key_settings()
@@ -13,6 +53,8 @@ defmodule MelocotonWeb.SettingsModalComponent do
     {provider, model} = Models.parse_model_string(settings["ai_model"])
 
     editor_mode = Settings.get("editor_mode") || "vim"
+    editor_theme_light = Settings.get("editor_theme_light") || "default"
+    editor_theme_dark = Settings.get("editor_theme_dark") || "default"
 
     socket
     |> assign(assigns)
@@ -22,6 +64,10 @@ defmodule MelocotonWeb.SettingsModalComponent do
       font_size: font_size,
       font_size_px: font_size_to_px(font_size),
       editor_mode: editor_mode,
+      editor_theme_light: editor_theme_light,
+      editor_theme_dark: editor_theme_dark,
+      light_theme_options: @light_themes,
+      dark_theme_options: @dark_themes,
       provider: provider,
       model: model,
       model_options: Models.model_options(provider),
@@ -60,6 +106,20 @@ defmodule MelocotonWeb.SettingsModalComponent do
     |> assign(editor_mode: mode)
     |> push_event("set-editor-mode", %{mode: mode})
     |> noreply()
+  end
+
+  @impl true
+  def handle_event("set-editor-theme-light", %{"light_theme" => theme}, socket)
+      when theme in @editor_themes do
+    Settings.set("editor_theme_light", theme)
+    socket |> assign(editor_theme_light: theme) |> noreply()
+  end
+
+  @impl true
+  def handle_event("set-editor-theme-dark", %{"dark_theme" => theme}, socket)
+      when theme in @editor_themes do
+    Settings.set("editor_theme_dark", theme)
+    socket |> assign(editor_theme_dark: theme) |> noreply()
   end
 
   @impl true

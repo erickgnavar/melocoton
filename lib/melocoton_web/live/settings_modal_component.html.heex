@@ -95,6 +95,55 @@
     </div>
   </div>
 
+  <div class="flex gap-3">
+    <div class="flex-1">
+      <label class="block text-xs font-medium mb-1.5" style="color: var(--text-secondary);">
+        Editor Theme (Light)
+      </label>
+      <select
+        id="editor-theme-light-select"
+        phx-hook="EditorThemeSelect"
+        phx-change="set-editor-theme-light"
+        phx-target={@myself}
+        name="light_theme"
+        data-theme-key="editor-theme-light"
+        class="w-full appearance-none px-2.5 py-1.5 text-xs rounded"
+        style="background: var(--bg-secondary); border: 0.5px solid var(--border-medium); color: var(--text-primary);"
+      >
+        <option
+          :for={{label, value} <- @light_theme_options}
+          value={value}
+          selected={@editor_theme_light == value}
+        >
+          {label}
+        </option>
+      </select>
+    </div>
+    <div class="flex-1">
+      <label class="block text-xs font-medium mb-1.5" style="color: var(--text-secondary);">
+        Editor Theme (Dark)
+      </label>
+      <select
+        id="editor-theme-dark-select"
+        phx-hook="EditorThemeSelect"
+        phx-change="set-editor-theme-dark"
+        phx-target={@myself}
+        name="dark_theme"
+        data-theme-key="editor-theme-dark"
+        class="w-full appearance-none px-2.5 py-1.5 text-xs rounded"
+        style="background: var(--bg-secondary); border: 0.5px solid var(--border-medium); color: var(--text-primary);"
+      >
+        <option
+          :for={{label, value} <- @dark_theme_options}
+          value={value}
+          selected={@editor_theme_dark == value}
+        >
+          {label}
+        </option>
+      </select>
+    </div>
+  </div>
+
   <div class="w-full h-px" style="background: var(--border-medium);"></div>
 
   <div

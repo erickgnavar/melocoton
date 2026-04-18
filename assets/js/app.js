@@ -37,14 +37,75 @@ import {
 import { vim, Vim } from "@replit/codemirror-vim";
 import { oneDark } from "@codemirror/theme-one-dark";
 import {
+  abcdef,
+  abyss,
+  androidStudio,
+  andromeda,
+  basicDark,
+  basicLight,
+  catppuccinMocha,
+  cobalt2,
+  forest,
+  githubDark,
+  githubLight,
+  gruvboxDark,
+  gruvboxLight,
+  highContrastDark,
+  highContrastLight,
+  materialDark,
+  materialLight,
+  materialOcean,
+  monokai,
+  nord,
+  palenight,
+  solarizedDark,
+  solarizedLight,
+  synthwave84,
+  tokyoNightDay,
+  tokyoNightStorm,
+  volcano,
+  vsCodeDark,
+  vsCodeLight,
+} from "@fsegurai/codemirror-theme-bundle";
+import {
   moveCompletionSelection,
   acceptCompletion,
 } from "@codemirror/autocomplete";
 import { format } from "sql-formatter";
 
-function isDarkTheme() {
-  return document.documentElement.getAttribute("data-theme") === "dark";
-}
+const editorThemes = {
+  default: [],
+  oneDark,
+  abcdef,
+  abyss,
+  androidStudio,
+  andromeda,
+  basicDark,
+  basicLight,
+  catppuccinMocha,
+  cobalt2,
+  forest,
+  githubDark,
+  githubLight,
+  gruvboxDark,
+  gruvboxLight,
+  highContrastDark,
+  highContrastLight,
+  materialDark,
+  materialLight,
+  materialOcean,
+  monokai,
+  nord,
+  palenight,
+  solarizedDark,
+  solarizedLight,
+  synthwave84,
+  tokyoNightDay,
+  tokyoNightStorm,
+  volcano,
+  vsCodeDark,
+  vsCodeLight,
+};
 
 const formatDialects = {
   postgres: "postgresql",
@@ -166,6 +227,16 @@ const liveSocket = new LiveSocket("/live", Socket, {
 
         const editorMode = localStorage.getItem("editor-mode") || "vim";
 
+        window.editorThemeLight = this.el.dataset.editorThemeLight || "default";
+        window.editorThemeDark = this.el.dataset.editorThemeDark || "default";
+
+        const appTheme =
+          document.documentElement.getAttribute("data-theme") || "light";
+        const initialTheme =
+          appTheme === "dark"
+            ? window.editorThemeDark
+            : window.editorThemeLight;
+
         const view = new EditorView({
           // because this element is a textarea we pass its content
           // when initializing the editor
@@ -188,18 +259,20 @@ const liveSocket = new LiveSocket("/live", Socket, {
                 session: { query: updateView.state.doc.toString() },
               });
             }),
-            themeCompartment.of(isDarkTheme() ? oneDark : []),
+            themeCompartment.of(editorThemes[initialTheme] || []),
           ],
         });
 
         // HACK: expose view so we can use it on load-new-query event
         // to reset editor content
         window.view = view;
+        window.themeCompartment = themeCompartment;
 
         this._themeListener = (e) => {
           const dark = e.detail.theme === "dark";
+          const theme = dark ? window.editorThemeDark : window.editorThemeLight;
           view.dispatch({
-            effects: themeCompartment.reconfigure(dark ? oneDark : []),
+            effects: themeCompartment.reconfigure(editorThemes[theme] || []),
           });
         };
         window.addEventListener("theme-changed", this._themeListener);
@@ -216,6 +289,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
         }
         window.sqlExtensionCompartment = null;
         window.vimCompartment = null;
+        window.themeCompartment = null;
       },
     },
     CommandPalette: {
@@ -252,6 +326,32 @@ const liveSocket = new LiveSocket("/live", Socket, {
             }
           });
         }
+      },
+    },
+    EditorThemeSelect: {
+      applyTheme() {
+        const key = this.el.dataset.themeKey;
+        const theme = this.el.value;
+        if (key === "editor-theme-dark") window.editorThemeDark = theme;
+        else window.editorThemeLight = theme;
+        const appTheme =
+          document.documentElement.getAttribute("data-theme") || "light";
+        const isActive =
+          (key === "editor-theme-dark" && appTheme === "dark") ||
+          (key === "editor-theme-light" && appTheme === "light");
+        if (isActive && window.view && window.themeCompartment) {
+          window.view.dispatch({
+            effects: window.themeCompartment.reconfigure(
+              editorThemes[theme] || [],
+            ),
+          });
+        }
+      },
+      mounted() {
+        this.el.addEventListener("change", () => this.applyTheme());
+      },
+      updated() {
+        this.applyTheme();
       },
     },
     AiChatInput: {
