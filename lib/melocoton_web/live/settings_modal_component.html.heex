@@ -167,9 +167,13 @@
           style="background: var(--bg-secondary); border: 0.5px solid var(--border-medium); color: var(--text-primary);"
         >
           <option value="">Select provider...</option>
-          <%= for {label, id} <- Melocoton.AI.Models.provider_options() do %>
-            <option value={id} selected={@provider == id}>{label}</option>
-          <% end %>
+          <option
+            :for={{label, id} <- Melocoton.AI.Models.provider_options()}
+            value={id}
+            selected={@provider == id}
+          >
+            {label}
+          </option>
         </select>
       </div>
       <div class="flex-1">
@@ -185,9 +189,9 @@
           disabled={@provider == nil}
         >
           <option value="">Select model...</option>
-          <%= for {label, id} <- @model_options do %>
-            <option value={id} selected={@model == id}>{label}</option>
-          <% end %>
+          <option :for={{label, id} <- @model_options} value={id} selected={@model == id}>
+            {label}
+          </option>
         </select>
       </div>
     </div>
@@ -234,55 +238,55 @@
 
     <div class="w-full h-px" style="background: var(--border-medium);"></div>
 
-    <%= for {key_name, label, placeholder} <- [
-      {"anthropic_api_key", "Anthropic API Key", "sk-ant-..."},
-      {"openai_api_key", "OpenAI API Key", "sk-..."},
-      {"openrouter_api_key", "OpenRouter API Key", "sk-or-..."},
-      {"minimax_api_key", "MiniMax API Key", "sk-cp-..."}
-    ] do %>
-      <div>
-        <label
-          class="flex items-center text-xs font-medium mb-1"
-          style="color: var(--text-secondary);"
+    <div :for={
+      {key_name, label, placeholder} <- [
+        {"anthropic_api_key", "Anthropic API Key", "sk-ant-..."},
+        {"openai_api_key", "OpenAI API Key", "sk-..."},
+        {"openrouter_api_key", "OpenRouter API Key", "sk-or-..."},
+        {"minimax_api_key", "MiniMax API Key", "sk-cp-..."}
+      ]
+    }>
+      <label
+        class="flex items-center text-xs font-medium mb-1"
+        style="color: var(--text-secondary);"
+      >
+        <.icon name="lucide-key-round" class="size-3 mr-1" />
+        {label}
+        <span
+          :if={@required_key == key_name}
+          class="ml-1.5 text-[9px] uppercase tracking-wide font-semibold"
+          style="color: var(--focus-color);"
         >
-          <.icon name="lucide-key-round" class="size-3 mr-1" />
-          {label}
-          <span
-            :if={@required_key == key_name}
-            class="ml-1.5 text-[9px] uppercase tracking-wide font-semibold"
-            style="color: var(--focus-color);"
-          >
-            required
-          </span>
-        </label>
-        <input
-          type="password"
-          name={key_name}
-          value={@settings[key_name]}
-          required={@required_key == key_name}
-          placeholder={
-            if @settings[key_name] != "",
-              do: mask_key(@settings[key_name]),
-              else: placeholder
-          }
-          class="w-full px-2.5 py-1.5 text-xs rounded"
-          style={
-            if @required_key == key_name,
-              do:
-                "background: var(--bg-secondary); border: 1px solid var(--focus-color); color: var(--text-primary);",
-              else:
-                "background: var(--bg-secondary); border: 0.5px solid var(--border-medium); color: var(--text-primary);"
-          }
-        />
-        <p
-          :if={key_name == "openrouter_api_key"}
-          class="mt-0.5 text-[10px]"
-          style="color: var(--text-tertiary);"
-        >
-          Gives access to 200+ models including Minimax, Anthropic, OpenAI, Google, Meta
-        </p>
-      </div>
-    <% end %>
+          required
+        </span>
+      </label>
+      <input
+        type="password"
+        name={key_name}
+        value={@settings[key_name]}
+        required={@required_key == key_name}
+        placeholder={
+          if @settings[key_name] != "",
+            do: mask_key(@settings[key_name]),
+            else: placeholder
+        }
+        class="w-full px-2.5 py-1.5 text-xs rounded"
+        style={
+          if @required_key == key_name,
+            do:
+              "background: var(--bg-secondary); border: 1px solid var(--focus-color); color: var(--text-primary);",
+            else:
+              "background: var(--bg-secondary); border: 0.5px solid var(--border-medium); color: var(--text-primary);"
+        }
+      />
+      <p
+        :if={key_name == "openrouter_api_key"}
+        class="mt-0.5 text-[10px]"
+        style="color: var(--text-tertiary);"
+      >
+        Gives access to 200+ models including Minimax, Anthropic, OpenAI, Google, Meta
+      </p>
+    </div>
   </div>
 
   <%!-- Footer --%>
@@ -291,11 +295,9 @@
     style="border-top: 1px solid var(--border-medium);"
   >
     <div class="flex items-center gap-3">
-      <%= if @saved do %>
-        <span class="text-xs text-green-500">
-          <.icon name="lucide-check" class="size-4 mr-1 inline-block" /> Settings saved
-        </span>
-      <% end %>
+      <span :if={@saved} class="text-xs text-green-500">
+        <.icon name="lucide-check" class="size-4 mr-1 inline-block" /> Settings saved
+      </span>
       <button
         type="button"
         phx-click="show-onboarding"
