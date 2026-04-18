@@ -11,7 +11,7 @@ defmodule MelocotonWeb.SqlLive.SqlEditorComponent do
       Melocoton.Settings.get("editor_theme_light") || "default"
     end)
     |> assign_new(:editor_theme_dark, fn ->
-      Melocoton.Settings.get("editor_theme_dark") || "default"
+      Melocoton.Settings.get("editor_theme_dark") || "oneDark"
     end)
     |> ok()
   end

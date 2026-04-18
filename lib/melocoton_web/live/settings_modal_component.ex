@@ -19,7 +19,6 @@ defmodule MelocotonWeb.SettingsModalComponent do
   ]
 
   @dark_themes [
-    {"Default", "default"},
     {"One Dark", "oneDark"},
     {"Abcdef", "abcdef"},
     {"Abyss", "abyss"},
@@ -54,7 +53,7 @@ defmodule MelocotonWeb.SettingsModalComponent do
 
     editor_mode = Settings.get("editor_mode") || "vim"
     editor_theme_light = Settings.get("editor_theme_light") || "default"
-    editor_theme_dark = Settings.get("editor_theme_dark") || "default"
+    editor_theme_dark = Settings.get("editor_theme_dark") || "oneDark"
 
     socket
     |> assign(assigns)
