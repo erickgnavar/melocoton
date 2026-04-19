@@ -59,6 +59,7 @@
                       do: "background: #{item.group.color}15; color: var(--text-primary);",
                       else: "color: var(--text-primary);"
                   }
+                  data-selected={idx == @selected_index}
                   phx-click="select"
                   phx-value-type="database"
                   phx-value-id={item.id}
@@ -94,6 +95,7 @@
                       do: "background: var(--bg-tertiary); color: var(--text-primary);",
                       else: "color: var(--text-primary);"
                   }
+                  data-selected={idx == @selected_index}
                   phx-click="select"
                   phx-value-type="action"
                   phx-value-action={item.action}

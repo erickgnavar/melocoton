@@ -299,10 +299,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
       updated() {
         this.setupInput();
 
-        // Scroll selected item into view
-        const selected = this.el.querySelector(
-          '[style*="background:"][style*="15"]',
-        );
+        const selected = this.el.querySelector("[data-selected]");
         if (selected) selected.scrollIntoView({ block: "nearest" });
       },
       setupInput() {
