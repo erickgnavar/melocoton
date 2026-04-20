@@ -431,5 +431,26 @@ defmodule Melocoton.Engines.Mysql do
   end
 
   @impl true
+  def get_index_definition(conn, name) do
+    sql = """
+    SELECT CONCAT(
+      IF(NON_UNIQUE = 0, 'CREATE UNIQUE INDEX ', 'CREATE INDEX '),
+      '`', INDEX_NAME, '` ON `', TABLE_NAME, '` (',
+      GROUP_CONCAT('`', COLUMN_NAME, '`' ORDER BY SEQ_IN_INDEX),
+      ')'
+    ) AS definition
+    FROM information_schema.STATISTICS
+    WHERE TABLE_SCHEMA = DATABASE() AND INDEX_NAME = ?
+    GROUP BY INDEX_NAME, TABLE_NAME, NON_UNIQUE
+    """
+
+    case DatabaseClient.query_and_normalize(conn, sql, [name]) do
+      {:ok, %{rows: [%{"definition" => def} | _]}} when is_binary(def) -> {:ok, def}
+      {:ok, _} -> {:error, "Index not found"}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  @impl true
   def test_connection(database), do: DatabaseClient.test_connection_via_query(database)
 end

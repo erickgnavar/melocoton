@@ -154,9 +154,12 @@
             :for={index <- indexes}
             :if={@search_term == "" || String.contains?(index.name, @search_term)}
             class="flex items-center p-1 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded"
+            phx-click="set-index-explorer"
+            phx-value-name={index.name}
+            phx-value-table={index.table}
           >
             <.icon name="lucide-key-round" class="size-3 mr-1.5 text-amber-500" />
-            <span>{index.name}</span>
+            <span class="truncate">{index.name}</span>
             <span class="ml-1 text-[9px]" style="color: var(--text-tertiary);">
               ({index.table})
             </span>
@@ -458,6 +461,9 @@
                 style={"color: #{@database.group.color};"}
               />
               <span class="max-w-[120px] truncate">{tab.trigger_name}</span>
+            <% :index -> %>
+              <.icon name="lucide-key-round" class="size-3 mr-1.5 text-amber-500" />
+              <span class="max-w-[120px] truncate">{tab.index_name}</span>
           <% end %>
           <button
             class="ml-2 hover:bg-black/10 dark:hover:bg-white/10 rounded p-0.5"
@@ -869,6 +875,15 @@
             trigger_id={trigger_id}
             trigger_name={trigger_tab.trigger_name}
             trigger_table={trigger_tab.trigger_table}
+            database={@database}
+          />
+        <% %{type: :index} = index_tab -> %>
+          <.live_component
+            module={MelocotonWeb.SqlLive.IndexExplorerComponent}
+            id={"index-explorer-#{index_tab.index_name}"}
+            repo={@conn}
+            index_name={index_tab.index_name}
+            index_table={index_tab.index_table}
             database={@database}
           />
         <% _ -> %>

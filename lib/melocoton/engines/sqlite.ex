@@ -284,6 +284,17 @@ defmodule Melocoton.Engines.Sqlite do
   end
 
   @impl true
+  def get_index_definition(conn, name) do
+    sql = "SELECT sql FROM sqlite_master WHERE type = 'index' AND name = ?"
+
+    case DatabaseClient.query_and_normalize(conn, sql, [name]) do
+      {:ok, %{rows: [%{"sql" => def} | _]}} when is_binary(def) -> {:ok, def}
+      {:ok, _} -> {:error, "Index not found"}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  @impl true
   def test_connection(database) do
     if File.exists?(database.url) do
       :ok

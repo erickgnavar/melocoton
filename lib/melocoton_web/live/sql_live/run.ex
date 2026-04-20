@@ -193,6 +193,30 @@ defmodule MelocotonWeb.SQLLive.Run do
     end
   end
 
+  def handle_event(
+        "set-index-explorer",
+        %{"name" => name, "table" => table},
+        socket
+      ) do
+    tabs = socket.assigns.tabs
+
+    case Enum.find_index(tabs, &(&1.type == :index and &1.index_name == name)) do
+      nil ->
+        new_tab = %{type: :index, index_name: name, index_table: table}
+        tabs = tabs ++ [new_tab]
+
+        socket
+        |> assign(:tabs, tabs)
+        |> assign(:active_tab_index, length(tabs) - 1)
+        |> noreply()
+
+      existing_index ->
+        socket
+        |> assign(:active_tab_index, existing_index)
+        |> noreply()
+    end
+  end
+
   def handle_event("set-table-explorer", %{"table" => ""}, socket), do: noreply(socket)
 
   def handle_event("set-table-explorer", %{"table" => table_name}, socket) do

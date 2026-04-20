@@ -81,6 +81,12 @@ defmodule Melocoton.Behaviours.Engine do
               {:ok, String.t()} | {:error, String.t()}
 
   @doc """
+  Return the full definition (DDL) of an index, identified by its name.
+  """
+  @callback get_index_definition(repo, String.t()) ::
+              {:ok, String.t()} | {:error, String.t()}
+
+  @doc """
   Validate if we can connect with the received database
   """
   @callback test_connection(Database.t()) :: :ok | {:error, String.t()}

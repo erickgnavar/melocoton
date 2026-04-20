@@ -477,5 +477,16 @@ defmodule Melocoton.Engines.Postgres do
   end
 
   @impl true
+  def get_index_definition(conn, name) do
+    sql = "SELECT indexdef FROM pg_indexes WHERE indexname = $1"
+
+    case DatabaseClient.query_and_normalize(conn, sql, [name]) do
+      {:ok, %{rows: [%{"indexdef" => def} | _]}} when is_binary(def) -> {:ok, def}
+      {:ok, _} -> {:error, "Index not found"}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  @impl true
   def test_connection(database), do: DatabaseClient.test_connection_via_query(database)
 end
