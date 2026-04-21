@@ -597,7 +597,6 @@ defmodule MelocotonWeb.SQLLive.Run do
   end
 
   defp handle_transaction_query(socket, query) do
-    db_id = socket.assigns.database.id
     init_time = System.monotonic_time(:nanosecond)
     result = TransactionSession.query(socket.assigns.transaction_session, query)
     end_time = System.monotonic_time(:nanosecond)
@@ -607,48 +606,45 @@ defmodule MelocotonWeb.SQLLive.Run do
       {:ok, raw_result} ->
         response = DatabaseClient.handle_response(raw_result)
         {response, truncated} = DatabaseClient.maybe_truncate(response, @max_rows)
-        record_query_history(db_id, query, :success, total_time, response.num_rows)
-
-        socket
-        |> assign(result: response)
-        |> assign(query_time: total_time)
-        |> assign(last_query: query)
-        |> assign(:error_message, nil)
-        |> assign(:result_truncated, truncated)
-        |> maybe_refresh_history()
+        apply_query_result(socket, query, {:ok, response, total_time, truncated})
 
       {:error, reason} ->
-        error_msg = DatabaseClient.translate_query_error(reason)
-        record_query_history(db_id, query, :error, total_time, 0, error_msg)
-
-        socket
-        |> assign(:error_message, error_msg)
-        |> maybe_refresh_history()
+        apply_query_result(
+          socket,
+          query,
+          {:error, DatabaseClient.translate_query_error(reason), total_time}
+        )
     end
   end
 
   defp handle_regular_query(socket, query) do
-    db_id = socket.assigns.database.id
-
     case DatabaseClient.query(socket.assigns.conn, query, %{}, max_rows: @max_rows) do
       {:ok, result, %{total_time: total_time, truncated: truncated}} ->
-        record_query_history(db_id, query, :success, total_time, result.num_rows)
-
-        socket
-        |> assign(result: result)
-        |> assign(query_time: total_time)
-        |> assign(last_query: query)
-        |> assign(:error_message, nil)
-        |> assign(:result_truncated, truncated)
-        |> maybe_refresh_history()
+        apply_query_result(socket, query, {:ok, result, total_time, truncated})
 
       {:error, reason} ->
-        record_query_history(db_id, query, :error, 0, 0, reason)
-
-        socket
-        |> assign(:error_message, reason)
-        |> maybe_refresh_history()
+        apply_query_result(socket, query, {:error, reason, 0})
     end
+  end
+
+  defp apply_query_result(socket, query, {:ok, result, total_time, truncated}) do
+    record_query_history(socket.assigns.database.id, query, :success, total_time, result.num_rows)
+
+    socket
+    |> assign(result: result)
+    |> assign(query_time: total_time)
+    |> assign(last_query: query)
+    |> assign(:error_message, nil)
+    |> assign(:result_truncated, truncated)
+    |> maybe_refresh_history()
+  end
+
+  defp apply_query_result(socket, query, {:error, reason, total_time}) do
+    record_query_history(socket.assigns.database.id, query, :error, total_time, 0, reason)
+
+    socket
+    |> assign(:error_message, reason)
+    |> maybe_refresh_history()
   end
 
   defp create_session(database, name) do
