@@ -3,6 +3,7 @@ defmodule MelocotonWeb.DatabaseLive.Index do
 
   alias Melocoton.Databases
   alias Melocoton.Databases.{Database, Group}
+  alias Melocoton.Settings
 
   require Logger
 
@@ -16,6 +17,7 @@ defmodule MelocotonWeb.DatabaseLive.Index do
     |> assign(:data, %{})
     |> assign(:show_onboarding, not Melocoton.Settings.onboarding_completed?())
     |> reload_data()
+    |> push_font_size()
     |> then(&{:ok, &1})
   end
 
@@ -216,6 +218,15 @@ defmodule MelocotonWeb.DatabaseLive.Index do
       diff < 86_400 -> "#{div(diff, 3600)}h ago"
       diff < 2_592_000 -> "#{div(diff, 86400)}d ago"
       true -> Calendar.strftime(datetime, "%b %d, %Y")
+    end
+  end
+
+  defp push_font_size(socket) do
+    if connected?(socket) do
+      font_size = Settings.get("font_size") || "md"
+      push_event(socket, "set-font-size", %{size: font_size})
+    else
+      socket
     end
   end
 end

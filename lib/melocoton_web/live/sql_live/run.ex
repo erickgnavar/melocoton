@@ -2,7 +2,7 @@ defmodule MelocotonWeb.SQLLive.Run do
   use MelocotonWeb, :live_view
 
   require Logger
-  alias Melocoton.{DatabaseClient, Databases, Pool, TransactionSession}
+  alias Melocoton.{DatabaseClient, Databases, Pool, Settings, TransactionSession}
   import MelocotonWeb.SqlLive.SidebarComponents, only: [section: 1]
 
   @max_rows 1_000
@@ -65,6 +65,7 @@ defmodule MelocotonWeb.SQLLive.Run do
       :ai_panel_width,
       parse_panel_width(project_setting(database.id, "ai_panel_width"), 22)
     )
+    |> push_font_size()
     |> ok()
   end
 
@@ -78,6 +79,15 @@ defmodule MelocotonWeb.SQLLive.Run do
 
   defp empty_result do
     %{cols: [], rows: [], num_rows: 0}
+  end
+
+  defp push_font_size(socket) do
+    if connected?(socket) do
+      font_size = Settings.get("font_size") || "md"
+      push_event(socket, "set-font-size", %{size: font_size})
+    else
+      socket
+    end
   end
 
   defp active_tab(socket), do: Enum.at(socket.assigns.tabs, socket.assigns.active_tab_index)
