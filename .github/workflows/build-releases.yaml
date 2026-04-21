@@ -82,6 +82,8 @@ jobs:
   publish-releases:
     runs-on: ubuntu-24.04
     needs: [build-macos, build-linux]
+    permissions:
+      contents: write
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -129,6 +131,6 @@ jobs:
             linux/melocoton.deb
             linux/melocoton.rpm
             linux/melocoton.AppImage
-          token: ${{ secrets.CUSTOM_GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           draft: false
           make_latest: true
