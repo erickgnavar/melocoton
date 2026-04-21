@@ -115,13 +115,6 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> noreply()
   end
 
-  def handle_event("validate-filter-results", %{"term" => ""}, socket) do
-    socket
-    |> assign(:filter_result, empty_result())
-    |> assign(:filter_term, "")
-    |> noreply()
-  end
-
   def handle_event("validate-filter-results", %{"term" => term}, socket) do
     cols = Enum.map(socket.assigns.result.cols, &to_string/1)
 
