@@ -30,8 +30,14 @@ defmodule Melocoton.Engines.Postgres do
     ORDER BY c.relname, a.attnum;
     """
 
-    with {:ok, %{rows: rows}} <- Connection.query(conn, sql),
-         {:ok, %{rows: matview_rows}} <- Connection.query(conn, matview_sql) do
+    [tables_task, matviews_task] =
+      [
+        Task.async(fn -> Connection.query(conn, sql) end),
+        Task.async(fn -> Connection.query(conn, matview_sql) end)
+      ]
+
+    with {:ok, %{rows: rows}} <- Task.await(tables_task),
+         {:ok, %{rows: matview_rows}} <- Task.await(matviews_task) do
       tables =
         rows
         |> Enum.group_by(fn [table_name | _] -> table_name end)
