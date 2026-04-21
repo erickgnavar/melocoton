@@ -20,14 +20,15 @@ defmodule MelocotonWeb.SQLLive.Run do
     # PID
     liveview_pid = self()
 
-    first_session =
+    tabs =
       case database.sessions do
-        [] -> create_session(database, "#1")
-        [session | _rest] -> session
-      end
+        [] ->
+          session = create_session(database, "#1")
+          [%{type: :query, session: session}]
 
-    tabs = Enum.map(database.sessions, fn s -> %{type: :query, session: s} end)
-    tabs = if tabs == [], do: [%{type: :query, session: first_session}], else: tabs
+        sessions ->
+          Enum.map(sessions, &%{type: :query, session: &1})
+      end
 
     socket
     |> assign(:filter_results_form, to_form(%{"term" => ""}))
