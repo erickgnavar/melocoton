@@ -421,7 +421,7 @@
         <div
           :for={{tab, index} <- Enum.with_index(@tabs)}
           class={[
-            "px-3 py-1.5 flex items-center cursor-pointer",
+            "group px-3 py-1.5 flex items-center cursor-pointer",
             index == @active_tab_index && "border-b-2"
           ]}
           style={
@@ -436,10 +436,30 @@
         >
           <%= case tab.type do %>
             <% :query -> %>
-              <.icon name="lucide-code" class="size-3 mr-1.5" />
-              <span>
-                #{Enum.count(Enum.take(@tabs, index + 1), &(&1.type == :query))}
-              </span>
+              <.icon name="lucide-code" class="size-3 mr-1.5 shrink-0" />
+              <%= if @renaming_tab_index == index do %>
+                <input
+                  id={"tab-rename-#{index}"}
+                  type="text"
+                  value={tab.session.name}
+                  phx-blur="commit-rename-tab"
+                  phx-keydown="keydown-rename-tab"
+                  phx-value-index={index}
+                  phx-mounted={JS.focus()}
+                  class="bg-transparent outline-none border-b w-28 text-xs"
+                  style="border-color: var(--border-medium);"
+                />
+              <% else %>
+                <span class="max-w-[120px] truncate">{tab.session.name}</span>
+                <button
+                  class="hidden group-hover:inline-flex items-center ml-1 p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 shrink-0"
+                  phx-click="start-rename-tab"
+                  phx-value-index={index}
+                  title="Rename tab"
+                >
+                  <.icon name="lucide-pencil" class="size-2.5" />
+                </button>
+              <% end %>
             <% :table -> %>
               <.icon
                 name="lucide-table-2"
@@ -489,10 +509,6 @@
             style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-subtle);"
           >
             <div class="flex items-center">
-              <span style="color: var(--text-secondary);">
-                query_{Enum.count(Enum.take(@tabs, @active_tab_index + 1), &(&1.type == :query))}.sql
-              </span>
-              <span class="mx-1.5" style="color: var(--text-tertiary);">·</span>
               <span
                 class="text-[10px] uppercase tracking-wide font-medium"
                 style={"color: #{@database.group.color};"}

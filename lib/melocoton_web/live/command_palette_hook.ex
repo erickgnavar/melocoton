@@ -30,7 +30,13 @@ defmodule MelocotonWeb.CommandPaletteHook do
           |> String.starts_with?("explain"),
       running_transaction: socket.assigns[:running_transaction?] == true,
       ai_panel_open: socket.assigns[:ai_panel_open] == true,
-      on_run_page: Map.has_key?(socket.assigns, :conn)
+      on_run_page: Map.has_key?(socket.assigns, :conn),
+      on_query_tab:
+        Map.has_key?(socket.assigns, :conn) and
+          match?(
+            %{type: :query},
+            Enum.at(socket.assigns[:tabs] || [], socket.assigns[:active_tab_index] || 0)
+          )
     }
 
     send_update(MelocotonWeb.CommandPalette,
@@ -76,6 +82,11 @@ defmodule MelocotonWeb.CommandPaletteHook do
 
   defp handle_info({MelocotonWeb.CommandPalette, {:palette_action, "show-history"}}, socket) do
     {:halt, push_event(socket, "palette-exec", %{event: "switch-result-tab", value: "history"})}
+  end
+
+  defp handle_info({MelocotonWeb.CommandPalette, {:palette_action, "rename-tab"}}, socket) do
+    active = socket.assigns[:active_tab_index] || 0
+    {:halt, Phoenix.Component.assign(socket, :renaming_tab_index, active)}
   end
 
   defp handle_info({MelocotonWeb.CommandPalette, {:palette_action, "show-onboarding"}}, socket) do

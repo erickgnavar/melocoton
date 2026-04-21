@@ -6,6 +6,7 @@ defmodule Melocoton.Databases.Session do
 
   schema "sessions" do
     field :query, :string
+    field :name, :string
     belongs_to :database, Database
 
     timestamps(type: :utc_datetime)
@@ -14,7 +15,7 @@ defmodule Melocoton.Databases.Session do
   @doc false
   def changeset(session, attrs) do
     session
-    |> cast(attrs, [:query, :database_id])
-    |> validate_required([:database_id])
+    |> cast(attrs, [:query, :name, :database_id])
+    |> validate_required([:name, :database_id])
   end
 end

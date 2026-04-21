@@ -1222,6 +1222,117 @@ defmodule MelocotonWeb.SQLLive.RunTest do
     end
   end
 
+  describe "session names" do
+    test "first tab shows the default session name", %{conn: conn, database: database} do
+      {:ok, _live, html} = live(conn, ~p"/databases/#{database.id}/run")
+
+      assert html =~ "#1"
+    end
+
+    test "new session tab gets a correlative name", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+
+      html = render_click(live_view, "new-session", %{})
+
+      assert html =~ "query_2.sql"
+    end
+
+    test "start-rename-tab renders the rename input for the right tab", %{
+      conn: conn,
+      database: database
+    } do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+
+      html = render_click(live_view, "start-rename-tab", %{"index" => "0"})
+
+      assert html =~ ~s(phx-blur="commit-rename-tab")
+      assert html =~ ~s(phx-keydown="keydown-rename-tab")
+    end
+
+    test "commit-rename-tab updates the tab label", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+
+      render_click(live_view, "start-rename-tab", %{"index" => "0"})
+
+      html =
+        render_click(live_view, "commit-rename-tab", %{
+          "index" => "0",
+          "value" => "my_query.sql"
+        })
+
+      assert html =~ "my_query.sql"
+      refute html =~ ~s(phx-blur="commit-rename-tab")
+    end
+
+    test "commit-rename-tab persists the name across remounts", %{
+      conn: conn,
+      database: database
+    } do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+
+      render_click(live_view, "start-rename-tab", %{"index" => "0"})
+
+      render_click(live_view, "commit-rename-tab", %{
+        "index" => "0",
+        "value" => "persisted.sql"
+      })
+
+      {:ok, _live2, html} = live(conn, ~p"/databases/#{database.id}/run")
+
+      assert html =~ "persisted.sql"
+    end
+
+    test "escape keydown cancels rename without saving", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+
+      render_click(live_view, "start-rename-tab", %{"index" => "0"})
+
+      html =
+        render_click(live_view, "keydown-rename-tab", %{
+          "index" => "0",
+          "key" => "Escape"
+        })
+
+      refute html =~ ~s(phx-blur="commit-rename-tab")
+      assert html =~ "#1"
+    end
+
+    test "commit with blank name does not change the tab label", %{
+      conn: conn,
+      database: database
+    } do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+
+      render_click(live_view, "start-rename-tab", %{"index" => "0"})
+
+      html =
+        render_click(live_view, "commit-rename-tab", %{"index" => "0", "value" => "   "})
+
+      assert html =~ "#1"
+    end
+
+    test "commit for a non-renaming tab index is ignored", %{conn: conn, database: database} do
+      {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")
+
+      render_click(live_view, "start-rename-tab", %{"index" => "0"})
+
+      html =
+        render_click(live_view, "commit-rename-tab", %{
+          "index" => "1",
+          "value" => "should_not_appear.sql"
+        })
+
+      refute html =~ "should_not_appear.sql"
+    end
+
+    test "rename icon is rendered for query tabs", %{conn: conn, database: database} do
+      {:ok, _live, html} = live(conn, ~p"/databases/#{database.id}/run")
+
+      assert html =~ ~s(phx-click="start-rename-tab")
+      assert html =~ "lucide-pencil"
+    end
+  end
+
   describe "save query" do
     test "save-query pushes a download event", %{conn: conn, database: database} do
       {:ok, live_view, _html} = live(conn, ~p"/databases/#{database.id}/run")

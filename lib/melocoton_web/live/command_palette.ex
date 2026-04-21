@@ -62,6 +62,13 @@ defmodule MelocotonWeb.CommandPalette do
       icon: "lucide-history",
       action: "show-history",
       when: :on_run_page
+    },
+    %{
+      id: :rename_tab,
+      name: "Rename Current Tab",
+      icon: "lucide-pencil",
+      action: "rename-tab",
+      when: :on_query_tab
     }
   ]
 

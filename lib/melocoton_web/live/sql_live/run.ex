@@ -22,7 +22,7 @@ defmodule MelocotonWeb.SQLLive.Run do
 
     first_session =
       case database.sessions do
-        [] -> create_session(database)
+        [] -> create_session(database, "#1")
         [session | _rest] -> session
       end
 
@@ -54,6 +54,7 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> assign(:active_result_tab, :results)
     |> assign(:query_history, [])
     |> assign(:running_query, false)
+    |> assign(:renaming_tab_index, nil)
     |> assign(:ai_panel_open, project_setting(database.id, "ai_panel_open") == "true")
     |> assign(
       :sidebar_width,
@@ -273,7 +274,9 @@ defmodule MelocotonWeb.SQLLive.Run do
 
   @impl Phoenix.LiveView
   def handle_event("new-session", _params, socket) do
-    session = create_session(socket.assigns.database)
+    query_count = Enum.count(socket.assigns.tabs, &(&1.type == :query))
+    name = "query_#{query_count + 1}.sql"
+    session = create_session(socket.assigns.database, name)
     updated_database = Databases.get_database!(socket.assigns.database.id)
 
     new_tab = %{type: :query, session: session}
@@ -286,7 +289,43 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> noreply()
   end
 
-  @impl Phoenix.LiveView
+  def handle_event("start-rename-tab", %{"index" => index}, socket) do
+    socket
+    |> assign(:renaming_tab_index, String.to_integer(index))
+    |> noreply()
+  end
+
+  def handle_event("commit-rename-tab", %{"index" => index, "value" => name}, socket) do
+    index = String.to_integer(index)
+    name = String.trim(name)
+
+    socket =
+      with ^index <- socket.assigns.renaming_tab_index,
+           %{type: :query} = tab <- Enum.at(socket.assigns.tabs, index),
+           {:ok, updated} <- Databases.update_session(tab.session, %{name: name}) do
+        updated_tabs = List.replace_at(socket.assigns.tabs, index, %{tab | session: updated})
+        assign(socket, :tabs, updated_tabs)
+      else
+        _ -> socket
+      end
+
+    socket |> close_rename() |> noreply()
+  end
+
+  def handle_event(
+        "keydown-rename-tab",
+        %{"key" => "Enter", "value" => name, "index" => index},
+        socket
+      ) do
+    handle_event("commit-rename-tab", %{"index" => index, "value" => name}, socket)
+  end
+
+  def handle_event("keydown-rename-tab", %{"key" => "Escape"}, socket) do
+    socket |> close_rename() |> noreply()
+  end
+
+  def handle_event("keydown-rename-tab", _params, socket), do: noreply(socket)
+
   def handle_event("run-query", %{"query" => query}, socket) do
     Logger.info("Running query #{query}")
     normalized = query |> String.trim() |> String.downcase()
@@ -502,6 +541,12 @@ defmodule MelocotonWeb.SQLLive.Run do
     |> noreply()
   end
 
+  defp close_rename(socket) do
+    socket
+    |> assign(:renaming_tab_index, nil)
+    |> push_event("refocus-editor", %{})
+  end
+
   defp dispatch_query(socket, query, normalized) do
     cond do
       normalized =~ ~r/^begin\b/ ->
@@ -606,8 +651,8 @@ defmodule MelocotonWeb.SQLLive.Run do
     end
   end
 
-  defp create_session(database) do
-    {:ok, session} = Databases.create_session(%{database_id: database.id, query: ""})
+  defp create_session(database, name) do
+    {:ok, session} = Databases.create_session(%{database_id: database.id, query: "", name: name})
     session
   end
 
