@@ -79,9 +79,54 @@ jobs:
             melocoton.rpm
             melocoton.AppImage
 
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Erlang/Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: "1.18"
+          otp-version: "27"
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Burrito dependencies
+        run: |
+          choco install zig -y
+          C:\msys64\usr\bin\pacman.exe -S --noconfirm xz
+          echo "C:\msys64\usr\bin" >> $env:GITHUB_PATH
+
+      - name: Prepare environment
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+
+      - name: Build project
+        shell: pwsh
+        run: |
+          .\build.ps1
+          $msi = Get-ChildItem -Path src-tauri/target/release/bundle/msi/*.msi | Select-Object -First 1
+          $nsis = Get-ChildItem -Path src-tauri/target/release/bundle/nsis/*.exe | Select-Object -First 1
+          Copy-Item $msi.FullName -Destination melocoton.msi
+          Copy-Item $nsis.FullName -Destination melocoton-setup.exe
+          echo "msi_file=melocoton.msi" >> $env:GITHUB_ENV
+          echo "nsis_file=melocoton-setup.exe" >> $env:GITHUB_ENV
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-installers
+          path: |
+            melocoton.msi
+            melocoton-setup.exe
+
   publish-releases:
     runs-on: ubuntu-24.04
-    needs: [build-macos, build-linux]
+    needs: [build-macos, build-linux, build-windows]
     permissions:
       contents: write
     steps:
@@ -101,6 +146,12 @@ jobs:
         with:
           name: linux-installers
           path: linux/
+
+      - name: Download windows artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: windows-installers
+          path: windows/
 
       - name: Generate release body
         id: changelog
@@ -131,6 +182,8 @@ jobs:
             linux/melocoton.deb
             linux/melocoton.rpm
             linux/melocoton.AppImage
+            windows/melocoton.msi
+            windows/melocoton-setup.exe
           token: ${{ secrets.GITHUB_TOKEN }}
           draft: false
           make_latest: true
