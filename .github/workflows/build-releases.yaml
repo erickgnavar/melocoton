@@ -23,9 +23,9 @@ jobs:
 
       - name: Install Burrito dependencies
         run: |
-          choco install zig xz -y
-          echo "C:\ProgramData\chocolatey\lib\zig\tools" >> $env:GITHUB_PATH
-          echo "C:\Program Files\xz\bin" >> $env:GITHUB_PATH
+          choco install zig -y
+          C:\msys64\usr\bin\pacman.exe -S --noconfirm xz
+          echo "C:\msys64\usr\bin" >> $env:GITHUB_PATH
 
       - name: Prepare environment
         run: |
