@@ -21,6 +21,12 @@ jobs:
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Install Burrito dependencies
+        run: |
+          choco install zig xz -y
+          echo "C:\ProgramData\chocolatey\lib\zig\tools" >> $env:GITHUB_PATH
+          echo "C:\Program Files\xz\bin" >> $env:GITHUB_PATH
+
       - name: Prepare environment
         run: |
           mix local.hex --force
