@@ -37,6 +37,7 @@ if (Test-Path $source) {
 }
 
 # Build Tauri app
-Set-Location src-tauri
+Push-Location src-tauri
 npm install
 npm run tauri build
+Pop-Location
