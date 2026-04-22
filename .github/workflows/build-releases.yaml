@@ -19,7 +19,7 @@ jobs:
           otp-version: "27"
 
       - name: Set up Rust
-        uses: dtolnay/rust-action@stable
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Prepare environment
         run: |
