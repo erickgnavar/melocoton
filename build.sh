@@ -25,6 +25,7 @@ elif [[ "$OS_NAME" == "GNU/Linux" ]]; then
   export BURRITO_TARGET=linux
 else
   echo "Unsupported platform"
+  echo "Use build.ps1 for Windows builds."
   exit 1
 fi
 
@@ -37,6 +38,7 @@ elif [[ "$OS_NAME" == "GNU/Linux" ]]; then
   cp ./burrito_out/melocoton_linux ./src-tauri/binaries/webserver
 else
   echo "Unsupported platform"
+  echo "Use build.ps1 for Windows builds."
   exit 1
 fi
 
