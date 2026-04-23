@@ -440,10 +440,22 @@
             >
               <%!-- Row number gutter --%>
               <td
-                class="row-gutter p-1.5"
+                class="row-gutter p-1.5 relative"
                 style="border-bottom: 0.5px solid var(--border-subtle);"
               >
-                {(@page - 1) * @limit + data_idx + 1}
+                <span class="row-number">{(@page - 1) * @limit + data_idx + 1}</span>
+                <button
+                  :if={@pk_columns != []}
+                  type="button"
+                  phx-click="delete-row"
+                  phx-value-row-idx={data_idx}
+                  phx-target={@myself}
+                  data-confirm="Delete this row?"
+                  class="row-delete-btn absolute inset-0 flex items-center justify-center"
+                  title="Delete row"
+                >
+                  <.icon name="lucide-trash-2" class="size-3" style="color: #ef4444;" />
+                </button>
               </td>
               <% is_editing =
                 @editing_cell && @editing_cell.row_idx == data_idx %>

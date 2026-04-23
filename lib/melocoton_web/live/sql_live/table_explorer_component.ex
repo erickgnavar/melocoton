@@ -403,6 +403,38 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
   end
 
   @impl true
+  def handle_event("delete-row", %{"row-idx" => row_idx}, socket) do
+    if socket.assigns.pk_columns == [] do
+      noreply(socket)
+    else
+      case Integer.parse(row_idx) do
+        {row_idx, _} ->
+          row = get_row_by_idx(socket, row_idx)
+
+          if row do
+            pk_values = pk_values_for_row(row, socket.assigns.pk_columns)
+            %{repo: repo, table_name: table_name, pk_columns: pk_columns} = socket.assigns
+
+            case execute_delete(repo, table_name, pk_values, pk_columns) do
+              :ok ->
+                notify_parent({:flash, :info, "Row deleted successfully"})
+                load_data(socket) |> noreply()
+
+              {:error, error} ->
+                notify_parent({:flash, :error, "Failed to delete row: #{error}"})
+                noreply(socket)
+            end
+          else
+            noreply(socket)
+          end
+
+        :error ->
+          noreply(socket)
+      end
+    end
+  end
+
+  @impl true
   def handle_event("export-table", %{"format" => format}, socket) do
     %{
       repo: repo,
@@ -554,6 +586,21 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponent do
       end)
 
     sql = "INSERT INTO #{quote_identifier(table_name)} (#{cols_sql}) VALUES (#{vals_sql})"
+
+    case DatabaseClient.query(repo, sql) do
+      {:ok, _result, _meta} -> :ok
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  defp execute_delete(repo, table_name, pk_values, pk_columns) do
+    pk_where =
+      Enum.map_join(pk_columns, " AND ", fn pk_col ->
+        pk_val = Map.get(pk_values, pk_col)
+        "#{quote_identifier(pk_col)} = '#{escape_value(pk_val)}'"
+      end)
+
+    sql = "DELETE FROM #{quote_identifier(table_name)} WHERE #{pk_where}"
 
     case DatabaseClient.query(repo, sql) do
       {:ok, _result, _meta} -> :ok

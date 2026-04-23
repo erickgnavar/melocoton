@@ -478,4 +478,26 @@ defmodule MelocotonWeb.SqlLive.TableExplorerComponentTest do
       assert html =~ "…"
     end
   end
+
+  describe "render/1 delete row" do
+    test "shows delete button in gutter when table has primary key" do
+      html =
+        base_assigns()
+        |> TableExplorerComponent.render()
+        |> rendered_to_string()
+
+      assert html =~ "delete-row"
+      assert html =~ "lucide-trash-2"
+      assert html =~ "data-confirm=\"Delete this row?\""
+    end
+
+    test "does not show delete button when table has no primary key" do
+      html =
+        base_assigns(pk_columns: [])
+        |> TableExplorerComponent.render()
+        |> rendered_to_string()
+
+      refute html =~ "delete-row"
+    end
+  end
 end

@@ -466,6 +466,18 @@ input:focus, button:active, textarea:focus, select:focus,
   user-select: none;
 }
 
+.row-gutter .row-delete-btn {
+  display: none;
+}
+
+tr:hover .row-gutter .row-delete-btn {
+  display: inline-flex;
+}
+
+tr:hover .row-gutter .row-number {
+  display: none;
+}
+
 /* Selected row */
 tr.row-selected {
   outline: 1px solid var(--border-strong);
