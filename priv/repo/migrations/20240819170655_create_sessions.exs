@@ -4,7 +4,7 @@ defmodule Melocoton.Repo.Migrations.CreateSessions do
   def change do
     create table(:sessions) do
       add :query, :text, null: true, default: ""
-      add :database_id, references(:databases, on_delete: :nothing), null: false
+      add :database_id, references(:databases, on_delete: :delete_all), null: false
 
       timestamps(type: :utc_datetime)
     end
