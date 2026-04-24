@@ -9,6 +9,8 @@ defmodule MelocotonWeb.DatabaseLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
+    Databases.ensure_default_group()
+
     socket
     |> assign(:groups, Databases.list_groups())
     |> assign(:search_form, to_form(%{"term" => ""}))

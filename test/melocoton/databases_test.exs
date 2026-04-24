@@ -164,5 +164,17 @@ defmodule Melocoton.DatabasesTest do
       group = group_fixture()
       assert %Ecto.Changeset{} = Databases.change_group(group)
     end
+
+    test "ensure_default_group/0 creates a default group when none exist" do
+      assert Databases.list_groups() == []
+      assert {:ok, %Group{name: "Default", color: "#6b7280"}} = Databases.ensure_default_group()
+      assert [%Group{name: "Default", color: "#6b7280"}] = Databases.list_groups()
+    end
+
+    test "ensure_default_group/0 is a no-op when groups already exist" do
+      group = group_fixture()
+      assert :ok = Databases.ensure_default_group()
+      assert Databases.list_groups() == [group]
+    end
   end
 end

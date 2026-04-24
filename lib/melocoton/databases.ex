@@ -275,6 +275,18 @@ defmodule Melocoton.Databases do
     Group.changeset(group, attrs)
   end
 
+  @doc """
+  Ensures at least one group exists by creating a default group when the database is empty.
+  Safe to call multiple times — it is a no-op if any group already exists.
+  """
+  def ensure_default_group do
+    if Enum.empty?(list_groups()) do
+      create_group(%{name: "Default", color: "#6b7280"})
+    else
+      :ok
+    end
+  end
+
   def ai_chat_topic(database_id), do: "ai_chat:#{database_id}"
 
   def get_or_create_active_chat(database_id) do
