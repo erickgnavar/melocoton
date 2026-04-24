@@ -23,6 +23,12 @@ echo "Running on $OS_NAME ($ARCH)..."
 if [[ "$OS_NAME" == "Darwin" ]]; then
   export BURRITO_TARGET=macos
 elif [[ "$OS_NAME" == "GNU/Linux" ]]; then
+  # Burrito ships a musl-linked ERTS on Linux, so we need rustler_precompiled
+  # NIFs (mdex/lumis) to target musl too, otherwise dlopen fails at runtime.
+  export TARGET_ABI=musl
+  export TARGET_OS=linux
+  export TARGET_ARCH="$ARCH"
+
   if [[ "$ARCH" == "aarch64" || "$ARCH" == "arm64" ]]; then
     export BURRITO_TARGET=linux_arm
   else
