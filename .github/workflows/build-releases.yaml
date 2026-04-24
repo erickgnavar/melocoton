@@ -79,6 +79,59 @@ jobs:
             melocoton.rpm
             melocoton.AppImage
 
+  build-linux-arm:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Prepare environment
+        run: |
+          sudo apt update
+          sudo apt install -y libwebkit2gtk-4.1-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libxdo-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            xdg-utils
+          curl https://mise.run | sh
+          export PATH=$PATH:~/.local/bin/
+          mise install
+          eval "$(mise activate bash)"
+          mix local.hex --force && mix local.rebar --force
+
+      - name: build project
+        run: |
+          bash build.sh
+          ls src-tauri/target/release/
+          deb_file=$(find src-tauri/target/release/bundle/deb/ -type f -name "*.deb")
+          rpm_file=$(find src-tauri/target/release/bundle/rpm/ -type f -name "*.rpm" 2>/dev/null || true)
+          appimage_file=$(find src-tauri/target/release/bundle/appimage/ -type f -name "*.AppImage" 2>/dev/null || true)
+          mv $deb_file melocoton-arm64.deb
+          echo "deb_file=melocoton-arm64.deb" >> $GITHUB_ENV
+          if [ -n "$rpm_file" ]; then
+            mv $rpm_file melocoton-arm64.rpm
+            echo "rpm_file=melocoton-arm64.rpm" >> $GITHUB_ENV
+          fi
+          if [ -n "$appimage_file" ]; then
+            mv $appimage_file melocoton-arm64.AppImage
+            echo "appimage_file=melocoton-arm64.AppImage" >> $GITHUB_ENV
+          fi
+
+      - name: upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: linux-arm-installers
+          if-no-files-found: ignore
+          path: |
+            melocoton-arm64.deb
+            melocoton-arm64.rpm
+            melocoton-arm64.AppImage
+
   build-windows:
     runs-on: windows-latest
     steps:
@@ -126,7 +179,7 @@ jobs:
 
   publish-releases:
     runs-on: ubuntu-24.04
-    needs: [build-macos, build-linux, build-windows]
+    needs: [build-macos, build-linux, build-linux-arm, build-windows]
     permissions:
       contents: write
     steps:
@@ -146,6 +199,12 @@ jobs:
         with:
           name: linux-installers
           path: linux/
+
+      - name: Download linux arm artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: linux-arm-installers
+          path: linux-arm/
 
       - name: Download windows artifacts
         uses: actions/download-artifact@v8
@@ -182,6 +241,9 @@ jobs:
             linux/melocoton.deb
             linux/melocoton.rpm
             linux/melocoton.AppImage
+            linux-arm/melocoton-arm64.deb
+            linux-arm/melocoton-arm64.rpm
+            linux-arm/melocoton-arm64.AppImage
             windows/melocoton.msi
             windows/melocoton-setup.exe
           token: ${{ secrets.GITHUB_TOKEN }}

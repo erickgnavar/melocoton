@@ -1,5 +1,6 @@
-os := if os() == "macos" { "macos" } else { "linux" }
-burrito_bin := if os == "macos" { "melocoton_macos" } else { "melocoton_linux" }
+arch := `uname -m`
+os := if os() == "macos" { "macos" } else if arch == "aarch64" { "linux_arm" } else { "linux" }
+burrito_bin := if os == "macos" { "melocoton_macos" } else if os == "linux_arm" { "melocoton_linux_arm" } else { "melocoton_linux" }
 
 # Development
 dev:

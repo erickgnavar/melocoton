@@ -17,12 +17,17 @@ MIX_ENV=prod mix assets.deploy
 
 # set up compilation target
 OS_NAME=$(uname -o)
-echo "Running on $OS_NAME..."
+ARCH=$(uname -m)
+echo "Running on $OS_NAME ($ARCH)..."
 
 if [[ "$OS_NAME" == "Darwin" ]]; then
   export BURRITO_TARGET=macos
 elif [[ "$OS_NAME" == "GNU/Linux" ]]; then
-  export BURRITO_TARGET=linux
+  if [[ "$ARCH" == "aarch64" || "$ARCH" == "arm64" ]]; then
+    export BURRITO_TARGET=linux_arm
+  else
+    export BURRITO_TARGET=linux
+  fi
 else
   echo "Unsupported platform"
   echo "Use build.ps1 for Windows builds."
@@ -35,7 +40,11 @@ MIX_ENV=prod mix release || exit 1
 if [[ "$OS_NAME" == "Darwin" ]]; then
   cp ./burrito_out/melocoton_macos ./src-tauri/binaries/webserver
 elif [[ "$OS_NAME" == "GNU/Linux" ]]; then
-  cp ./burrito_out/melocoton_linux ./src-tauri/binaries/webserver
+  if [[ "$ARCH" == "aarch64" || "$ARCH" == "arm64" ]]; then
+    cp ./burrito_out/melocoton_linux_arm ./src-tauri/binaries/webserver
+  else
+    cp ./burrito_out/melocoton_linux ./src-tauri/binaries/webserver
+  fi
 else
   echo "Unsupported platform"
   echo "Use build.ps1 for Windows builds."
