@@ -113,6 +113,16 @@ const formatDialects = {
   mysql: "mysql",
 };
 
+function getEditorQuery(editorView) {
+  const selection = editorView.state.selection.main;
+  if (selection.from !== selection.to) {
+    return editorView.state.doc
+      .toString()
+      .substring(selection.from, selection.to);
+  }
+  return editorView.state.doc.toString();
+}
+
 function formatSQL(editorView, from, to) {
   const { state } = editorView;
 
@@ -208,17 +218,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
             {
               key: "Mod-Enter",
               run() {
-                // run query with current selection when pressing
-                // CMD + enter
-                const selection = view.state.selection.ranges.at(0);
-                const selectedText = view.state.doc
-                  .toString()
-                  .substring(selection.from, selection.to);
-
-                that.pushEvent("run-query", {
-                  query: selectedText,
-                });
-
+                that.pushEvent("run-query", { query: getEditorQuery(view) });
                 return true;
               },
             },
@@ -464,6 +464,15 @@ const liveSocket = new LiveSocket("/live", Socket, {
       },
       destroyed() {
         if (this.cleanup) this.cleanup();
+      },
+    },
+    RunQueryButton: {
+      mounted() {
+        this.el.addEventListener("click", (e) => {
+          if (!window.view) return;
+          e.preventDefault();
+          this.pushEvent("run-query", { query: getEditorQuery(window.view) });
+        });
       },
     },
     AutoHideFlash: {

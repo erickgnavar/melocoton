@@ -347,16 +347,11 @@
 
         <%!-- Run button with inline shortcut --%>
         <button
+          id="run-query-btn"
           class="px-3 py-1 text-xs text-white rounded hover:opacity-90 flex items-center font-medium disabled:opacity-50"
           style={"background: #{@database.group.color};"}
-          phx-click="run-query"
+          phx-hook="RunQueryButton"
           disabled={@running_query}
-          phx-value-query={
-            case Enum.at(@tabs, @active_tab_index) do
-              %{type: :query, session: s} -> s.query
-              _ -> ""
-            end
-          }
         >
           <.icon
             :if={!@running_query}
