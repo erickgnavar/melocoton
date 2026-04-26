@@ -86,9 +86,13 @@ defmodule Melocoton.DatabaseClient do
   def test_connection_via_query(database) do
     conn = Melocoton.Pool.get_repo(database)
 
-    case query(conn, "SELECT 1") do
-      {:ok, _result, _meta} -> :ok
-      {:error, reason} -> {:error, reason}
+    try do
+      case query(conn, "SELECT 1") do
+        {:ok, _result, _meta} -> :ok
+        {:error, reason} -> {:error, reason}
+      end
+    after
+      Melocoton.Pool.release(database.id)
     end
   end
 
