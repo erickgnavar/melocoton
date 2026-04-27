@@ -33,7 +33,7 @@ and packaged as a native desktop app with Tauri.
 
 ## Installation
 
-Download the latest release for your platform from the [Releases](https://github.com/erick-navarro/melocoton/releases) page:
+Download the latest release for your platform from the [Releases](https://github.com/erickgnavar/melocoton/releases) page:
 
 | Platform | Installer                   |
 |----------|-----------------------------|
