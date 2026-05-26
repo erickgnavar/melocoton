@@ -31,7 +31,32 @@ defmodule Melocoton.AI.Models do
        {"MiniMax-M2.1", "MiniMax M2.1"},
        {"MiniMax-M2", "MiniMax M2"}
      ]},
-    {"ollama", "Ollama", :dynamic}
+    {"ollama", "Ollama", :dynamic},
+    {"opencode", "OpenCode",
+     [
+       {"zen/deepseek-v4-flash-free", "Free: DeepSeek V4 Flash Free"},
+       {"zen/big-pickle", "Free: Big Pickle"},
+       {"zen/nemotron-3-super-free", "Free: Nemotron 3 Super Free"},
+       {"go/deepseek-v4-flash", "Go: DeepSeek V4 Flash"},
+       {"go/deepseek-v4-pro", "Go: DeepSeek V4 Pro"},
+       {"go/qwen3.6-plus", "Go: Qwen3.6 Plus"},
+       {"go/qwen3.5-plus", "Go: Qwen3.5 Plus"},
+       {"go/glm-5.1", "Go: GLM-5.1"},
+       {"go/glm-5", "Go: GLM-5"},
+       {"go/kimi-k2.6", "Go: Kimi K2.6"},
+       {"go/kimi-k2.5", "Go: Kimi K2.5"},
+       {"go/mimo-v2.5-pro", "Go: MiMo-V2.5-Pro"},
+       {"go/mimo-v2.5", "Go: MiMo-V2.5"},
+       {"go/minimax-m2.7", "Go: MiniMax M2.7"},
+       {"go/minimax-m2.5", "Go: MiniMax M2.5"},
+       {"zen/gpt-5.5", "Zen: GPT 5.5"},
+       {"zen/gpt-5.2-codex", "Zen: GPT 5.2 Codex"},
+       {"zen/gpt-5.1-codex", "Zen: GPT 5.1 Codex"},
+       {"zen/claude-sonnet-4-6", "Zen: Claude Sonnet 4.6"},
+       {"zen/claude-opus-4-5", "Zen: Claude Opus 4.5"},
+       {"zen/claude-haiku-4-5", "Zen: Claude Haiku 4.5"},
+       {"zen/gemini-3.5-flash", "Zen: Gemini 3.5 Flash"}
+     ]}
   ]
 
   def providers, do: @providers
@@ -64,6 +89,7 @@ defmodule Melocoton.AI.Models do
   def required_api_key("openrouter"), do: "openrouter_api_key"
   def required_api_key("minimax"), do: "minimax_api_key"
   def required_api_key("ollama"), do: nil
+  def required_api_key("opencode"), do: "opencode_api_key"
   def required_api_key(_), do: nil
 
   def build_model_string(nil, _), do: nil

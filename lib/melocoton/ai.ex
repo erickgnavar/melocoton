@@ -46,6 +46,9 @@ defmodule Melocoton.AI do
             {:error, "LLM error: #{inspect(error)}"}
         end
 
+      {:opencode, model_name} ->
+        Melocoton.AI.OpenCode.chat(llm_messages, model: model_name)
+
       _ ->
         case ReqLLM.generate_text(model_str, llm_messages) do
           {:ok, %{message: %{content: content}}} ->
@@ -59,6 +62,7 @@ defmodule Melocoton.AI do
 
   defp parse_provider("minimax:" <> model), do: {:minimax, model}
   defp parse_provider("ollama:" <> model), do: {:ollama, model}
+  defp parse_provider("opencode:" <> model), do: {:opencode, model}
   defp parse_provider(_), do: :standard
 
   # Content can be a plain string, a list of ContentPart structs, or other formats

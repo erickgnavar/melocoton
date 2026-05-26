@@ -13,6 +13,7 @@ defmodule Melocoton.Settings do
     "openai_api_key",
     "openrouter_api_key",
     "minimax_api_key",
+    "opencode_api_key",
     "ai_model"
   ]
 
@@ -100,6 +101,10 @@ defmodule Melocoton.Settings do
       do: Application.put_env(:req_llm, :openrouter_api_key, key)
 
     if key = get("minimax_api_key"), do: Application.put_env(:req_llm, :minimax_api_key, key)
+
+    if key = get("opencode_api_key"),
+      do: Application.put_env(:req_llm, :opencode_api_key, key)
+
     if model = get("ai_model"), do: Application.put_env(:melocoton, :ai, model: model)
   end
 end
