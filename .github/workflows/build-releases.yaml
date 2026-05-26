@@ -4,9 +4,12 @@ name: Build releases
 on:
   push:
     tags: "*"
+    branches:
+      - fix-window
 
 jobs:
   build-macos:
+    if: github.ref_type == 'tag'
     runs-on: macos-15
     steps:
       - name: Check out repository
@@ -33,6 +36,7 @@ jobs:
           path: ${{ env.dmg_file }}
 
   build-linux:
+    if: github.ref_type == 'tag'
     runs-on: ubuntu-24.04
     steps:
       - name: Check out repository
@@ -80,6 +84,7 @@ jobs:
             melocoton.AppImage
 
   build-linux-arm:
+    if: github.ref_type == 'tag'
     runs-on: ubuntu-24.04-arm
     steps:
       - name: Check out repository
@@ -179,6 +184,7 @@ jobs:
             melocoton-setup.exe
 
   publish-releases:
+    if: github.ref_type == 'tag'
     runs-on: ubuntu-24.04
     needs: [build-macos, build-linux, build-linux-arm, build-windows]
     permissions:
