@@ -23,6 +23,10 @@ echo "Running on $OS_NAME ($ARCH)..."
 if [[ "$OS_NAME" == "Darwin" ]]; then
   export BURRITO_TARGET=macos
 elif [[ "$OS_NAME" == "GNU/Linux" ]]; then
+  # Force rustler_precompiled (used by mdex and lumis) to select musl-linked
+  # NIF binaries instead of glibc. Burrito bundles a musl Erlang runtime which
+  # cannot dlopen glibc-linked .so files at runtime on the target machine.
+  export TARGET_ABI=musl
   if [[ "$ARCH" == "aarch64" || "$ARCH" == "arm64" ]]; then
     export BURRITO_TARGET=linux_arm
   else
