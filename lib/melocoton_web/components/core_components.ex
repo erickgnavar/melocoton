@@ -731,8 +731,10 @@ defmodule MelocotonWeb.CoreComponents do
   def sql_block(assigns) do
     ~H"""
     <div class={["ai-sql-block rounded overflow-hidden", @class]}>
-      {"```sql\n#{@sql}\n```"
-      |> MDEx.to_html!(syntax_highlight: [formatter: :html_linked])
+      {Makeup.highlight(@sql,
+        lexer: MakeupSql,
+        formatter: Makeup.Formatters.HTML.HTMLFormatter
+      )
       |> Phoenix.HTML.raw()}
     </div>
     """

@@ -616,20 +616,29 @@ tr.row-selected {
 /* Reset browser default pre margin inside AI chat SQL blocks */
 .ai-sql-block pre { margin: 0; }
 
-/* ===== Lumis syntax highlighting (class-based, theme-aware) ===== */
-pre.lumis {
+/* ===== Makeup syntax highlighting (class-based, theme-aware) ===== */
+pre.highlight {
   color: var(--text-primary);
   background-color: var(--bg-secondary);
   padding: 0.5rem;
 }
 
-pre.lumis .keyword      { color: var(--syntax-keyword); }
-pre.lumis .type         { color: var(--syntax-table); }
-pre.lumis .number-float,
-pre.lumis .number       { color: var(--syntax-number); }
-pre.lumis .comment      { color: var(--syntax-comment); font-style: italic; }
-pre.lumis .string       { color: var(--syntax-string); }
-pre.lumis .operator,
-pre.lumis .punctuation-delimiter { color: var(--text-secondary); }
-pre.lumis .variable-member       { color: var(--text-primary); }
-pre.lumis .function     { color: var(--syntax-keyword); }
+pre.highlight .kr,
+pre.highlight .k,
+pre.highlight .kd  { color: var(--syntax-keyword); }
+pre.highlight .kt  { color: var(--syntax-table); }
+pre.highlight .m,
+pre.highlight .mf,
+pre.highlight .mi  { color: var(--syntax-number); }
+pre.highlight .c,
+pre.highlight .c1,
+pre.highlight .cm  { color: var(--syntax-comment); font-style: italic; }
+pre.highlight .s,
+pre.highlight .s1,
+pre.highlight .s2  { color: var(--syntax-string); }
+pre.highlight .o,
+pre.highlight .p   { color: var(--text-secondary); }
+pre.highlight .n,
+pre.highlight .nv  { color: var(--text-primary); }
+pre.highlight .nf,
+pre.highlight .fm  { color: var(--syntax-keyword); }

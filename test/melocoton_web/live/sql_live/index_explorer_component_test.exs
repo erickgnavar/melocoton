@@ -55,7 +55,7 @@ defmodule MelocotonWeb.SqlLive.IndexExplorerComponentTest do
         |> IndexExplorerComponent.render()
         |> rendered_to_string()
 
-      assert html =~ "keyword-modifier"
+      assert html =~ "class=\"kr\""
       assert html =~ "ai-sql-block"
     end
   end
