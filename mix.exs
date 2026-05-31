@@ -83,7 +83,9 @@ defmodule Melocoton.MixProject do
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false},
       {:req_llm, "~> 1.8"},
-      {:mdex, "~> 0.2"},
+      {:earmark, "~> 1.4"},
+      {:makeup, "~> 1.0"},
+      {:makeup_sql, "~> 0.1"},
       {:myxql, "~> 0.8"},
       {:testcontainers, "~> 2.0", only: [:dev, :test]}
     ]
