@@ -45,14 +45,23 @@ jobs:
           mv $appimage_file melocoton.AppImage
           echo "appimage_file=melocoton.AppImage" >> $GITHUB_ENV
 
-      - name: upload artifact
+      - name: upload deb
         uses: actions/upload-artifact@v7
         with:
-          name: linux-installers
-          path: |
-            melocoton.deb
-            melocoton.rpm
-            melocoton.AppImage
+          name: melocoton.deb
+          path: melocoton.deb
+
+      - name: upload rpm
+        uses: actions/upload-artifact@v7
+        with:
+          name: melocoton.rpm
+          path: melocoton.rpm
+
+      - name: upload AppImage
+        uses: actions/upload-artifact@v7
+        with:
+          name: melocoton.AppImage
+          path: melocoton.AppImage
 
   build-linux-arm:
     runs-on: ubuntu-24.04-arm
@@ -97,14 +106,61 @@ jobs:
             echo "appimage_file=melocoton-arm64.AppImage" >> $GITHUB_ENV
           fi
 
-      - name: upload artifact
+      - name: upload arm64 deb
         uses: actions/upload-artifact@v7
         with:
-          name: linux-arm-installers
+          name: melocoton-arm64.deb
           if-no-files-found: ignore
-          path: |
-            melocoton-arm64.deb
-            melocoton-arm64.rpm
-            melocoton-arm64.AppImage
+          path: melocoton-arm64.deb
+
+      - name: upload arm64 rpm
+        uses: actions/upload-artifact@v7
+        with:
+          name: melocoton-arm64.rpm
+          if-no-files-found: ignore
+          path: melocoton-arm64.rpm
+
+      - name: upload arm64 AppImage
+        uses: actions/upload-artifact@v7
+        with:
+          name: melocoton-arm64.AppImage
+          if-no-files-found: ignore
+          path: melocoton-arm64.AppImage
+
+  publish-draft:
+    runs-on: ubuntu-24.04
+    needs: [build-linux, build-linux-arm]
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Download linux artifacts
+        uses: actions/download-artifact@v8
+        with:
+          pattern: melocoton.*
+          path: linux/
+          merge-multiple: true
+
+      - name: Download linux arm artifacts
+        uses: actions/download-artifact@v8
+        with:
+          pattern: melocoton-arm64.*
+          path: linux-arm/
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v3
+        with:
+          tag_name: v0.29.1-test.${{ github.run_id }}
+          name: "Test build v0.29.1 (${{ github.sha }})"
+          body: "Test build from release-testing branch."
+          draft: true
+          files: |
+            linux/melocoton.deb
+            linux/melocoton.rpm
+            linux/melocoton.AppImage
+            linux-arm/melocoton-arm64.deb
+            linux-arm/melocoton-arm64.rpm
+            linux-arm/melocoton-arm64.AppImage
 
 
