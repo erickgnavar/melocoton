@@ -1,0 +1,31 @@
+# mix deps.audit --ignore-file .deps_audit_ignore
+#
+# GHSA-52mm-h59v-f3c7 - earmark: Stored XSS via unescaped HTML attribute values
+# earmark is retired/unmaintained upstream with no patched release available
+# (fix would require migrating to MDEx). The only call site
+# (lib/melocoton_web/live/sql_live/ai_chat_component.ex) already pipes
+# Earmark output through HtmlSanitizeEx.markdown_html() before marking it
+# raw, which strips the unescaped attribute values this advisory exploits.
+# Additionally, melocoton runs as a single-user desktop app rather than a
+# multi-user web service, so there's no cross-user/session boundary for a
+# stored XSS payload to cross.
+GHSA-52mm-h59v-f3c7
+
+# GHSA-gp9c-pm5m-5cxr, GHSA-j9wq-vxxc-94wf, GHSA-mp55-p8c9-rfw2,
+# GHSA-pj7v-xfvx-wmjq - hackney (transitive dep of testcontainers, dev/test
+# only via `only: [:dev, :test]` in mix.exs).
+# testcontainers pins `hackney ~> 1.20` (confirmed still true on its
+# unreleased main branch), and hackney's last 1.x release, 1.25.0, has no
+# patched build - the fix required jumping to 4.0.1+. Overriding to
+# hackney 4.x was tried and broke Testcontainers' Docker-socket detection
+# in CI (DockerUrl.test_docker_host/1 hardcodes Tesla.Adapter.Hackney to
+# probe the unix socket, and something in that path regressed across the
+# 1.x -> 4.x rewrite), so it was reverted. All four advisories concern
+# hackney acting as an HTTP client against attacker-influenced URLs
+# (CRLF/SSRF/TLS timeout); testcontainers only uses hackney to talk to the
+# local Docker daemon over a unix socket with a URL it constructs itself,
+# so there's no untrusted input reaching hackney here.
+GHSA-gp9c-pm5m-5cxr
+GHSA-j9wq-vxxc-94wf
+GHSA-mp55-p8c9-rfw2
+GHSA-pj7v-xfvx-wmjq

@@ -116,7 +116,7 @@ defmodule Melocoton.MixProject do
         "format --check-formatted",
         "deps.unlock --check-unused",
         "credo --strict",
-        "deps.audit",
+        "deps.audit --ignore-file .deps_audit_ignore",
         "test --cover"
       ]
     ]
