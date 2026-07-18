@@ -1,6 +1,8 @@
 use rand::Rng;
 use std::env;
 use std::error::Error;
+use std::fs;
+use std::io;
 use std::net::TcpListener;
 use std::path::Path;
 use std::process::Command;
@@ -15,6 +17,8 @@ use url::Url;
 struct AppData {
     port: u16,
 }
+
+const OLD_IDENTIFIER: &str = "app.melocoton.app";
 
 #[tauri::command]
 fn open_new_window(app_handle: tauri::AppHandle, state: State<'_, Mutex<AppData>>) {
@@ -109,11 +113,50 @@ async fn is_http_ready(address: &str, timeout_seconds: u64) -> bool {
     false
 }
 
+fn migrate_app_data(new_dir: &Path) -> io::Result<()> {
+    let Some(data_root) = new_dir.parent() else {
+        return Ok(());
+    };
+    let old_dir = data_root.join(OLD_IDENTIFIER);
+
+    if !old_dir.is_dir() {
+        return Ok(());
+    }
+
+    println!(
+        "Migrating application data from {} to {}",
+        old_dir.display(),
+        new_dir.display()
+    );
+    copy_missing_files(&old_dir, new_dir)
+}
+
+fn copy_missing_files(source: &Path, destination: &Path) -> io::Result<()> {
+    fs::create_dir_all(destination)?;
+
+    for entry in fs::read_dir(source)? {
+        let entry = entry?;
+        let source_path = entry.path();
+        let destination_path = destination.join(entry.file_name());
+        let file_type = entry.file_type()?;
+
+        if file_type.is_dir() {
+            copy_missing_files(&source_path, &destination_path)?;
+        } else if file_type.is_file() && !destination_path.exists() {
+            fs::copy(source_path, destination_path)?;
+        }
+    }
+
+    Ok(())
+}
+
 async fn setup(
     app_handle: tauri::AppHandle,
     port: u16,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
     let base_dir = app_handle.path().app_data_dir()?;
+    migrate_app_data(&base_dir)?;
+
     let webserver_path = app_handle
         .path()
         .resolve("binaries/webserver", BaseDirectory::Resource)?;
@@ -143,4 +186,43 @@ async fn setup(
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    fn temporary_directory(name: &str) -> PathBuf {
+        env::temp_dir().join(format!(
+            "melocoton-{name}-{}-{}",
+            std::process::id(),
+            generate_secret_key(8)
+        ))
+    }
+
+    #[test]
+    fn migrates_old_app_data_without_overwriting_new_files() {
+        let root = temporary_directory("migration");
+        let old_dir = root.join(OLD_IDENTIFIER);
+        let new_dir = root.join("com.ruaylabs.melocoton");
+        fs::create_dir_all(old_dir.join("nested")).unwrap();
+        fs::create_dir_all(&new_dir).unwrap();
+        fs::write(old_dir.join("melocoton.db"), "old database").unwrap();
+        fs::write(old_dir.join("nested/settings.json"), "settings").unwrap();
+        fs::write(new_dir.join("melocoton.db"), "new database").unwrap();
+
+        migrate_app_data(&new_dir).unwrap();
+
+        assert_eq!(
+            fs::read_to_string(new_dir.join("melocoton.db")).unwrap(),
+            "new database"
+        );
+        assert_eq!(
+            fs::read_to_string(new_dir.join("nested/settings.json")).unwrap(),
+            "settings"
+        );
+
+        fs::remove_dir_all(root).unwrap();
+    }
 }
