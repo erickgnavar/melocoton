@@ -33,6 +33,16 @@ and packaged as a native desktop app with Tauri.
 
 ## Installation
 
+### Homebrew (macOS)
+
+```bash
+brew install --cask ruaylabs/tap/melocoton
+```
+
+The cask is maintained in the [Ruaylabs Homebrew tap](https://github.com/ruaylabs/homebrew-tap).
+
+### Manual download
+
 Download the latest release for your platform from the [Releases](https://github.com/ruaylabs/melocoton/releases) page:
 
 | Platform | Installer                   |
