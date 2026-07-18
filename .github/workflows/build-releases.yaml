@@ -22,9 +22,10 @@ jobs:
       - name: build project
         run: |
           bash build.sh
+          version="${GITHUB_REF_NAME#v}"
           dmg_file=$(find src-tauri/target/release/bundle/dmg/ -type f -name "*.dmg")
-          mv $dmg_file melocoton.dmg
-          echo "dmg_file=melocoton.dmg" >> $GITHUB_ENV
+          mv "$dmg_file" "melocoton-${version}.dmg"
+          echo "dmg_file=melocoton-${version}.dmg" >> $GITHUB_ENV
 
       - name: upload artifact
         uses: actions/upload-artifact@v7
@@ -60,24 +61,25 @@ jobs:
         run: |
           bash build.sh
           ls src-tauri/target/release/
+          version="${GITHUB_REF_NAME#v}"
           deb_file=$(find src-tauri/target/release/bundle/deb/ -type f -name "*.deb")
           rpm_file=$(find src-tauri/target/release/bundle/rpm/ -type f -name "*.rpm")
           appimage_file=$(find src-tauri/target/release/bundle/appimage/ -type f -name "*.AppImage")
-          mv $deb_file melocoton.deb
-          echo "deb_file=melocoton.deb" >> $GITHUB_ENV
-          mv $rpm_file melocoton.rpm
-          echo "rpm_file=melocoton.rpm" >> $GITHUB_ENV
-          mv $appimage_file melocoton.AppImage
-          echo "appimage_file=melocoton.AppImage" >> $GITHUB_ENV
+          mv "$deb_file" "melocoton-${version}.deb"
+          echo "deb_file=melocoton-${version}.deb" >> $GITHUB_ENV
+          mv "$rpm_file" "melocoton-${version}.rpm"
+          echo "rpm_file=melocoton-${version}.rpm" >> $GITHUB_ENV
+          mv "$appimage_file" "melocoton-${version}.AppImage"
+          echo "appimage_file=melocoton-${version}.AppImage" >> $GITHUB_ENV
 
       - name: upload artifact
         uses: actions/upload-artifact@v7
         with:
           name: linux-installers
           path: |
-            melocoton.deb
-            melocoton.rpm
-            melocoton.AppImage
+            melocoton-*.deb
+            melocoton-*.rpm
+            melocoton-*.AppImage
 
   build-linux-arm:
     runs-on: ubuntu-24.04-arm
@@ -108,18 +110,19 @@ jobs:
         run: |
           bash build.sh
           ls src-tauri/target/release/
+          version="${GITHUB_REF_NAME#v}"
           deb_file=$(find src-tauri/target/release/bundle/deb/ -type f -name "*.deb")
           rpm_file=$(find src-tauri/target/release/bundle/rpm/ -type f -name "*.rpm" 2>/dev/null || true)
           appimage_file=$(find src-tauri/target/release/bundle/appimage/ -type f -name "*.AppImage" 2>/dev/null || true)
-          mv $deb_file melocoton-arm64.deb
-          echo "deb_file=melocoton-arm64.deb" >> $GITHUB_ENV
+          mv "$deb_file" "melocoton-${version}-arm64.deb"
+          echo "deb_file=melocoton-${version}-arm64.deb" >> $GITHUB_ENV
           if [ -n "$rpm_file" ]; then
-            mv $rpm_file melocoton-arm64.rpm
-            echo "rpm_file=melocoton-arm64.rpm" >> $GITHUB_ENV
+            mv "$rpm_file" "melocoton-${version}-arm64.rpm"
+            echo "rpm_file=melocoton-${version}-arm64.rpm" >> $GITHUB_ENV
           fi
           if [ -n "$appimage_file" ]; then
-            mv $appimage_file melocoton-arm64.AppImage
-            echo "appimage_file=melocoton-arm64.AppImage" >> $GITHUB_ENV
+            mv "$appimage_file" "melocoton-${version}-arm64.AppImage"
+            echo "appimage_file=melocoton-${version}-arm64.AppImage" >> $GITHUB_ENV
           fi
 
       - name: upload artifact
@@ -128,9 +131,9 @@ jobs:
           name: linux-arm-installers
           if-no-files-found: ignore
           path: |
-            melocoton-arm64.deb
-            melocoton-arm64.rpm
-            melocoton-arm64.AppImage
+            melocoton-*-arm64.deb
+            melocoton-*-arm64.rpm
+            melocoton-*-arm64.AppImage
 
   build-windows:
     runs-on: windows-latest
@@ -163,20 +166,21 @@ jobs:
         shell: pwsh
         run: |
           .\build.ps1
+          $version = $env:GITHUB_REF_NAME -replace '^v', ''
           $msi = Get-ChildItem -Path src-tauri/target/release/bundle/msi/*.msi | Select-Object -First 1
           $nsis = Get-ChildItem -Path src-tauri/target/release/bundle/nsis/*.exe | Select-Object -First 1
-          Copy-Item $msi.FullName -Destination melocoton.msi
-          Copy-Item $nsis.FullName -Destination melocoton-setup.exe
-          echo "msi_file=melocoton.msi" >> $env:GITHUB_ENV
-          echo "nsis_file=melocoton-setup.exe" >> $env:GITHUB_ENV
+          Copy-Item $msi.FullName -Destination "melocoton-$version.msi"
+          Copy-Item $nsis.FullName -Destination "melocoton-$version-setup.exe"
+          echo "msi_file=melocoton-$version.msi" >> $env:GITHUB_ENV
+          echo "nsis_file=melocoton-$version-setup.exe" >> $env:GITHUB_ENV
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
           name: windows-installers
           path: |
-            melocoton.msi
-            melocoton-setup.exe
+            melocoton-*.msi
+            melocoton-*-setup.exe
 
   publish-releases:
     runs-on: ubuntu-24.04
@@ -232,21 +236,20 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Publish artifacts as release assets
-        uses: softprops/action-gh-release@v3
-        with:
-          body: ${{ steps.changelog.outputs.body }}
-          tag_name: ${{ github.ref_name }}
-          files: |
-            macos/melocoton.dmg
-            linux/melocoton.deb
-            linux/melocoton.rpm
-            linux/melocoton.AppImage
-            linux-arm/melocoton-arm64.deb
-            linux-arm/melocoton-arm64.rpm
-            linux-arm/melocoton-arm64.AppImage
-            windows/melocoton.msi
-            windows/melocoton-setup.exe
-          token: ${{ secrets.GITHUB_TOKEN }}
-          draft: false
-          make_latest: true
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          shopt -s nullglob
+          gh release create "${{ github.ref_name }}" \
+            --notes "${{ steps.changelog.outputs.body }}" \
+            --latest \
+            macos/*.dmg \
+            linux/*.deb \
+            linux/*.rpm \
+            linux/*.AppImage \
+            linux-arm/*.deb \
+            linux-arm/*.rpm \
+            linux-arm/*.AppImage \
+            windows/*.msi \
+            windows/*.exe
