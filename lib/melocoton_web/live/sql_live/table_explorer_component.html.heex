@@ -207,6 +207,10 @@
           name="filter"
           value={@filter}
           placeholder="Filter rows..."
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          spellcheck="false"
           phx-debounce="300"
           class="w-40 px-2 py-1 text-xs rounded"
           style="background: var(--bg-primary); border: 0.5px solid var(--border-medium); color: var(--text-primary);"
@@ -280,6 +284,10 @@
             value={filter.value}
             phx-debounce="300"
             placeholder={if filter.sql, do: "e.g. now()", else: "value..."}
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+            spellcheck="false"
             class="flex-1 px-1.5 py-1 text-xs rounded min-w-[80px]"
             style={
               if filter.sql,
@@ -503,6 +511,10 @@
                       class="flex-1 px-1.5 py-1 text-xs"
                       style={"background: var(--bg-primary); color: var(--text-primary); border: 2px solid #{@database.group.color}; outline: none; min-width: 60px;"}
                       name="value"
+                      autocomplete="off"
+                      autocorrect="off"
+                      autocapitalize="off"
+                      spellcheck="false"
                     />
                     <button
                       type="button"
@@ -1372,6 +1384,10 @@
           placeholder={
             if MapSet.member?(@add_row_sql_fields, col), do: "e.g. now()", else: "NULL"
           }
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          spellcheck="false"
           class="flex-1 px-2.5 py-1.5 text-xs rounded"
           style={
             if MapSet.member?(@add_row_sql_fields, col),

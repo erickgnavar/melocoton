@@ -52,6 +52,10 @@ defmodule MelocotonWeb.DatabaseLive.FormComponent do
                 name="connection_string"
                 value=""
                 placeholder={"#{if @db_type == :postgres, do: "postgres", else: "mysql"}://user:password@host:port/database"}
+                autocomplete="off"
+                autocorrect="off"
+                autocapitalize="off"
+                spellcheck="false"
                 phx-change="parse-connection-string"
                 phx-target={@myself}
                 class="mt-1 block w-full rounded border px-3 py-1.5 text-sm"
